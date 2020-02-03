@@ -1,9 +1,22 @@
 {
-  "name": "@candlefw/test",
-  "version": "0.0.1",
-  "description": "CandleFW Testing System",
-  "main": "test.js",
-  "repository": "https://github.com/candlefw/test",
-  "author": "galactrax <anthonycweathersby@gmail.com>",
-  "license": "MIT"
+	"name": "@candlefw/test",
+	"version": "0.0.1",
+	"description": "CandleFW Testing System",
+	"main": "test.js",
+	"type": "module",
+	"bin": {
+		"cfw_test": "./bin/cfw_test.js"
+	},
+	"scripts": {
+		"test": "cfw_test --test_design talking is -title talk-slap ./test/test.js"
+	},
+	"repository": {
+		"type": "git",
+		"url": "https://github.com/candlefw/test.git"
+	},
+	"author": "galactrax <anthonycweathersby@gmail.com>",
+	"license": "MIT",
+	"devDependencies": {
+		"chai": "^4.2.0"
+	}
 }
