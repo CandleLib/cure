@@ -7,7 +7,7 @@ export default function getName(scope) {
 		name = scope.name;
 
 	while (s.parent) {
-		name = `${s.parent.name} => ${name}`;
+		name = `${s.parent.name} \u27A4 ${name}`;
 		s = s.parent;
 	}
 
