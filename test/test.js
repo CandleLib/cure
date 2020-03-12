@@ -1,21 +1,25 @@
-import chai from "chai";
+"Basic assertions";
 
-import getName from "../source/get_name.js";
+let a = 3;
 
-chai.should();
+"a should equal 3";
+((a == 3));
 
-ctest("basic unit tests", () => {
-	ctest("getName", () => {
-		var t = 3;
-		ctest("getNames", () => {
-			console.log(112)
-			const scope = {};
-			(1 + 2).should.equal(0);
-		})
+a = null;
 
-		ctest("getNames2", () => {
-			const scope = {};
-			(1 + 2).should.equal(3);
-		})
-	})
-})
+"a should equal null";
+((a == null));
+
+"A should equal null";
+((a == null));
+
+"1. A should equal null";
+((a == null));
+
+a = 0;
+
+"2. A should equal null";
+((a == 0));
+
+"3. A should equal null";
+((a == 0));
