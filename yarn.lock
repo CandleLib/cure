@@ -2,6 +2,31 @@
 # yarn lockfile v1
 
 
+"@candlefw/js@^0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.0.9.tgz#3cf39b6ffe34cb901aaa9dabece6e0b6ec4b6a8d"
+  integrity sha512-PWTATcE/3NVhTtLbV03BpWgMEBzrIB5Gt4gutMT4tHf9evvybcSZnrmK56oWtIevGhTTGuD9tVrCUcEAqM954A==
+  dependencies:
+    "@candlefw/url" latest
+    "@candlefw/whind" latest
+
+"@candlefw/spark@>=0.0.1":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@candlefw/spark/-/spark-0.0.8.tgz#f4f2e662e5d389d7eabb98e8e571179c6ccba485"
+  integrity sha512-wsgXUOz5qYVFMGSECzu4585j4hJp9otperAI1FKWHbXnOsMdw3kukUOrwfufJuKavnAb3omAAHembrllSnN6xQ==
+
+"@candlefw/url@latest":
+  version "0.0.13"
+  resolved "https://registry.yarnpkg.com/@candlefw/url/-/url-0.0.13.tgz#5abf5b7420eb44ba996f288e7297b2f933d2b476"
+  integrity sha512-FFJ1usgjtK2Spre8vfxla2TsImjLEh9X5x1JfXhOEDwKxex3WTWcRvN2VRug+yS50Xm888VcyeSJ24FunYR48A==
+  dependencies:
+    "@candlefw/whind" latest
+
+"@candlefw/whind@latest":
+  version "0.3.8"
+  resolved "https://registry.yarnpkg.com/@candlefw/whind/-/whind-0.3.8.tgz#6051051934f0fd64c581992a523ce3e4467353c7"
+  integrity sha512-FYRDTl9I1TvZ85Ri/7jX+BMIsRLGjuzM4C6Qnhx5pwhhZTzKspN/BGN9K4LnYL5onturOqGtD49vMdank1nktA==
+
 assertion-error@^1.1.0:
   version "1.1.0"
   resolved "https://registry.yarnpkg.com/assertion-error/-/assertion-error-1.1.0.tgz#e60b6b0e8f301bd97e5375215bda406c85118c0b"
