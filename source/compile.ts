@@ -1,10 +1,13 @@
-import { MinTreeNodeType as $, parser, render as $r, ext, MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType } from "@candlefw/js";
+import { MinTreeNodeType as $, parser, render as $r, ext, MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, add_parent, replace, make_skippable, filter } from "@candlefw/conflagrate";
 import { getErrorMessageFromContent } from "./get_error_message.js";
+import URL from "@candlefw/url";
+import { i } from "@candlefw/whind/build/types/ascii_code_points";
 /**
  * Compiles test blocks from ast objects.
  */
-export async function compileTest(ast: MinTreeNode) {
+export async function compileTest(ast: MinTreeNode, origin: URL) {
+
     const asts = [], globals = [], imports = [], statements = [], bindings = [];
 
     let suite_name = "";
@@ -12,14 +15,21 @@ export async function compileTest(ast: MinTreeNode) {
     for (
         const node of traverse(ast, "nodes")
             .then(bit_filter("type", MinTreeNodeClass.STATEMENT))
+            .then(make_skippable())
     ) {
-
+        /**
+         * Import statements
+         */
         if (node.type & MinTreeNodeClass.MODULE) {
 
-            const url = ext(node, true).from.url.value,
+            let
+                url = new URL(ext(node, true).from.url.value);
+
+            const
                 obj = {
                     import_names: [],
-                    module_source: url
+                    module_source: url,
+                    IS_RELATIVE: url.IS_RELATIVE
                 };
 
             for (const id of traverse(node, "nodes")
@@ -78,15 +88,17 @@ export async function compileTest(ast: MinTreeNode) {
 
             if (expression.type == $.Parenthesized) {
 
-                if (ext(ext(node).expression).expression.type == $.Parenthesized) {
+                if (ext(node, true).expression.expression.type == $.Parenthesized) {
                     const current_binding = bindings.slice(-1)[0];
 
                     if (current_binding && !current_binding.node) {
+                        current_binding.index = statements.length;
                         current_binding.node = node;
                     } else {
                         bindings.push(statement_tracker);
                     }
-
+                    //Only want top level statements
+                    node.skip();
                     continue;
                 }
             }
@@ -106,6 +118,9 @@ export async function compileTest(ast: MinTreeNode) {
         }
 
         statements.push(statement_tracker);
+
+        //Only want top level statements
+        node.skip();
     }
 
     for (const binding of bindings) {
@@ -121,13 +136,32 @@ export async function compileTest(ast: MinTreeNode) {
         for (let i = 0; i < binding.index; i++)
             stmts.push(statements[i].node);
 
+        const
+            expr = <MinTreeNode>binding.node.nodes[0].nodes[0].nodes[0],
+            message = getErrorMessageFromContent(expr);
+
+        let out_expr = $r(expr);
+
+        if (expr.type == $.CallExpression)
+            out_expr = `(()=>{ try{${out_expr}}catch(e){return true;} return false; })()`;
+
+        if (expr.type == $.ArrowFunction || expr.type & MinTreeNodeClass.VARIABLE)
+            out_expr = `i.throws(${out_expr})`;
+
+        if (expr.type == $.EqualityExpression) {
+            switch (expr.symbol) {
+                case "==":
+                    out_expr = `i.equal(${$r(expr.nodes[0])}, ${$r(expr.nodes[1])})`;
+                    break;
+                case "!=":
+                    out_expr = `i.notEqual(${$r(expr.nodes[0])}, ${$r(expr.nodes[1])})`;
+                    break;
+            }
+        }
+
         try {
-
-
             const
-                expr = <MinTreeNode>binding.node.nodes[0].nodes[0].nodes[0],
-                message = getErrorMessageFromContent(expr),
-                thr = stmt(`if(!(${$r(expr)})) throw AssertionError(\`${message}\`);`),
+                thr = stmt(`if(!(${out_expr})) throw AssertionError(\`${message}\`);`),
                 landing = { ast: null };
 
             for (const node of traverse(thr, "nodes")
@@ -142,8 +176,11 @@ export async function compileTest(ast: MinTreeNode) {
             asts.push({ ast: node, name: binding.name || "undefined" });
         } catch (e) {
             console.error(e);
+
+
         }
     }
+
     return { name: suite_name, asts, imports };
 }
 ;
