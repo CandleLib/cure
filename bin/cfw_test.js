@@ -1,7 +1,11 @@
 #!/usr/bin/env node
 
 import { test } from "../build/library/test.js";
-import { getProcessArgs } from "@candlefw/wax";
+import { getProcessArgs, xtF, color, xtColor, xtReset } from "@candlefw/wax";
+
+const warning = xtF(xtColor(color.red)),
+    reset = xtF(xtReset);
+
 
 const
     args = getProcessArgs(),
@@ -45,7 +49,10 @@ Candlefw Test
 README: https://www.github.com/candlefw/test/
 `;
 
-if (HELP)
+if (HELP) {
+    if (files.length == 0)
+        console.log(warning + "NO SUITE FILES FOUND" + reset);
     console.log(HELP_MESSAGE);
+}
 else
     test(WATCH, ...files);
