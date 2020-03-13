@@ -1,7 +1,7 @@
 import spark from "@candlefw/spark";
 import { Runner } from "./runner.js";
-import { completedRun, updateRun, startRun } from "./report.js";
-export async function runTests(final_tests, suites, runner = new Runner(1), reporter = undefined) {
+import { completedRun, updateRun, startRun } from "../reporting/report.js";
+export async function runTests(final_tests, suites, WATCH = false, runner = new Runner(1), reporter = undefined, RELOAD_DEPENDS: boolean = false) {
 
     await startRun(final_tests, suites, reporter);
 
@@ -9,19 +9,18 @@ export async function runTests(final_tests, suites, runner = new Runner(1), repo
 
     const results = [];
 
-    for (const res of runner.run(final_tests)) {
+    for (const res of runner.run(final_tests, RELOAD_DEPENDS)) {
         if (res) {
             results.push(...res);
-            updateRun(results, suites, reporter);
+            if (WATCH)
+                updateRun(results, suites, reporter);
         }
         await spark.sleep(2);
     }
 
     try {
         FAILED = await completedRun(results, suites, reporter);
-    }
-
-    catch (e) {
+    } catch (e) {
         FAILED = true;
         console.error(e);
     }
