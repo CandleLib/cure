@@ -6,26 +6,27 @@
 	"types": "./build/types/test.d.ts",
 	"main": "./build/library/test.js",
 	"bin": {
-		"cfw_test": "./bin/cfw_test.js"
+		"cfw.test": "./bin/cfw.test.js"
 	},
 	"scripts": {
-		"test": "./bin/cfw_test.js --watch ./test/test.js ./test/test3.js",
+		"test": " ./bin/cfw.test.js ./test/load_test.spec.js",
 		"build.watch": "tsc --watch",
-		"build": "tsc"
+		"build": "tsc -p ./tsconfig.json && ./bin/cfw.test.js ./test/load_test.spec.js"
 	},
 	"repository": {
 		"type": "git",
 		"url": "https://github.com/candlefw/test.git"
 	},
-	"author": "galactrax <anthonycweathersby@gmail.com>",
+	"author": "Anthony Weathersby <anthonycweathersby@gmail.com>",
 	"license": "MIT",
-	"devDependencies": {
-		"chai": "^4.2.0"
-	},
 	"dependencies": {
+		"deep-equal": "^2.0.1",
 		"@candlefw/js": "^0.0.9",
 		"@candlefw/conflagrate": ">=0.0.1",
 		"@candlefw/wax": ">=0.0.1",
 		"@candlefw/spark": ">=0.0.1"
+	},
+	"engines": {
+		"node": ">=13.7.0"
 	}
 }
