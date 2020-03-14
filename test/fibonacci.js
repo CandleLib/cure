@@ -8,29 +8,29 @@ import { Fibonacci as fib } from "./test_data/test_module.js";
 "Fibonacci state 2";
 ((1 == fib(2)));
 
-"Fibonacci state 3";
-((1 == fib(3)));
+"Fibonacci state 11";
+((55 == fib(11)));
 
-"Fibonacci state 4";
-((2 == fib(4)));
+"Fibonacci state 12";
+((89 == fib(12)));
 
-"Fibonacci state 5";
-((3 == fib(5)));
+"Fibonacci state 13";
+((144 == fib(13)));
 
-"Fibonacci state 6";
-((5 == fib(6)));
-
-"Fibonacci state 7";
-((8 == fib(7)));
-
-"Fibonacci state 8";
-((13 == fib(8)));
-
-"Fibonacci state 21";
-((6765 == fib(21)));
+"Fibonacci state 18";
+((1597 == fib(18)));
 
 "Fibonacci state 29";
 ((317811 == fib(29)));
 
 "Fibonacci state 33";
-((2178309 == fib(3340)));
+((2178309 == fib(33)));
+
+"Fibonacci state 34";
+((2178309 == fib(33)));
+
+"Fibonacci state 35";
+((5702887 == fib(35)));
+
+"Fibonacci state 39";
+((39088169 == fib(39)));
