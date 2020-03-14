@@ -12,8 +12,7 @@ branches:
     - master
 
 install:
-  - yarn install typescript
-  - npm install
+  - yarn install
 
 cache:
   yarn: true
