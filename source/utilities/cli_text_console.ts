@@ -11,6 +11,7 @@ export class CLITextDraw {
      * @private
      */
     private buffer: string;
+    private error_buffer: string;
 
     /**
      * Symbol used to separate lines.
@@ -32,6 +33,7 @@ export class CLITextDraw {
     }
 
     scheduledUpdate() {
+        process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
         process.stdout.cursorTo(0, 0, () => {
             process.stdout.clearScreenDown(() => {
                 process.stdin.write(this.buffer);

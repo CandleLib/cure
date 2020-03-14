@@ -1,4 +1,4 @@
-import { CLITextDraw } from "../cli_text_console.js";
+import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { BasicReporter } from "./basic_reporter.js";
 
 const Console = new CLITextDraw();

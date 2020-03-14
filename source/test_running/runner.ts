@@ -1,5 +1,8 @@
 import { Worker, workerData } from "worker_threads";
 import { performance } from "perf_hooks";
+import URL from "@candlefw/url";
+import { Test } from "../types/test";
+
 
 export class Runner {
     number_of_workers: number;
@@ -42,7 +45,7 @@ export class Runner {
         for (const wkr of this.workers)
             wkr.target.terminate();
     }
-    * run(tests: Array<TestUnit>, RELOAD_DEPENDS: boolean = false) {
+    * run(tests: Array<Test>, RELOAD_DEPENDS: boolean = false) {
         let id = 0, completed = 0;
 
         //Reset any running workers
@@ -71,10 +74,23 @@ export class Runner {
             for (const wkr of this.workers) {
 
                 if (wkr.READY && tests.length > 0) {
-                    wkr.READY = false;
-                    wkr.test = tests.splice(0, 1)[0];;
-                    wkr.start = performance.now();
-                    wkr.target.postMessage({ test: wkr.test });
+                    const test = tests.splice(0, 1)[0];
+
+                    if (test.error) {
+                        finished.push({
+                            start: 0,
+                            end: 0,
+                            duration: 0,
+                            error: test.error,
+                            test: test,
+                            TIMED_OUT: true
+                        });
+                    } else {
+                        wkr.test = test;
+                        wkr.start = performance.now();
+                        wkr.target.postMessage({ test: wkr.test });
+                        wkr.READY = false;
+                    }
                 }
 
                 if (!wkr.READY) {

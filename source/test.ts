@@ -1,26 +1,103 @@
 import { parser, render as $r } from "@candlefw/js";
 import URL from "@candlefw/url";
-import {
-    createSourceMap, createSourceMapJSON
-} from "@candlefw/conflagrate";
+import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
+import * as path from "path";
+import * as fs from "fs";
 
-import path from "path";
-import fs from "fs";
-
-import { compileTest } from "./compile.js";
+import { compileTest } from "./compile/compile.js";
 import { runTests } from "./test_running/run_tests.js";
 import { Runner } from "./test_running/runner.js";
 import { BasicReporter } from "./reporting/basic_reporter.js";
+import { c_fail, c_reset } from "./utilities/colors.js";
+import { Suite } from "./types/test.js";
+import CompilerBindings from "./compile/binding_compilers.js";
+import { loadBindingCompiler } from "./compile/binding_compiler_manager.js";
+import { TestAssertionError } from "./types/test_error.js";
+
+
+CompilerBindings.map(loadBindingCompiler);
 
 let
-    suites = null,
+    suites: Map<string, Suite> = null,
     reporter = null,
-    runner = null;
+    runner = null,
+    PENDING = false;
 
-async function loadTests(url, suite, WATCH = false) {
+function hardFail(error, why_we_are_failing_while_app) {
+    console.error(error.message);
+    console.log(why_we_are_failing_while_app);
+    process.exit(-1);
+}
+
+const WatchMap: Map<string, Map<string, Suite>> = new Map();
+
+function createRelativeFileWatcher(path: string) {
+
+    WatchMap.set(path, new Map());
+
+    try {
+
+        fs.watch(path, async function () {
+
+            if (!PENDING) {
+                PENDING = true;
+
+
+                const suites = Array.from(WatchMap.get(path).values());
+
+                await runTests(
+                    suites.flatMap(suite => suite.tests),
+                    Array.from(suites),
+                    true,
+                    runner,
+                    reporter,
+                    true);
+
+                PENDING = false;
+            }
+        });
+    } catch (e) {
+        hardFail(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset);
+    }
+}
+
+/**
+ * Handles the creation of file watchers for relative imported modules.
+ */
+async function handleWatchOfRelativeDependencies(suite: Suite) {
+
+    const { tests, name: origin } = suite,
+        active_paths: Set<string> = new Set();
+
+    tests
+        .flatMap(test => test.import_module_sources)
+        .filter(src => src.IS_RELATIVE)
+        .forEach(src => {
+
+            const path = src.source;
+
+            active_paths.add(path);
+
+            if (!WatchMap.has(path))
+                createRelativeFileWatcher(path);
+        });
+
+    //Remove suite from existing maps
+    [...WatchMap.values()].map(wm => {
+        if (wm.has(origin))
+            wm.delete(origin);
+    });
+
+    //And suite to the newly identifier watched file handlers
+    for (const path of active_paths.values())
+        WatchMap.get(path).set(origin, suite);
+}
+
+async function loadTests(url_string, suite) {
     try {
 
         const
+            url = new URL(path.resolve(process.cwd(), url_string)),
             text = await url.fetchText(),
             ast = parser(text),
             { asts, imports, name: suite_name } = await compileTest(ast, url);
@@ -30,131 +107,110 @@ async function loadTests(url, suite, WATCH = false) {
         for (const final of asts) {
 
             const
+                error = final.error,
                 map = createSourceMap(),
                 import_arg_names = [],
+                args = [],
                 import_module_sources = [],
                 import_arg_specifiers = [];
 
-            // Load imports into args
-            for (const import_obj of imports) {
+            if (error)
+                hardFail(error, "NULL");
 
-                const { import_names: names, module_source, IS_RELATIVE } = import_obj,
-                    source = IS_RELATIVE ? URL.resolveRelative(module_source, url) + "" : module_source + "";
+            if (!error) {
 
-                import_module_sources.push({ source, IS_RELATIVE });
+                // Load imports into args
+                for (const import_obj of imports) {
 
-                for (const name of names) {
-                    import_arg_names.push(name.import_name);
-                    import_arg_specifiers.push({ module_specifier: source, module_name: name.original_name });
+                    const { import_names: names, module_source, IS_RELATIVE } = import_obj,
+                        source = IS_RELATIVE ? URL.resolveRelative(module_source, url) + "" : module_source + "";
+
+                    import_module_sources.push({ source, IS_RELATIVE });
+
+                    for (const name of names) {
+                        import_arg_names.push(name.import_name);
+                        import_arg_specifiers.push({ module_specifier: source, module_name: name.original_name });
+                    }
                 }
-            }
 
-            const
-                args = ["i", "AssertionError", ...import_arg_names, $r(final.ast, map)];
+                args.push("i", "AssertionError", ...import_arg_names, $r(final.ast, map));
+            }
 
             suite.tests.push({
                 name: final.name,
                 suite: suite_name,
                 import_module_sources,
                 import_arg_specifiers,
-                map: createSourceMapJSON(map, text),
-                origin: url + "",
+                map: createSourceMapJSON(map, <string>text),
+                origin: url_string,
                 test_function_object_args: args,
                 RUN: true,
-                errors: []
+                error
             });
         }
     } catch (e) {
         suite.tests.length = 0;
-        suite.error = e;
+        suite.error = new TestAssertionError(e.message + " " + url_string, 0, 0, "", "");
     }
 }
-
-const WatchMap = new Map();
 
 async function loadSuite(suite, WATCH = false) {
 
     suite.tests.length = 0;
     suite.error = null;
-    suite.name = suite.url + "";
+    suite.name = suite.origin + "";
 
-    await loadTests(suite.url, suite, WATCH);
+    await loadTests(suite.origin, suite);
 
     if (WATCH) {
-        let PENDING = false;
 
-        //Watch all relative import files 
-        suite.tests
 
-            .flatMap(test => test.import_module_sources)
+        handleWatchOfRelativeDependencies(suite);
 
-            .filter(src => src.IS_RELATIVE)
+        try {
+            fs.watch(suite.origin + "", async function (a) {
+                if (!PENDING) {
+                    PENDING = true;
+                    suite.tests.length = 0;
+                    suite.error = null;
+                    suite.name = suite.origin + "";
 
-            .forEach(src => {
+                    await loadTests(suite.origin, suite);
 
-                const path = src.source;
+                    handleWatchOfRelativeDependencies(suite);
 
-                if (!WatchMap.has(path)) {
+                    await runTests(suite.tests.slice(), [suite], true, runner, reporter);
 
-                    WatchMap.set(path, new Map());
-
-                    fs.watch(path, async function () {
-                        if (!PENDING) {
-                            PENDING = true;
-
-                            const suites = Array.from(WatchMap.get(path).values());
-
-                            await runTests(
-                                suites.flatMap(suite => suite.tests),
-                                Array.from(suites),
-                                WATCH,
-                                runner,
-                                reporter,
-                                true);
-
-                            console.log("Waiting for changes...");
-                            PENDING = false;
-                        }
-                    });
-                } else {
-                    const watch = WatchMap.get(path);
-                    watch.set(suite.name, suite);
+                    PENDING = false;
                 }
             });
+        } catch (e) {
+            hardFail(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset);
+        }
 
-        fs.watch(suite.url + "", async function (a) {
-            if (!PENDING) {
-                PENDING = true;
-                suite.tests.length = 0;
-                suite.error = null;
-                suite.name = suite.url + "";
-                await loadTests(suite.url, suite, WATCH);
-                await runTests(suite.tests.slice(), [suite], WATCH, runner, reporter);
-                console.log("Waiting for changes...");
-                PENDING = false;
-            }
-        });
     }
 }
 
 async function test(WATCH = false, ...test_suite_url_strings: string[]) {
 
+    console.log(test_suite_url_strings);
+
     await URL.polyfill();
 
-    suites = new Map(test_suite_url_strings.map((url_string: string) => [
-        url_string, { url: new URL(path.resolve(process.cwd(), url_string)), tests: [] }
+    suites = new Map(test_suite_url_strings.map(url_string => [
+        url_string, { origin: url_string, name: url_string, tests: [] }
     ]));
 
     for (const suite of suites.values())
         await loadSuite(suite, WATCH);
 
-    runner = new Runner(4);
+    runner = new Runner(10);
     reporter = new BasicReporter();
 
     const
         st = Array.from(suites.values()),
-        FAILED = await runTests(st.flatMap(suite => suite.tests), st, WATCH, runner, reporter) ||
-            Array.from(suites.values()).filter(s => !!s.error).length > 0;
+        FAILED = await runTests(st.flatMap(suite => suite.tests), st, WATCH, runner, reporter)
+            || Array.from(suites.values()).filter(s => !!s.error).length > 0;
 
     if (WATCH) {
         console.log("Waiting for changes...");

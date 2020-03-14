@@ -15,7 +15,7 @@ export async function runTests(final_tests, suites, WATCH = false, runner = new 
             if (WATCH)
                 updateRun(results, suites, reporter);
         }
-        await spark.sleep(2);
+        await spark.sleep(10);
     }
 
     try {
