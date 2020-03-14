@@ -1,0 +1,22 @@
+language: node_js
+
+node_js:
+  - "node"
+  - "13"
+  - "7"
+
+env:
+  - workerCount=2 timeout=600000
+
+branches:
+  only:
+    - dev
+    - master
+
+install:
+  - npm install typescript
+  - npm install
+
+cache:
+  directories:
+    - node_modules
