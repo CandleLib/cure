@@ -20,11 +20,12 @@
 	"author": "Anthony Weathersby <anthonycweathersby@gmail.com>",
 	"license": "MIT",
 	"dependencies": {
-		"deep-equal": "^2.0.1",
-		"@candlefw/js": "^0.0.9",
 		"@candlefw/conflagrate": ">=0.0.1",
+		"@candlefw/js": "^0.0.9",
+		"@candlefw/spark": ">=0.0.1",
 		"@candlefw/wax": ">=0.0.1",
-		"@candlefw/spark": ">=0.0.1"
+		"@types/node": "^13.9.1",
+		"deep-equal": "^2.0.1"
 	},
 	"engines": {
 		"node": ">=13.7.0"
