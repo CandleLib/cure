@@ -49,6 +49,8 @@ Candlefw Test
 README: https://www.github.com/candlefw/test/
 `;
 
+process.title = "cfw.test";
+
 if (HELP) {
     if (files.length == 0)
         console.log(warning + "NO SUITE FILES FOUND" + reset);
