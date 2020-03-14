@@ -9,7 +9,7 @@
 		"cfw.test": "./bin/cfw.test.js"
 	},
 	"scripts": {
-		"test": " ./bin/cfw.test.js ./test/load_test.spec.js",
+		"test": "tsc -p ./tsconfig.json && ./bin/cfw.test.js ./test/load_test.spec.js",
 		"build.watch": "tsc --watch",
 		"build": "tsc -p ./tsconfig.json && ./bin/cfw.test.js ./test/load_test.spec.js"
 	},
