@@ -21,7 +21,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@candlefw/conflagrate": "latest",
-		"@candlefw/js": "latest",
+		"@candlefw/js": "0.1.2",
 		"@candlefw/spark": "0.1.0",
 		"@candlefw/url": "^0.1.0",
 		"@candlefw/wax": "latest",
