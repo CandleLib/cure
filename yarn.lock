@@ -2,31 +2,58 @@
 # yarn lockfile v1
 
 
+"@candlefw/color@latest":
+  version "1.0.1-0"
+  resolved "https://registry.yarnpkg.com/@candlefw/color/-/color-1.0.1-0.tgz#b8c2fae3e27c9c805c5dbb774695df2d1bca94f0"
+  integrity sha512-/K8WZYcHF20Y2EZgAstCXiaRnM/kU8q8H4IQyvBH+AmFOyekGhTuJmH/qwV2yX2BL5bPIBOT+NEuVe9IGcEA/A==
+
 "@candlefw/conflagrate@>=0.0.1", "@candlefw/conflagrate@latest":
   version "0.0.1"
   resolved "https://registry.yarnpkg.com/@candlefw/conflagrate/-/conflagrate-0.0.1.tgz#3e0254214c9bd2a36a600885dd4a84af11466d7f"
   integrity sha512-LvfeaJSnxcMVmsPxethO7THzevIlV85FzSNYsE3pfQan1wYNvoU9/bSSHZ+A8JOrRKCTP4EzSrpsvck5vfbfsg==
 
-"@candlefw/hydrocarbon@0.3.0":
-  version "0.3.0"
-  resolved "https://registry.yarnpkg.com/@candlefw/hydrocarbon/-/hydrocarbon-0.3.0.tgz#c8eb3a0fdb63bad335393e91bdc68d72abc6eec2"
-  integrity sha512-i0S7Utd7rI5XFBOFZkoogT8d6sIhEdVOI10VvtNNTJvCl0M5L3Esw7RRaPdaqIHlOacMKoTAxel1B3oGo05xhA==
+"@candlefw/hydrocarbon@0.3.1":
+  version "0.3.1"
+  resolved "https://registry.yarnpkg.com/@candlefw/hydrocarbon/-/hydrocarbon-0.3.1.tgz#155364f3b27634adcb930730bb45edf2e6c715bf"
+  integrity sha512-1wE04vJH80Oh9jsp0MhywFLOl68gf8OSzET6rOn7ksITDbEGPHNmnfltTbDGRAKm6/SEH33QWiYokM4mVsCWYA==
   dependencies:
-    "@candlefw/js" "^0.1.0"
+    "@candlefw/conflagrate" latest
+    "@candlefw/js" "0.0.8"
     "@candlefw/url" latest
     "@candlefw/whind" latest
     commander "^5.0.0"
     terser "^4.6.3"
 
-"@candlefw/js@0.1.2", "@candlefw/js@^0.1.0":
-  version "0.1.2"
-  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.1.2.tgz#4ba319445dad7efc7bed37033861e6444bbdf7fd"
-  integrity sha512-UQxhswRTGDNeG26m/L6Wo1CspDw00M6y1P+DJE92e63laEDJWWmGB0cmNjP2L/ejF5MllQGRNvuYXtLN7gyveg==
+"@candlefw/js@0.0.8":
+  version "0.0.8"
+  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.0.8.tgz#7946467302cc04f3b80ad7fedda249d782190b03"
+  integrity sha512-kMm/8E0z337jGGV1UO3ZIDq/HNWwvBWm1mQWItH1OqS3+vfecFLt7gPeh70RmcnfnU4BaGRGsgpKcp4jOZplCg==
+  dependencies:
+    "@candlefw/color" latest
+    "@candlefw/ll" latest
+    "@candlefw/math" latest
+    "@candlefw/url" latest
+    "@candlefw/whind" "0.3.6"
+
+"@candlefw/js@0.1.3":
+  version "0.1.3"
+  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.1.3.tgz#63f8c68aba4d0b0ad454a61a318293d177a7f25f"
+  integrity sha512-dgkVEAvMYMnr63LSPrxieUr6Efn0GScLhWwOF86Q/6aaruoa4JExj0yXbtZm3ypX/Lmibj1mwcYI02No3y53Zg==
   dependencies:
     "@candlefw/conflagrate" latest
-    "@candlefw/hydrocarbon" "0.3.0"
+    "@candlefw/hydrocarbon" "0.3.1"
     "@candlefw/url" "0.1.0"
     "@candlefw/whind" "0.4.0"
+
+"@candlefw/ll@latest":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@candlefw/ll/-/ll-0.1.5.tgz#ed58223daf5f291caeb537e3e714ddf41c85cf6b"
+  integrity sha512-w/5ylg7sMlsaqnNYXRhaPVyDnI/nZEFCxUL1ofqtfw9/ln7Ptg/C77Eqi9e4GHbJCcV/QlSM2zPNhXXyAqj+ww==
+
+"@candlefw/math@latest":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@candlefw/math/-/math-0.0.3.tgz#f81f092a2a0801b1a2b8137cb2d0149ec9266e15"
+  integrity sha512-6CsnF3LhbYdU7UhzB9BUUW0gXtBJ3LplWgp5kAx4liOZWaQ+1LGtZlkuVpsvq5/R34TgORhZuHO/1THz2Ja1Cw==
 
 "@candlefw/spark@0.1.0":
   version "0.1.0"
@@ -55,6 +82,11 @@
     "@candlefw/conflagrate" ">=0.0.1"
     "@candlefw/url" "^0.0.13"
     "@candlefw/whind" ">=0.0.1"
+
+"@candlefw/whind@0.3.6":
+  version "0.3.6"
+  resolved "https://registry.yarnpkg.com/@candlefw/whind/-/whind-0.3.6.tgz#5add1d4b4a7fda2a692e396270c2f19da02828bb"
+  integrity sha512-t4HrxFwuzbq4VmMOgymhsU+hvK+jNiT9USmlLIcQCdQI9JnAYS8soTp/8iJqcLcJnyyL3KHdmn8Y0WMqslxaLQ==
 
 "@candlefw/whind@0.4.0", "@candlefw/whind@>=0.0.1", "@candlefw/whind@latest":
   version "0.4.0"
@@ -314,6 +346,11 @@ terser@^4.6.3:
     commander "^2.20.0"
     source-map "~0.6.1"
     source-map-support "~0.5.12"
+
+typescript@^3.8.3:
+  version "3.8.3"
+  resolved "https://registry.yarnpkg.com/typescript/-/typescript-3.8.3.tgz#409eb8544ea0335711205869ec458ab109ee1061"
+  integrity sha512-MYlEfn5VrLNsgudQTVJeNaQFUAI7DkhnOjdpAp4T+ku1TfQClewlbSuTVHiA+8skNBgaf02TL/kLOvig4y3G8w==
 
 which-boxed-primitive@^1.0.1:
   version "1.0.1"

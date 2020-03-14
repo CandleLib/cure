@@ -21,12 +21,15 @@
 	"license": "MIT",
 	"dependencies": {
 		"@candlefw/conflagrate": "latest",
-		"@candlefw/js": "0.1.2",
+		"@candlefw/js": "0.1.3",
 		"@candlefw/spark": "0.1.0",
 		"@candlefw/url": "^0.1.0",
 		"@candlefw/wax": "latest",
 		"@types/node": "^13.9.1",
 		"deep-equal": "^2.0.1"
+	},
+	"devDependencies": {
+		"typescript": "^3.8.3"
 	},
 	"engines": {
 		"node": ">=13.7.0"

@@ -12,9 +12,10 @@ branches:
     - master
 
 install:
-  - npm install typescript
+  - yarn install typescript
   - npm install
 
 cache:
+  yarn: true
   directories:
     - node_modules
