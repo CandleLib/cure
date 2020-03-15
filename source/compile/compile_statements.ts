@@ -92,8 +92,6 @@ export function compileStatements(
             case $.WhileStatement: {
                 const new_node = sanitize(node);
 
-                console.dir(ext(new_node, true), { depth: null });
-
                 /*********************************************************
                  * Reserve Block statement
                  *********************************************************/
@@ -117,8 +115,8 @@ export function compileStatements(
                         + (++name_iterations > 0 ? " @:" + name_iterations : "");
 
                     /*********************************************************
-                 * ADD Assertion site.
-                 *********************************************************/
+                     * ADD Assertion site.
+                     *********************************************************/
                     const names = new Set();
 
                     for (const id of traverse(node, "nodes")
@@ -149,13 +147,6 @@ export function compileStatements(
                     } else
                         active_test_name = suite_name + expression.value;
                 } else if (expression.type == $.CallExpression) {
-                    /*********************************************************
-                     * Check for PRAGMAS
-                     *********************************************************/
-                    //BEFORE EACH
-                    //AFTER EACH
-                    //AFTER ALL
-                    //BEFORE ALL
                 }
             } break;
         }

@@ -4,7 +4,7 @@ import { CompileResults } from "../types/compiler_result.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
 import { RawTest } from "../types/raw_test.js";
 import { compileStatements } from "./compile_statements.js";
-import { compileTestBinding } from "./compile_test_binding.js";
+import { compileTestSite } from "./compile_test_site.js";
 
 
 /*
@@ -16,8 +16,8 @@ export async function compileTest(ast: MinTreeNode) {
         imports: Array<ImportDependNode> = [],
         tests: Array<RawTest> = [];
 
-    let error = null;
     let i = 0;
+
     const { test_sites, scope } = compileStatements(ast);
 
     /*********************************************************
@@ -26,11 +26,13 @@ export async function compileTest(ast: MinTreeNode) {
 
     for (const site of test_sites) {
 
-        const test = compileTestBinding(site.name, site, scope.imp);
-        console.log($r(test.ast))
+        site.index = i++;
+
+        const test = compileTestSite(site.name, site, scope.imp);
+
         if (test)
             tests.push(test);
     }
 
-    return <CompileResults>{ raw_tests: tests, imports, error };
+    return <CompileResults>{ raw_tests: tests, imports };
 }

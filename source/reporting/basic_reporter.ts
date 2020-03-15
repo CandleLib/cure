@@ -16,6 +16,7 @@ function getNameData(name) {
 }
 
 export class BasicReporter {
+
     suites: Map<string, any>;
 
     time_start: number;
@@ -131,9 +132,7 @@ export class BasicReporter {
                         const
                             origin = error.origin || test.origin,
                             data = (await (new URL(origin))
-                                .fetchText())
-                                .replace(error.match_source, error.replace_source),
-
+                                .fetchText()),
                             lex = new Lexer(data);
 
                         lex.CHARACTERS_ONLY = true;
@@ -144,7 +143,12 @@ export class BasicReporter {
                         }
 
                         errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${
-                            c_fail + lex.errorMessage(error.message, origin, 120).split("\n").join("\n   ")}\n${c_reset}`);
+                            c_fail
+                            + lex.errorMessage(error.message, origin, 120)
+                                .replace(error.match_source, error.replace_source)
+                                .split("\n")
+                                .join("\n   ")
+                            }\n${c_reset}`);
 
                     } else {
                         errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${

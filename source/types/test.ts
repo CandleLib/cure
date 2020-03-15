@@ -1,6 +1,8 @@
 import { Lexer } from "@candlefw/whind";
 import { TestAssertionError } from "./test_error";
+
 export type ModuleSpecifier = {
+
     /**
      * Name of a module export.
      */
@@ -12,7 +14,35 @@ export type ModuleSpecifier = {
     module_name: string;
 };
 
+export type Source = {
+
+    /**
+     * Resolved URL of the module. 
+     */
+    source: string;
+
+    /**
+     * Names of exports required of the module.
+     */
+    import_names: string[];
+
+    /**
+     * url of the module
+     */
+    module_source: string;
+
+    /**
+     * `true` if the module_source is a relative path.
+     */
+    IS_RELATIVE: boolean;
+};
+
 export type Test = {
+
+    /**
+     * Index of the assertion site within the source file. Top Down. 
+     */
+    index: number,
 
     /**
      * Name of the test. Includes suite name and redudant name info.
@@ -52,50 +82,4 @@ export type Test = {
      * Position Lexer for reporting errors in source
      */
     pos?: Lexer;
-};
-
-export type Source = {
-
-    /**
-     * Resolved URL of the module. 
-     */
-    source: string;
-
-    /**
-     * Names of exports required of the module.
-     */
-    import_names: string[];
-
-    /**
-     * url of the module
-     */
-    module_source: string;
-
-    /**
-     * `true` if the module_source is a relative path.
-     */
-    IS_RELATIVE: boolean;
-};
-
-export type Suite = {
-
-    /**
-     * Name givin to the test.
-     */
-    name: string;
-
-    /**
-     * Tests this suite runs
-     */
-    tests: Test[];
-
-    /**
-     * The original url of the suite
-     */
-    origin: string;
-
-    /**
-     * An error object if an exception was thrown during test compilation.
-     */
-    error?: Error | TestAssertionError;
 };

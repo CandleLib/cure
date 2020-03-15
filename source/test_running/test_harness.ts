@@ -5,11 +5,13 @@ import { TestAssertionError } from "../types/test_error.js";
  */
 export const harness = {
 
-    temp: null,
+    regA: null,
 
-    temp1: null,
+    regB: null,
 
-    temp2: null,
+    regC: null,
+
+    regD: null,
 
     caught_exception: null,
 
@@ -40,12 +42,18 @@ export const harness = {
     },
 
     equal: (a, b) => {
+        harness.regA = a;
+        harness.regB = b;
+
         if (typeof a == "object" && typeof b == "object" && a != b)
             return equal(a, b);
         return a == b;
     },
 
     notEqual: (a, b) => {
+        harness.regA = a;
+        harness.regB = b;
+
         if (typeof a == "object" && typeof b == "object") {
             if (a == b)
                 return false;

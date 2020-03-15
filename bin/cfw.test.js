@@ -1,13 +1,12 @@
 #!/usr/bin/env node
 
-import { test } from "../build/library/test.js";
 import { getProcessArgs, xtF, color, xtColor, xtReset } from "@candlefw/wax";
 
-const warning = xtF(xtColor(color.red)),
-    reset = xtF(xtReset);
-
+import { test } from "../build/library/main.js";
 
 const
+    warning = xtF(xtColor(color.red)),
+    reset = xtF(xtReset),
     args = getProcessArgs(),
     files = args.__array__.filter(a => a.hyphens == 0).map(a => a.name),
     WATCH = !!(args.watch || args.w),
@@ -24,9 +23,15 @@ Candlefw Test
 
 [Options]: 
 
+
     Show help message: --help | -h | -?  
         
         Display this help message.
+
+    Output Result: -o   
+        
+        Forses the use of a null reporter and returns the test results
+        as a JSON string.
 
     Watch input files:  --watch | -w
         
@@ -37,7 +42,9 @@ Candlefw Test
         i.e.: 
             import { imports } from "./my_imports"
             import { other_imports } from "../other_imports"
+            ;
 
+            const
         Will not watch files that are imported from node_modules
         or absolute directories:
         
@@ -49,12 +56,30 @@ Candlefw Test
 README: https://www.github.com/candlefw/test/
 `;
 
-process.title = "cfw.test";
 
-if (HELP) {
-    if (files.length == 0)
-        console.log(warning + "NO SUITE FILES FOUND" + reset);
-    console.log(HELP_MESSAGE);
+async function start() {
+
+    console.log(args)s
+    process.title = "cfw.test";
+
+    if (HELP) {
+        if (files.length == 0)
+            console.log(warning + "NO SUITE FILES FOUND" + reset);
+
+        console.log(HELP_MESSAGE);
+    } else {
+
+        const frame = test(WATCH, ...files);
+
+        frame.start().then(d => {
+
+            console.dir(d, { depth: null })
+
+            process.exit(d.FAILED ? 255 : 0);
+        });
+    }
 }
-else
-    test(WATCH, ...files);
+
+start();
+
+

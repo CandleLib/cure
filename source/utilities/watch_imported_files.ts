@@ -2,26 +2,32 @@ import fs from "fs";
 
 import { runTests } from "../test_running/run_tests.js";
 import { c_fail, c_reset } from "./colors.js";
-import { Suite } from "../types/test.js";
+import { Suite } from "../types/suite";
 import { fatalExit } from "./fatal_exit.js";
-import { PENDING } from "./pending.js";
+import { Globals } from "source/types/globals.js";
 
 
 const WatchMap: Map<string, Map<string, Suite>> = new Map();
 
-function createRelativeFileWatcher(path: string, runner, reporter) {
+function createRelativeFileWatcher(path: string, globals: Globals) {
 
     WatchMap.set(path, new Map());
 
     try {
-        fs.watch(path, async function () {
-            if (!PENDING) {
-                PENDING.is = true;
+        const watcher = fs.watch(path, async function () {
+            if (!globals.PENDING) {
+
+                globals.PENDING = true;
+
                 const suites = Array.from(WatchMap.get(path).values());
-                await runTests(suites.flatMap(suite => suite.tests), Array.from(suites), true, runner, reporter, true);
-                PENDING.is = false;
+
+                await runTests(suites.flatMap(suite => suite.tests), Array.from(suites), globals, true);
+
+                globals.PENDING = false;
             }
         });
+
+        globals.watchers.push(watcher);
     }
 
     catch (e) {
@@ -31,7 +37,7 @@ function createRelativeFileWatcher(path: string, runner, reporter) {
 /**
  * Handles the creation of file watchers for relative imported modules.
  */
-export async function handleWatchOfRelativeDependencies(suite: Suite, runner, reporter) {
+export async function handleWatchOfRelativeDependencies(suite: Suite, globals: Globals) {
 
     const { tests, name: origin } = suite, active_paths: Set<string> = new Set();
 
@@ -42,7 +48,7 @@ export async function handleWatchOfRelativeDependencies(suite: Suite, runner, re
             const path = src.source;
             active_paths.add(path);
             if (!WatchMap.has(path))
-                createRelativeFileWatcher(path, runner, reporter);
+                createRelativeFileWatcher(path, globals);
         });
 
     //Remove suite from existing maps

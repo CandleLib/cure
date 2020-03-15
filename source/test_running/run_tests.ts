@@ -1,17 +1,22 @@
 import spark from "@candlefw/spark";
-import { Runner } from "./runner.js";
+
 import { completedRun, updateRun, startRun } from "../reporting/report.js";
-export async function runTests(final_tests, suites, WATCH = false, runner = new Runner(1), reporter = undefined, RELOAD_DEPENDS: boolean = false) {
+
+import { Globals } from "source/types/globals.js";
+
+import { Test } from "source/types/test.js";
+import { Suite } from "source/types/suite";
+
+export async function runTests(final_tests: Test[], suites: Suite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
+
+    const { runner, reporter, outcome, WATCH } = globals,
+        update_timout = 10;
+
+    let FAILED = false, t = update_timout;
 
     await startRun(final_tests, suites, reporter);
 
-    let FAILED = false;
-
-    const
-        outcome = { FAILED: false, results: [] },
-        update_timout = 10;
-
-    let t = update_timout;
+    outcome.results.length = 0
 
     for (const res of runner.run(final_tests, RELOAD_DEPENDS)) {
 

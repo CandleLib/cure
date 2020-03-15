@@ -11,30 +11,33 @@ import { getUsedStatements } from "./get_used_statements.js";
 import { replaceNodes } from "./replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 
-export function compileTestBinding(name: string, test_site: TestSite, imports: ImportDependNode[]): RawTest {
+export function compileTestSite(name: string, test_site: TestSite, imports: ImportDependNode[]): RawTest {
 
     const i = [];
 
     let
-        node = test_site.node, assertion_statement = compileAssertionSite(node),
-        scope = test_site.scope,
-        names = test_site.names,
-        root = scope.root,
-        nodes = scope.nodes,
-        start = test_site.start;
+        { node, scope, names, index, start } = test_site,
+        { root, nodes } = scope,
+        assertion_statement = compileAssertionSite(node);
 
     if (!assertion_statement) {
 
         const expr = test_site.node.nodes[0].nodes[0].nodes[0];
 
         return {
+            IS_ASYNC: false,
+            index,
             imports: [],
             suite: "", name, ast: null, pos: node.pos,
-            error: new TestAssertionError(`Could not find a SiteCompiler for MinTreeNode [${$[expr.type]}]`, expr.pos.line, expr.pos.char, "", "")
+            error: new TestAssertionError(
+                `Could not find a SiteCompiler for MinTreeNode [${$[expr.type]}]`,
+                expr.pos.line,
+                expr.pos.char,
+                "",
+                "")
         };
-    }
 
-    else {
+    } else {
 
         let statements = [];
 
@@ -71,9 +74,9 @@ export function compileTestBinding(name: string, test_site: TestSite, imports: I
             }
         }
 
-        if (scope.parent) {
+        if (scope.parent)
             statements = [...compileOuterScope(scope.parent, names), ...statements];
-        }
+
         //Add declarations and identify imports. 
         const ast = parser(";");
 
@@ -89,6 +92,6 @@ export function compileTestBinding(name: string, test_site: TestSite, imports: I
                     break;
                 }
         }
-        return { name, suite: name, ast, imports: i, pos: node.pos };
+        return { name, suite: name, ast, imports: i, pos: node.pos, index, IS_ASYNC: false };
     }
 }

@@ -6,7 +6,7 @@ import { createSourceMap } from "@candlefw/conflagrate";
 
 import { Test } from "../types/test.js";
 import { TestAssertionError } from "../types/test_error.js";
-import { compileTest } from "./compile.js";
+import { compileTest } from "../compile/compile.js";
 
 export async function loadTests(url_string, suite) {
 
@@ -18,7 +18,7 @@ export async function loadTests(url_string, suite) {
             ast = parser(text),
             { raw_tests } = await compileTest(ast);
 
-        for (const { error: e, ast, imports, name, pos } of raw_tests) {
+        for (const { error: e, ast, imports, name, pos, index } of raw_tests) {
 
             const
                 //map = createSourceMap(),
@@ -61,7 +61,9 @@ export async function loadTests(url_string, suite) {
                     "AssertionError",
                     ...import_arg_names);
             }
+
             suite.tests.push(<Test>{
+                index,
                 name,
                 source: $r(ast),
                 import_module_sources,
