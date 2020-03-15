@@ -1,20 +1,10 @@
-import { parser, MinTreeNodeClass, MinTreeNode, stmt, ext } from "@candlefw/js";
+import { parser, MinTreeNodeClass, MinTreeNode, stmt, ext, MinTreeNodeType } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
-import { selectBindingCompiler } from "./binding_compiler_manager.js";
-export function CompileBinding(binding, statements, origin) {
+import { selectBindingCompiler } from "./assertion_compiler_manager.js";
+export function compileAssertionSite(node: MinTreeNode): MinTreeNode {
 
     const
-        node = parser`;`,
-        test_statements =
-            node.nodes;
-
-    test_statements.length = 0;
-
-    for (let i = 0; i < binding.index; i++)
-        test_statements.push(statements[i].node);
-
-    const
-        expr = <MinTreeNode>binding.node.nodes[0].nodes[0].nodes[0];
+        expr = node.nodes[0].nodes[0].nodes[0];
 
     for (const binding_compiler of selectBindingCompiler(expr)) {
         if (binding_compiler.test(expr)) {
@@ -30,12 +20,12 @@ export function CompileBinding(binding, statements, origin) {
                     `\`${message}\``,
                     line || expr.pos.line,
                     column || expr.pos.char,
-                    `\`${match}\``,
-                    `\`${highlight}\``
+                    `\"${match.replace(/"/g, "'")}\"`,
+                    `\"${highlight.replace(/"/g, "'")}\"`
                 ];
 
             const
-                thr = stmt(`if(${js_string}) i.setException(new AssertionError(${error_data}));`),
+                thr = stmt(`if(${js_string}) $cfw.setException(new AssertionError(${error_data}));`),
 
                 landing = { ast: null };
 
@@ -53,11 +43,10 @@ export function CompileBinding(binding, statements, origin) {
                     node.replace(expr);
             }
 
-            test_statements.push(landing.ast);
-            break;
+            return landing.ast;
         }
     }
 
     //create new script
-    return { ast: node, name: binding.name || "undefined", error: null, stmts: test_statements };
+    return null;
 }

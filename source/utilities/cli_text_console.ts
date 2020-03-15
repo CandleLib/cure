@@ -27,8 +27,10 @@ export class CLITextDraw {
 
     addLines(...lines) {
         const out_lines = lines.join(this.delimiter);
+
         if (this.buffer)
             this.buffer += "\n";
+
         this.buffer += out_lines;
     }
 
@@ -47,6 +49,7 @@ export class CLITextDraw {
     }
 
     clear() {
+        process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
         this.buffer = "";
     }
 }

@@ -1,9 +1,10 @@
-import { BindingExpressionCompiler } from "../types/binding_compile";
-import { MinTreeNodeClass, MinTreeNodeType, MinTreeNode } from "@candlefw/js";
+import { MinTreeNode } from "@candlefw/js";
+
+import { AssertionSiteCompiler } from "../types/binding_compile";
 
 const BindingCompilers = [];
 
-export function loadBindingCompiler(obj: BindingExpressionCompiler) {
+export function loadBindingCompiler(obj: AssertionSiteCompiler) {
     // Check for the presence of the expected 
     // properties of BindingExpressionCompiler
     if (!obj)
@@ -26,7 +27,7 @@ export function loadBindingCompiler(obj: BindingExpressionCompiler) {
     return true;
 };
 
-export function selectBindingCompiler(node: MinTreeNode): BindingExpressionCompiler[] {
+export function selectBindingCompiler(node: MinTreeNode): AssertionSiteCompiler[] {
 
     const type = node.type;
     //return BindingCompilers

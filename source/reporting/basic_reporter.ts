@@ -1,10 +1,13 @@
-import { CLITextDraw } from "../utilities/cli_text_console.js";
 import spark from "@candlefw/spark";
 import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/whind";
+
+import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "../types/test_result.js";
 import { c_fail, c_done, c_reset, c_success, c_pending } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
+import { Test } from "../types/test.js";
+import { render } from "@candlefw/js";
 
 export class BasicReporter {
     suites: Map<string, any>;
@@ -44,7 +47,7 @@ export class BasicReporter {
         return strings.join("\n");
     }
 
-    async start(pending_tests, suites, console: CLITextDraw) {
+    async start(pending_tests, suites, console: CLITextDraw | Console) {
 
         this.time_start = performance.now();
 
@@ -63,8 +66,7 @@ export class BasicReporter {
         }
     }
 
-    async update(results: Array<TestResult>, suites, terminal: CLITextDraw, COMPLETE = false) {
-
+    async update(results: Array<TestResult>, suites, terminal: CLITextDraw | Console, COMPLETE = false) {
         terminal.clear();
         const suites_ = this.suites;
 
@@ -75,13 +77,14 @@ export class BasicReporter {
 
         const out = this.render();
 
-        if (!COMPLETE)
+        if (!COMPLETE) {
             terminal.log(out);
+        }
 
         return out;
     }
 
-    async complete(results, suites, terminal: CLITextDraw) {
+    async complete(results, suites, terminal: CLITextDraw | Console) {
 
         const
             strings = [await this.update(results, suites, terminal, true)],
@@ -92,55 +95,63 @@ export class BasicReporter {
             total = results.length,
             failed = 0;
 
-        for (const { test, error } of results) {
+        try {
+            for (const { test, error } of results) {
 
-
-            if (error) {
-
-                FAILED = true;
-
-                if (error.IS_TEST_ERROR) {
-
-                    const
-                        data = (await (new URL(test.origin))
-                            .fetchText())
-                            .replace(error.match_source, error.replace_source),
-
-                        lex = new Lexer(data);
-
-                    lex.CHARACTERS_ONLY = true;
-
-                    while (!lex.END) {
-                        if (lex.line == error.line && lex.char >= error.column) break;
-                        lex.next();
-                    }
-
-                    errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${
-                        lex.errorMessage(error.message, test.origin, 120).split("\n").join("\n   ")}\n${c_reset}`);
-
+                if (error) {
                     failed++;
 
-                } else {
-                    errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${
-                        error.message.split("\n").join("\n   ")}\n`);
+                    FAILED = true;
+
+                    if (error.IS_TEST_ERROR) {
+
+                        const
+                            origin = error.origin || test.origin,
+                            data = (await (new URL(origin))
+                                .fetchText())
+                                .replace(error.match_source, error.replace_source),
+
+                            lex = new Lexer(data);
+
+                        lex.CHARACTERS_ONLY = true;
+
+                        while (!lex.END) {
+                            if (lex.line == error.line && lex.char >= error.column) break;
+                            lex.next();
+                        }
+
+                        errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${
+                            c_fail + lex.errorMessage(error.message, origin, 120).split("\n").join("\n   ")}\n${c_reset}`);
+
+                    } else {
+                        errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${
+                            c_fail + error.message.split("\n").join("\n   ")}\n`);
+                    }
+
+                    errors.push(JSON.stringify(test));
                 }
             }
-        }
 
-        for (const suite of suites) {
 
-            if (suite.error) {
+            for (const suite of suites) {
 
-                errors.push(`Suite ${c_fail + suite.name + c_reset} failed:\n\n    ${
-                    suite.error.message.split("\n").join("\n   ")}\n${c_reset}`);
+                if (suite.error) {
+                    failed++;
+                    errors.push(`Suite ${c_fail + suite.name + c_reset} failed:\n\n    ${
+                        c_fail + suite.error.message.split("\n").join("\n   ")}\n${c_reset}`);
+                }
             }
+        } catch (e) {
+            failed++;
+            errors.push(`Reporter failed:\n\n    ${
+                c_fail + e.stack.split("\n").join("\n   ")}\n${c_reset}`);
         }
 
         strings.push(`${total} test${total !== 1 ? "s" : ""} run. ${total > 0 ? (failed > 0
             ? c_fail + `${failed} failed test${(failed !== 1 ? "s" : "") + c_reset} :: ${c_success + (total - failed)} successful test${total - failed !== 1 ? "s" : ""}`
-            : c_success + "All tests succeeded") : ""} ${c_reset}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms` + c_reset);
+            : c_success + "All tests succeeded") : ""} ${c_reset}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
 
-        terminal.log(strings.join("\n"), errors.join("\n"), "\n");
+        terminal.log(strings.join("\n"), errors.join("\n"), "\n" + c_reset);
 
         await spark.sleep(1);
 

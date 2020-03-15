@@ -4,7 +4,7 @@ import { MinTreeNodeClass, MinTreeNodeType, MinTreeNode } from "@candlefw/js";
  * An object used to compile double parenthesize bindings into a testable and reportable
  * expression.
  */
-export type BindingExpressionCompiler = {
+export type AssertionSiteCompiler = {
 
     /**
      * The signature of the first MinTreeNode in the double parenthesize expression.

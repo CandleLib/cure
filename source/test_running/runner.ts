@@ -14,6 +14,7 @@ export class Runner {
     module_url: string;
 
     constructor(max_workers: number = 2) {
+
         const
             finished = [],
             module_url = (process.platform == "win32")
@@ -127,4 +128,4 @@ export class Runner {
 
         return;
     }
-} 40;
+};

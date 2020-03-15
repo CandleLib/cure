@@ -7,23 +7,28 @@ export async function runTests(final_tests, suites, WATCH = false, runner = new 
 
     let FAILED = false;
 
-    const results = [];
-
+    const outcome = { FAILED: false, results: [] };
+    const update_timout = 10;
+    let t = update_timout;
     for (const res of runner.run(final_tests, RELOAD_DEPENDS)) {
         if (res) {
-            results.push(...res);
-            if (WATCH)
-                updateRun(results, suites, reporter);
+            outcome.results.push(...res);
+            if (WATCH && t-- < 0) {
+                t = update_timout;
+                updateRun(outcome.results, suites, reporter);
+            }
         }
-        await spark.sleep(10);
+        await spark.sleep(1);
     }
 
     try {
-        FAILED = await completedRun(results, suites, reporter);
+        FAILED = await completedRun(outcome.results, suites, reporter, WATCH ? undefined : console);
     } catch (e) {
         FAILED = true;
         console.error(e);
     }
 
-    return FAILED;
+    outcome.FAILED = FAILED;
+
+    return outcome;
 }

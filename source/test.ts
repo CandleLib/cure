@@ -1,97 +1,30 @@
 import { parser, render as $r } from "@candlefw/js";
 import URL from "@candlefw/url";
-import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
-import * as path from "path";
-import * as fs from "fs";
 
+import path from "path";
+import fs from "fs";
+
+import { createSourceMap } from "@candlefw/conflagrate";
+import CompilerBindings from "./compile/assertion_compilers.js";
+import { loadBindingCompiler } from "./compile/assertion_compiler_manager.js";
 import { compileTest } from "./compile/compile.js";
 import { runTests } from "./test_running/run_tests.js";
 import { Runner } from "./test_running/runner.js";
 import { BasicReporter } from "./reporting/basic_reporter.js";
 import { c_fail, c_reset } from "./utilities/colors.js";
-import { Suite } from "./types/test.js";
-import CompilerBindings from "./compile/binding_compilers.js";
-import { loadBindingCompiler } from "./compile/binding_compiler_manager.js";
+import { Suite, Test } from "./types/test.js";
 import { TestAssertionError } from "./types/test_error.js";
-
+import { handleWatchOfRelativeDependencies } from "./utilities/watch_imported_files.js";
+import { PENDING } from "./utilities/pending.js";
+import { fatalExit } from "./utilities/fatal_exit.js";
+import { cpus } from "os";
 
 CompilerBindings.map(loadBindingCompiler);
 
 let
     suites: Map<string, Suite> = null,
     reporter = null,
-    runner = null,
-    PENDING = false;
-
-function hardFail(error, why_we_are_failing_while_app) {
-    console.error(error.message);
-    console.log(why_we_are_failing_while_app);
-    process.exit(-1);
-}
-
-const WatchMap: Map<string, Map<string, Suite>> = new Map();
-
-function createRelativeFileWatcher(path: string) {
-
-    WatchMap.set(path, new Map());
-
-    try {
-
-        fs.watch(path, async function () {
-
-            if (!PENDING) {
-                PENDING = true;
-
-
-                const suites = Array.from(WatchMap.get(path).values());
-
-                await runTests(
-                    suites.flatMap(suite => suite.tests),
-                    Array.from(suites),
-                    true,
-                    runner,
-                    reporter,
-                    true);
-
-                PENDING = false;
-            }
-        });
-    } catch (e) {
-        hardFail(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset);
-    }
-}
-
-/**
- * Handles the creation of file watchers for relative imported modules.
- */
-async function handleWatchOfRelativeDependencies(suite: Suite) {
-
-    const { tests, name: origin } = suite,
-        active_paths: Set<string> = new Set();
-
-    tests
-        .flatMap(test => test.import_module_sources)
-        .filter(src => src.IS_RELATIVE)
-        .forEach(src => {
-
-            const path = src.source;
-
-            active_paths.add(path);
-
-            if (!WatchMap.has(path))
-                createRelativeFileWatcher(path);
-        });
-
-    //Remove suite from existing maps
-    [...WatchMap.values()].map(wm => {
-        if (wm.has(origin))
-            wm.delete(origin);
-    });
-
-    //And suite to the newly identifier watched file handlers
-    for (const path of active_paths.values())
-        WatchMap.get(path).set(origin, suite);
-}
+    runner = null;
 
 async function loadTests(url_string, suite) {
     try {
@@ -100,57 +33,62 @@ async function loadTests(url_string, suite) {
             url = new URL(path.resolve(process.cwd(), url_string)),
             text = await url.fetchText(),
             ast = parser(text),
-            { asts, imports, name: suite_name } = await compileTest(ast, url);
+            { raw_tests } = await compileTest(ast);
 
-        suite.name = suite_name;
-
-        for (const final of asts) {
+        for (const { error: e, ast, imports, name, pos } of raw_tests) {
 
             const
-                error = final.error,
                 map = createSourceMap(),
                 import_arg_names = [],
                 args = [],
                 import_module_sources = [],
                 import_arg_specifiers = [];
 
-            if (error)
-                hardFail(error, "NULL");
+            let error = e;
 
             if (!error) {
 
-                // Load imports into args
-                for (const import_obj of imports) {
+                try {
 
-                    const { import_names: names, module_source, IS_RELATIVE } = import_obj,
-                        source = IS_RELATIVE ? URL.resolveRelative(module_source, url) + "" : module_source + "";
 
-                    import_module_sources.push({ source, IS_RELATIVE });
+                    // Load imports into args
+                    for (const import_obj of imports) {
 
-                    for (const name of names) {
-                        import_arg_names.push(name.import_name);
-                        import_arg_specifiers.push({ module_specifier: source, module_name: name.original_name });
+                        const { import_names: imports, module_source, IS_RELATIVE } = import_obj,
+                            source = IS_RELATIVE ? URL.resolveRelative(module_source, url) + "" : module_source + "";
+
+                        import_module_sources.push({ source, IS_RELATIVE });
+
+                        for (const import_spec of imports) {
+                            import_arg_names.push(import_spec.import_name);
+                            import_arg_specifiers.push({ module_specifier: source, module_name: import_spec.module_name });
+                        }
                     }
-                }
 
-                args.push("i", "AssertionError", ...import_arg_names, $r(final.ast, map));
+                } catch (e) {
+                    error = e;
+                }
+                args.push("$cfw", "AssertionError", ...import_arg_names, $r(ast));
             }
 
-            suite.tests.push({
-                name: final.name,
-                suite: suite_name,
+
+            suite.tests.push(<Test>{
+                name,
+                suite: "TODO at test:70:0",
                 import_module_sources,
                 import_arg_specifiers,
-                map: createSourceMapJSON(map, <string>text),
+                //map: createSourceMapJSON(map, <string>text),
                 origin: url_string,
                 test_function_object_args: args,
                 RUN: true,
-                error
+                IS_ASYNC: false,
+                error,
+                pos
             });
         }
     } catch (e) {
         suite.tests.length = 0;
-        suite.error = new TestAssertionError(e.message + " " + url_string, 0, 0, "", "");
+        suite.error = new TestAssertionError(e, 0, 0, "", "");
     }
 }
 
@@ -165,35 +103,33 @@ async function loadSuite(suite, WATCH = false) {
     if (WATCH) {
 
 
-        handleWatchOfRelativeDependencies(suite);
+        handleWatchOfRelativeDependencies(suite, runner, reporter);
 
         try {
             fs.watch(suite.origin + "", async function (a) {
-                if (!PENDING) {
-                    PENDING = true;
+                if (!PENDING.is) {
+                    PENDING.is = true;
                     suite.tests.length = 0;
                     suite.error = null;
                     suite.name = suite.origin + "";
 
                     await loadTests(suite.origin, suite);
 
-                    handleWatchOfRelativeDependencies(suite);
+                    handleWatchOfRelativeDependencies(suite, runner, reporter);
 
                     await runTests(suite.tests.slice(), [suite], true, runner, reporter);
 
-                    PENDING = false;
+                    PENDING.is = false;
                 }
             });
         } catch (e) {
-            hardFail(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset);
+            fatalExit(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset);
         }
 
     }
 }
 
 async function test(WATCH = false, ...test_suite_url_strings: string[]) {
-
-    console.log(test_suite_url_strings);
 
     await URL.polyfill();
 
@@ -204,13 +140,13 @@ async function test(WATCH = false, ...test_suite_url_strings: string[]) {
     for (const suite of suites.values())
         await loadSuite(suite, WATCH);
 
-    runner = new Runner(10);
+    runner = new Runner(Math.max(cpus().length - 1, 1));
     reporter = new BasicReporter();
 
     const
         st = Array.from(suites.values()),
-        FAILED = await runTests(st.flatMap(suite => suite.tests), st, WATCH, runner, reporter)
-            || Array.from(suites.values()).filter(s => !!s.error).length > 0;
+        outcome = await runTests(st.flatMap(suite => suite.tests), st, WATCH, runner, reporter)
+            || { FAILED: Array.from(suites.values()).filter(s => !!s.error).length > 0, results: [] };
 
     if (WATCH) {
         console.log("Waiting for changes...");
@@ -218,7 +154,7 @@ async function test(WATCH = false, ...test_suite_url_strings: string[]) {
 
         runner.destroy();
 
-        if (FAILED) {
+        if (outcome.FAILED) {
             console.log("\n Exiting with failed tests. ");
             process.exit(-1);
         }
