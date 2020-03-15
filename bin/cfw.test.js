@@ -30,7 +30,7 @@ Candlefw Test
 
     Output Result: -o   
         
-        Forses the use of a null reporter and returns the test results
+        Forces the use of a null reporter and returns the test results
         as a JSON string.
 
     Watch input files:  --watch | -w
@@ -59,7 +59,6 @@ README: https://www.github.com/candlefw/test/
 
 async function start() {
 
-    console.log(args)s
     process.title = "cfw.test";
 
     if (HELP) {
