@@ -2,8 +2,10 @@ import spark from "@candlefw/spark";
 import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/whind";
 
+import { Reporter } from "../types/reporter.js";
 import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "../types/test_result.js";
+
 import { c_fail, c_done, c_reset, c_success, c_pending } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
 
@@ -15,7 +17,7 @@ function getNameData(name) {
     return { suites, name: name_string, sub_test_count: parseInt(sub_test_count || 0) }
 }
 
-export class BasicReporter {
+export class BasicReporter implements Reporter {
 
     suites: Map<string, any>;
 
