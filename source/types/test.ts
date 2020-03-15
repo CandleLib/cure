@@ -1,4 +1,4 @@
-import URL from "@candlefw/url";
+import { Lexer } from "@candlefw/whind";
 import { TestAssertionError } from "./test_error";
 export type ModuleSpecifier = {
     /**
@@ -11,6 +11,7 @@ export type ModuleSpecifier = {
      */
     module_name: string;
 };
+
 export type Test = {
 
     /**
@@ -47,6 +48,10 @@ export type Test = {
     * An error object if an exception was thrown during test compilation.
     */
     error?: Error | TestAssertionError;
+    /**
+     * Position Lexer for reporting errors in source
+     */
+    pos?: Lexer;
 };
 export type Source = {
 
