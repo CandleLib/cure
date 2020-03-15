@@ -2,58 +2,40 @@
 # yarn lockfile v1
 
 
-"@candlefw/color@latest":
-  version "1.0.1-0"
-  resolved "https://registry.yarnpkg.com/@candlefw/color/-/color-1.0.1-0.tgz#b8c2fae3e27c9c805c5dbb774695df2d1bca94f0"
-  integrity sha512-/K8WZYcHF20Y2EZgAstCXiaRnM/kU8q8H4IQyvBH+AmFOyekGhTuJmH/qwV2yX2BL5bPIBOT+NEuVe9IGcEA/A==
+"@candlefw/conflagrate@0.0.3", "@candlefw/conflagrate@>=0.0.1", "@candlefw/conflagrate@latest":
+  version "0.0.3"
+  resolved "https://registry.yarnpkg.com/@candlefw/conflagrate/-/conflagrate-0.0.3.tgz#27dccb4effc8cb5b1163d651f20add8d53c45d9c"
+  integrity sha512-1UTY3HEOvDBogEme0yMltACIqsmhX+WI7R5tLwKuNiAqOl0MiONggBzsnwR4+nePXUz47dfj3FnACp3tmH7+RA==
 
-"@candlefw/conflagrate@>=0.0.1", "@candlefw/conflagrate@latest":
-  version "0.0.1"
-  resolved "https://registry.yarnpkg.com/@candlefw/conflagrate/-/conflagrate-0.0.1.tgz#3e0254214c9bd2a36a600885dd4a84af11466d7f"
-  integrity sha512-LvfeaJSnxcMVmsPxethO7THzevIlV85FzSNYsE3pfQan1wYNvoU9/bSSHZ+A8JOrRKCTP4EzSrpsvck5vfbfsg==
-
-"@candlefw/hydrocarbon@0.3.1":
-  version "0.3.1"
-  resolved "https://registry.yarnpkg.com/@candlefw/hydrocarbon/-/hydrocarbon-0.3.1.tgz#155364f3b27634adcb930730bb45edf2e6c715bf"
-  integrity sha512-1wE04vJH80Oh9jsp0MhywFLOl68gf8OSzET6rOn7ksITDbEGPHNmnfltTbDGRAKm6/SEH33QWiYokM4mVsCWYA==
+"@candlefw/hydrocarbon@0.3.2":
+  version "0.3.2"
+  resolved "https://registry.yarnpkg.com/@candlefw/hydrocarbon/-/hydrocarbon-0.3.2.tgz#b41d31c1d49923f4e399b30a8558c89733ff2729"
+  integrity sha512-w98JNCuqzEZjzr3/UmTyzdvIYBgyvttfpDj4MdhorAPqAKr8FCbtDqIBB0Z/q5nwRUXypdA4VOG5BbD/YLryqg==
   dependencies:
     "@candlefw/conflagrate" latest
-    "@candlefw/js" "0.0.8"
+    "@candlefw/js" "0.0.9"
     "@candlefw/url" latest
     "@candlefw/whind" latest
     commander "^5.0.0"
     terser "^4.6.3"
 
-"@candlefw/js@0.0.8":
-  version "0.0.8"
-  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.0.8.tgz#7946467302cc04f3b80ad7fedda249d782190b03"
-  integrity sha512-kMm/8E0z337jGGV1UO3ZIDq/HNWwvBWm1mQWItH1OqS3+vfecFLt7gPeh70RmcnfnU4BaGRGsgpKcp4jOZplCg==
+"@candlefw/js@0.0.9":
+  version "0.0.9"
+  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.0.9.tgz#3cf39b6ffe34cb901aaa9dabece6e0b6ec4b6a8d"
+  integrity sha512-PWTATcE/3NVhTtLbV03BpWgMEBzrIB5Gt4gutMT4tHf9evvybcSZnrmK56oWtIevGhTTGuD9tVrCUcEAqM954A==
   dependencies:
-    "@candlefw/color" latest
-    "@candlefw/ll" latest
-    "@candlefw/math" latest
     "@candlefw/url" latest
-    "@candlefw/whind" "0.3.6"
+    "@candlefw/whind" latest
 
-"@candlefw/js@0.1.3":
-  version "0.1.3"
-  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.1.3.tgz#63f8c68aba4d0b0ad454a61a318293d177a7f25f"
-  integrity sha512-dgkVEAvMYMnr63LSPrxieUr6Efn0GScLhWwOF86Q/6aaruoa4JExj0yXbtZm3ypX/Lmibj1mwcYI02No3y53Zg==
+"@candlefw/js@0.1.5":
+  version "0.1.5"
+  resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.1.5.tgz#4fedb2fba577731a898eaf25f783e4f7278f6704"
+  integrity sha512-TEXhvDRiVa1iJJA0r6BEOOuId42Uojs0uZm3MldJPzVT62aLqsqT5Lz+pF8vrpbT27Wkbv1f9sJd9XX6Ale/IA==
   dependencies:
     "@candlefw/conflagrate" latest
-    "@candlefw/hydrocarbon" "0.3.1"
+    "@candlefw/hydrocarbon" "0.3.2"
     "@candlefw/url" "0.1.0"
     "@candlefw/whind" "0.4.0"
-
-"@candlefw/ll@latest":
-  version "0.1.5"
-  resolved "https://registry.yarnpkg.com/@candlefw/ll/-/ll-0.1.5.tgz#ed58223daf5f291caeb537e3e714ddf41c85cf6b"
-  integrity sha512-w/5ylg7sMlsaqnNYXRhaPVyDnI/nZEFCxUL1ofqtfw9/ln7Ptg/C77Eqi9e4GHbJCcV/QlSM2zPNhXXyAqj+ww==
-
-"@candlefw/math@latest":
-  version "0.0.3"
-  resolved "https://registry.yarnpkg.com/@candlefw/math/-/math-0.0.3.tgz#f81f092a2a0801b1a2b8137cb2d0149ec9266e15"
-  integrity sha512-6CsnF3LhbYdU7UhzB9BUUW0gXtBJ3LplWgp5kAx4liOZWaQ+1LGtZlkuVpsvq5/R34TgORhZuHO/1THz2Ja1Cw==
 
 "@candlefw/spark@0.1.0":
   version "0.1.0"
@@ -82,11 +64,6 @@
     "@candlefw/conflagrate" ">=0.0.1"
     "@candlefw/url" "^0.0.13"
     "@candlefw/whind" ">=0.0.1"
-
-"@candlefw/whind@0.3.6":
-  version "0.3.6"
-  resolved "https://registry.yarnpkg.com/@candlefw/whind/-/whind-0.3.6.tgz#5add1d4b4a7fda2a692e396270c2f19da02828bb"
-  integrity sha512-t4HrxFwuzbq4VmMOgymhsU+hvK+jNiT9USmlLIcQCdQI9JnAYS8soTp/8iJqcLcJnyyL3KHdmn8Y0WMqslxaLQ==
 
 "@candlefw/whind@0.4.0", "@candlefw/whind@>=0.0.1", "@candlefw/whind@latest":
   version "0.4.0"
