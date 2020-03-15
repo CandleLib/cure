@@ -16,5 +16,6 @@ export type Scope = {
     stmts: DependGraphNode[];
     root: MinTreeNode;
     nodes: MinTreeNode[];
-    pragmas: Pragma[]
+    pragmas: Pragma[],
+    USE_ALL: boolean
 };

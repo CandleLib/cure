@@ -2,14 +2,14 @@ import { MinTreeNodeType as $, MinTreeNode, parser } from "@candlefw/js";
 import { traverse, extract, replace } from "@candlefw/conflagrate";
 
 import { TestAssertionError } from "../types/test_error.js";
-import { TestSite } from "../types/test_site";
-import { ImportDependNode } from "../types/ImportDependNode";
-import { RawTest } from "../types/raw_test";
+import { TestSite } from "../types/test_site.js";
+import { ImportDependNode } from "../types/import_depend_node.js";
+import { RawTest } from "../types/raw_test.js";
 
 import { compileAssertionSite } from "./compile_assertion_site.js";
-import { getUsedStatements } from "./get_used_statements";
-import { replaceNodes } from "./replace_nodes";
-import { compileOuterScope } from "./compile_outer_scope";
+import { getUsedStatements } from "./get_used_statements.js";
+import { replaceNodes } from "./replace_nodes.js";
+import { compileOuterScope } from "./compile_outer_scope.js";
 
 export function compileTestBinding(name: string, test_site: TestSite, imports: ImportDependNode[]): RawTest {
 
@@ -63,10 +63,10 @@ export function compileTestBinding(name: string, test_site: TestSite, imports: I
 
             switch (pragma.type) {
                 case "AE":
-                    statements.push(...pragma.node);
+                    statements.push(...pragma.nodes);
                     break;
                 case "BE":
-                    statements.unshift(...pragma.node);
+                    statements.unshift(...pragma.nodes);
                     break;
             }
         }

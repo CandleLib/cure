@@ -4,6 +4,7 @@ import { performance } from "perf_hooks";
 import { TestResult } from "../types/test_result";
 import { Test } from "../types/test";
 import { TestAssertionError } from "../types/test_error.js";
+
 import { harness } from "./test_harness.js";
 
 const
@@ -14,7 +15,7 @@ parentPort.on("message", async (msg) => {
 
     const
         { test }: { test: Test; } = msg,
-        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, } = test,
+        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source } = test,
         result: TestResult = { start: performance.now(), end: 0, duration: 0, error: null, test, TIMED_OUT: false };
 
     try {
@@ -27,7 +28,7 @@ parentPort.on("message", async (msg) => {
             }
         }
 
-        const testFunction = new (test.IS_ASYNC ? Function : Function)(...args),
+        const testFunction = new (test.IS_ASYNC ? Function : Function)(...[...args, source]),
 
             test_args = [harness, TestAssertionError, ...spec.map(e => {
 

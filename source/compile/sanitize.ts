@@ -1,14 +1,15 @@
 import { MinTreeNodeType as $, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
 import { traverse, skip_root, filter, make_replaceable, extract } from "@candlefw/conflagrate";
+import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_extended_node";
 
 /**
  * Removes double parenthesis statements from an AST.
  * 
- * @param {MinTreeNode} ast 
+ * @param {MinTreeNode | MinTreeExtendedNode} ast 
  */
-export function sanitize(ast: MinTreeNode) {
+export function sanitize(ast: MinTreeExtendedNode | MinTreeNode) {
 
-    const receiver = { ast: <MinTreeNode>null };
+    const receiver = { ast: null };
     /**
      * The active suite/test name
      */

@@ -1,6 +1,6 @@
 import { MinTreeNode } from "@candlefw/js";
 import { Lexer } from "@candlefw/whind";
-import { ImportDependNode } from "./ImportDependNode";
+import { ImportDependNode } from "./import_depend_node";
 export type RawTest = {
     suite: string;
     name: string;

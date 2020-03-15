@@ -7,12 +7,12 @@ import { TestResult } from "../types/test_result.js";
 import { c_fail, c_done, c_reset, c_success, c_pending } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
 
-function getNameData(name){
+function getNameData(name) {
     const name_parts = name.split(".");
-    const suites = name_parts.slice(0,-1);
-    const [,name_string,,sub_test_count] = name_parts.pop().match(/([^\@]+)(\@\:(\d+))?/);
+    const suites = name_parts.slice(0, -1);
+    const [, name_string, , sub_test_count] = name_parts.pop().match(/([^\@]+)(\@\:(\d+))?/);
 
-    return {suites, name:name_string, sub_test_count:parseInt(sub_test_count || 0)}
+    return { suites, name: name_string, sub_test_count: parseInt(sub_test_count || 0) }
 }
 
 export class BasicReporter {
@@ -22,7 +22,7 @@ export class BasicReporter {
 
     constructor() { this.suites = null; this.time_start = 0; }
 
-    render(suites = {suites:this.suites}, prepend = "") {
+    render(suites = { suites: this.suites }, prepend = "") {
         const strings = [];
 
         for (const [key, suite] of suites.suites.entries()) {
@@ -46,8 +46,8 @@ export class BasicReporter {
                 else
                     strings.push(prepend + "    " + c_pending + test.name + c_reset);
             }
-            
-            strings.push(this.render(suite, prepend +  "  "));
+
+            strings.push(this.render(suite, prepend + "  "));
         }
 
         return strings.join("\n");
@@ -60,20 +60,20 @@ export class BasicReporter {
         //order tests according to suite
         this.suites = new Map;
 
-        
+
         for (const e of pending_tests) {
             let suites_ = this.suites, target_suite = null;
-            
-            const {suites, name, sub_test_count} = getNameData(e.name);
 
-            for(const suite of suites){
+            const { suites, name, sub_test_count } = getNameData(e.name);
+
+            for (const suite of suites) {
                 if (!suites_.has(suite)) {
-                    suites_.set(suite, {tests:new Map(), suites: new Map()});
+                    suites_.set(suite, { tests: new Map(), suites: new Map() });
                 }
                 target_suite = suites_.get(suite);
                 suites_ = target_suite.suites;
             }
-                        
+
             target_suite.tests.set(name, { name, complete: false, failed: false });
         }
     }
@@ -84,12 +84,12 @@ export class BasicReporter {
         for (const { test, error, duration } of results) {
 
             let suites_ = this.suites, target_suite = null;
-            
-            const {suites, name, sub_test_count} = getNameData(test.name);
 
-            for(const suite of suites){
+            const { suites, name, sub_test_count } = getNameData(test.name);
+
+            for (const suite of suites) {
                 if (!suites_.has(suite)) {
-                    suites_.set(suite, {tests:new Map(), suites: new Map()});
+                    suites_.set(suite, { tests: new Map(), suites: new Map() });
                 }
                 target_suite = suites_.get(suite);
                 suites_ = target_suite.suites;
@@ -150,11 +150,8 @@ export class BasicReporter {
                         errors.push(`[ ${c_done + test.suite} - ${c_reset + test.name + c_done} ]${c_reset} failed:\n\n    ${
                             c_fail + error.message.split("\n").join("\n   ")}\n`);
                     }
-
-                    errors.push(JSON.stringify(test));
                 }
             }
-
 
             for (const suite of suites) {
 

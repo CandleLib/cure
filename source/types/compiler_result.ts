@@ -1,5 +1,5 @@
 import { RawTest } from "./raw_test";
-import { ImportDependNode } from "./ImportDependNode";
+import { ImportDependNode } from "./import_depend_node";
 
 export type CompileResults = {
 

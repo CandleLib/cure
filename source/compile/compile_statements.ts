@@ -1,10 +1,12 @@
 import { MinTreeNodeType as $, ext, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
 import { traverse, bit_filter, make_skippable, skip_root, extract } from "@candlefw/conflagrate";
-import { compileImport } from "./compileImport.js";
-import { TestSite } from "../types/test_site";
-import { Scope } from "../types/scope";
-import { DependGraphNode } from "../types/depend_graph_node";
-import { sanitize } from "./sanitize";
+
+import { TestSite } from "../types/test_site.js";
+import { Scope } from "../types/scope.js";
+import { DependGraphNode } from "../types/depend_graph_node.js";
+
+import { compileImport } from "./compile_import.js";
+import { sanitize } from "./sanitize.js";
 
 export function compileStatements(
     ast: MinTreeNode,
@@ -73,14 +75,14 @@ export function compileStatements(
 
                     scope.pragmas.push({
                         type: "AE",
-                        node: sanitize(funct).body
+                        nodes: sanitize(funct).body
                     });
                 }
                 else if (funct.name.value == "BEFORE_EACH") {
 
                     scope.pragmas.push({
                         type: "BE",
-                        node: sanitize(funct).body
+                        nodes: sanitize(funct).body
                     });
                 }
 

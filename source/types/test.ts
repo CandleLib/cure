@@ -15,14 +15,14 @@ export type ModuleSpecifier = {
 export type Test = {
 
     /**
-     * Name of the test's suite.
-     */
-    suite: string;
-
-    /**
-     * Name given to the test.
+     * Name of the test. Includes suite name and redudant name info.
      */
     name: string;
+
+    /**
+     * A JavaScript string that will run the test. 
+     */
+    source: string,
 
     /**
      * List of arguments to past to the Test Function
@@ -30,7 +30,7 @@ export type Test = {
     test_function_object_args: string[];
 
     /**
-     * List of translators from imported modules to argument 
+     * List of translators from imported module names to argument names 
      */
     import_arg_specifiers: Array<ModuleSpecifier>;
 

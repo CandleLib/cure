@@ -1,10 +1,10 @@
 import { render as $r, MinTreeNode, exp, stmt } from "@candlefw/js";
 
-import { CompileResults } from "../types/compiler_result";
-import { ImportDependNode } from "../types/ImportDependNode";
-import { RawTest } from "../types/raw_test";
-import { compileStatements } from "./compileStatements";
-import { compileTestBinding } from "./compile_test_binding";
+import { CompileResults } from "../types/compiler_result.js";
+import { ImportDependNode } from "../types/import_depend_node.js";
+import { RawTest } from "../types/raw_test.js";
+import { compileStatements } from "./compile_statements.js";
+import { compileTestBinding } from "./compile_test_binding.js";
 
 
 /*

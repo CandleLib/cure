@@ -1,6 +1,6 @@
 import { MinTreeNode } from "@candlefw/js";
 
-import { AssertionSiteCompiler } from "../types/assertion_site_compiler";
+import { AssertionSiteCompiler } from "../types/assertion_site_compiler.js";
 
 const BindingCompilers = [];
 

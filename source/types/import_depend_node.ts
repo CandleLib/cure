@@ -1,5 +1,6 @@
-import { DependGraphNode } from "../types/DependGraphNode";
-import { ImportName } from "./ImportName";
+import { DependGraphNode } from "../types/depend_graph_node";
+import { ImportName } from "./import_name";
+
 export type ImportDependNode = DependGraphNode & {
     /**
      * An of ImportName

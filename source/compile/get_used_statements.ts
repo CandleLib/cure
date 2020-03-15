@@ -1,4 +1,4 @@
-import { Scope } from "../types/scope";
+import { Scope } from "../types/scope.js";
 
 function partialIntersectionOfSets(setA, setB) {
     for (const a of setA.values())
