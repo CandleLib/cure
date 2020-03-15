@@ -1,4 +1,4 @@
-import { loadBindingCompiler, selectBindingCompiler, clearBindingsCompilers, test } from "../build/library/compile/binding_compiler_manager.js";
+import { loadBindingCompiler, selectBindingCompiler, clearBindingsCompilers, test } from "../build/library/compile/assertion_compiler_manager.js";
 
 import { MinTreeNodeType, exp } from "@candlefw/js";
 
