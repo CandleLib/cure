@@ -4,7 +4,7 @@ import { performance } from "perf_hooks";
 import { TestResult } from "../types/test_result";
 import { Test } from "../types/test";
 import { TestAssertionError } from "../types/test_error.js";
-import { i } from "./i.js";
+import { harness } from "./test_harness.js";
 
 const
     ImportedModules: Map<string, any> = new Map(),
@@ -29,7 +29,7 @@ parentPort.on("message", async (msg) => {
 
         const testFunction = new (test.IS_ASYNC ? Function : Function)(...args),
 
-            test_args = [i, TestAssertionError, ...spec.map(e => {
+            test_args = [harness, TestAssertionError, ...spec.map(e => {
 
                 const module = ImportedModules.get(e.module_specifier);
 
@@ -42,7 +42,7 @@ parentPort.on("message", async (msg) => {
 
         result.end = performance.now();
 
-        result.error = i.last_error;
+        result.error = harness.last_error;
     } catch (e) {
 
         result.error = new TestAssertionError(e, test.pos.line, test.pos.char, "", "");
@@ -50,7 +50,7 @@ parentPort.on("message", async (msg) => {
         result.end = performance.now();
     }
 
-    i.last_error = null;
+    harness.last_error = null;
 
     result.duration = result.end - result.start;
 

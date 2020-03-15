@@ -5,6 +5,7 @@ import { Test } from "../types/test";
 
 
 export class Runner {
+
     number_of_workers: number;
 
     finished: Array<any>;
@@ -22,13 +23,16 @@ export class Runner {
                 : (new URL(import.meta.url)).pathname;
 
         this.module_url = module_url.replace("runner.js", "runner_worker.js");
+
         this.finished = finished;
+
         this.workers = (new Array(max_workers))
             .fill(0)
             .map(() => ({ DISCARD: false, READY: false, target: null }));
     }
 
     createWorker(wkr, module_url = this.module_url) {
+
         const
             finished = this.finished,
             worker = new Worker(module_url);
@@ -42,11 +46,15 @@ export class Runner {
 
         return worker;
     }
+
     destroy() {
+
         for (const wkr of this.workers)
             wkr.target.terminate();
     }
+
     * run(tests: Array<Test>, RELOAD_DEPENDS: boolean = false) {
+
         let id = 0, completed = 0;
 
         //Reset any running workers

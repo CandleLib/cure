@@ -31,13 +31,14 @@ export class TestAssertionError {
             const end = error_frame.lastIndexOf(")");
             let data = error_frame.slice(start + 1, end).split(",")[0].split(":");
 
-            this.message = error.message;
+            this.message = error.stack;
 
             if (data[0] == "file") {
                 data = [data[0] + ":" + data[1], data[2], data[3]];
                 this.origin = (new URL(data[0])).path;
                 this.line = parseInt(data[1]) - 1;
                 this.column = parseInt(data[2]) - 1;
+                //this.message = error.message;
             }
 
             if (data[0] == "<anonymous>") {

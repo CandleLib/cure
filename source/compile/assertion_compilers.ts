@@ -1,5 +1,6 @@
 import { render as $r, MinTreeNodeType, MinTreeNodeClass, ext } from "@candlefw/js";
-import { AssertionSiteCompiler } from "../types/binding_compile.js";
+
+import { AssertionSiteCompiler } from "../types/assertion_site_compiler.js";
 
 import { fail, rst, bg, ref, val, resB, c_fail, c_reset } from "../utilities/colors.js";
 

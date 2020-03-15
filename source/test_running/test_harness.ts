@@ -3,12 +3,18 @@ import { TestAssertionError } from "../types/test_error.js";
 /**
  * Candle object accessible within a test.
  */
-export const i = {
+export const harness = {
+
     temp: null,
+
     temp1: null,
+
     temp2: null,
+
     caught_exception: null,
+
     last_error: null,
+
     makeLiteral: (s) => {
         switch (typeof (s)) {
             case "string":
@@ -21,21 +27,24 @@ export const i = {
                 return s;
         }
     },
+
     throws: (fn) => {
         try {
             fn();
         }
         catch (e) {
-            i.caught_exception = e;
+            harness.caught_exception = e;
             return true;
         }
         return false;
     },
+
     equal: (a, b) => {
         if (typeof a == "object" && typeof b == "object" && a != b)
             return equal(a, b);
         return a == b;
     },
+
     notEqual: (a, b) => {
         if (typeof a == "object" && typeof b == "object") {
             if (a == b)
@@ -46,9 +55,10 @@ export const i = {
         else
             return a == b;
     },
+
     setException: (e) => {
         if (!(e instanceof TestAssertionError))
             throw TypeError("Expected an Error object to be thrown.");
-        i.last_error = e;
+        harness.last_error = e;
     }
 };

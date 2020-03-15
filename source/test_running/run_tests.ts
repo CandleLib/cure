@@ -7,13 +7,20 @@ export async function runTests(final_tests, suites, WATCH = false, runner = new 
 
     let FAILED = false;
 
-    const outcome = { FAILED: false, results: [] };
-    const update_timout = 10;
+    const
+        outcome = { FAILED: false, results: [] },
+        update_timout = 10;
+
     let t = update_timout;
+
     for (const res of runner.run(final_tests, RELOAD_DEPENDS)) {
+
         if (res) {
+
             outcome.results.push(...res);
+
             if (WATCH && t-- < 0) {
+
                 t = update_timout;
                 updateRun(outcome.results, suites, reporter);
             }

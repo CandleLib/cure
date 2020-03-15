@@ -1,6 +1,12 @@
 import { MinTreeNode } from "@candlefw/js";
-import { DependGraphNode } from "./DependGraphNode";
-import { ImportDependNode } from "./ImportDependNode";
+import { DependGraphNode } from "./depend_graph_node";
+import { ImportDependNode } from "./import_depend_node";
+
+export type Pragma = {
+    type: string,
+    nodes: MinTreeNode[]
+}
+
 export type Scope = {
     ast: MinTreeNode;
     offset: number;
@@ -10,4 +16,5 @@ export type Scope = {
     stmts: DependGraphNode[];
     root: MinTreeNode;
     nodes: MinTreeNode[];
+    pragmas: Pragma[]
 };

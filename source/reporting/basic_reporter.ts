@@ -6,8 +6,14 @@ import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "../types/test_result.js";
 import { c_fail, c_done, c_reset, c_success, c_pending } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
-import { Test } from "../types/test.js";
-import { render } from "@candlefw/js";
+
+function getNameData(name){
+    const name_parts = name.split(".");
+    const suites = name_parts.slice(0,-1);
+    const [,name_string,,sub_test_count] = name_parts.pop().match(/([^\@]+)(\@\:(\d+))?/);
+
+    return {suites, name:name_string, sub_test_count:parseInt(sub_test_count || 0)}
+}
 
 export class BasicReporter {
     suites: Map<string, any>;
@@ -16,63 +22,80 @@ export class BasicReporter {
 
     constructor() { this.suites = null; this.time_start = 0; }
 
-    render() {
-        const strings = [], suites = this.suites;
+    render(suites = {suites:this.suites}, prepend = "") {
+        const strings = [];
 
-        for (const [key, suite] of suites.entries()) {
+        for (const [key, suite] of suites.suites.entries()) {
 
-            strings.push(key + ":");
+            strings.push(prepend + key + ":");
 
-            for (const test of suite.values()) {
+            for (const test of suite.tests.values()) {
 
                 if (test.complete) {
                     const dur = ` - ${((test.duration * (test.duration < 1 ? 1000 : 1)) | 0)}${test.duration < 1 ? "μs" : "ms"}`;
 
                     if (test.failed) {
 
-                        strings.push(c_fail + "  ❌ " + c_done + test.name + dur + c_reset);
+                        strings.push(prepend + c_fail + "  ❌ " + c_done + test.name + dur + c_reset);
                     }
                     else {
 
-                        strings.push(c_success + "  ✅ " + c_done + test.name + dur + c_reset);
+                        strings.push(prepend + c_success + "  ✅ " + c_done + test.name + dur + c_reset);
                     }
                 }
                 else
-                    strings.push("    " + c_pending + test.name + c_reset);
+                    strings.push(prepend + "    " + c_pending + test.name + c_reset);
             }
-
-            strings.push("");
+            
+            strings.push(this.render(suite, prepend +  "  "));
         }
 
         return strings.join("\n");
     }
 
-    async start(pending_tests, suites, console: CLITextDraw | Console) {
+    async start(pending_tests, suites, terminal: CLITextDraw | Console) {
 
         this.time_start = performance.now();
 
         //order tests according to suite
         this.suites = new Map;
 
-        const suites_ = this.suites;
-
+        
         for (const e of pending_tests) {
+            let suites_ = this.suites, target_suite = null;
+            
+            const {suites, name, sub_test_count} = getNameData(e.name);
 
-            if (!suites_.has(e.suite)) {
-
-                suites_.set(e.suite, new Map());
+            for(const suite of suites){
+                if (!suites_.has(suite)) {
+                    suites_.set(suite, {tests:new Map(), suites: new Map()});
+                }
+                target_suite = suites_.get(suite);
+                suites_ = target_suite.suites;
             }
-            suites_.get(e.suite).set(e.name, { name: e.name, complete: false, failed: false });
+                        
+            target_suite.tests.set(name, { name, complete: false, failed: false });
         }
     }
 
     async update(results: Array<TestResult>, suites, terminal: CLITextDraw | Console, COMPLETE = false) {
         terminal.clear();
-        const suites_ = this.suites;
 
         for (const { test, error, duration } of results) {
 
-            suites_.get(test.suite).set(test.name, { name: test.name, complete: true, failed: !!error, duration });
+            let suites_ = this.suites, target_suite = null;
+            
+            const {suites, name, sub_test_count} = getNameData(test.name);
+
+            for(const suite of suites){
+                if (!suites_.has(suite)) {
+                    suites_.set(suite, {tests:new Map(), suites: new Map()});
+                }
+                target_suite = suites_.get(suite);
+                suites_ = target_suite.suites;
+            }
+
+            target_suite.tests.set(name, { name, complete: true, failed: !!error, duration });
         }
 
         const out = this.render();

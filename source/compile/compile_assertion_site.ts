@@ -1,6 +1,8 @@
-import { parser, MinTreeNodeClass, MinTreeNode, stmt, ext, MinTreeNodeType } from "@candlefw/js";
+import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
+
 import { selectBindingCompiler } from "./assertion_compiler_manager.js";
+
 export function compileAssertionSite(node: MinTreeNode): MinTreeNode {
 
     const
