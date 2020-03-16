@@ -1,13 +1,12 @@
-import { xtF, xtColor, xtReset, color, xtBold } from "@candlefw/wax";
-export const c_pending = xtF(xtColor(color.gray30)),
-    c_done = xtF(xtColor(color.grey50)),
-    c_success = xtF(xtColor(color.seagreen3), xtBold),
-    c_fail = xtF(xtColor(color.rosybrown), xtBold),
+import { xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
+export const c_pending = xtF(xtColor(col_x11.Gray30)),
+    c_done = xtF(xtColor(col_x11.Grey50)),
+    c_success = xtF(xtColor(col_x11.SeaGreen3), xtBold),
+    c_fail = xtF(xtColor(col_x11.Red), xtBold),
     c_reset = xtF(xtReset),
-    ref = xtF(xtBold, xtColor(color.lightgoldenrod2)),
-    fail = xtF(xtBold, xtColor(color.steelblue1)),
-    val = xtF(xtBold, xtColor(color.chartreuse3)),
-    bg = xtF(xtBold, xtColor(color.gray23)),
-    bg2 = xtF(xtColor(color.lightpink3)),
+    ref = xtF(xtBold, xtColor(col_x11.LightGoldenrod)),
+    fail = xtF(xtBold, xtColor(col_x11.SteelBlue1)),
+    val = xtF(xtBold, xtColor(col_x11.Chartreuse3)),
+    bg = xtF(xtBold, xtColor(col_x11.Gray23)),
     resB = xtF(xtReset),
     rst = xtF(xtReset);
