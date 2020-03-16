@@ -1,10 +1,10 @@
 {
 	"name": "@candlefw/test",
-	"version": "0.0.1",
+	"version": "0.0.2-alpha",
 	"description": "CandleFW Testing System",
 	"type": "module",
-	"types": "./build/types/test.d.ts",
-	"main": "./build/library/test.js",
+	"types": "./build/types/main.d.ts",
+	"main": "./build/library/main.js",
 	"bin": {
 		"cfw.test": "./bin/cfw.test.js"
 	},
@@ -21,6 +21,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@candlefw/conflagrate": "0.0.3",
+		"@candlefw/hydrocarbon": "^0.3.2",
 		"@candlefw/js": "0.1.5",
 		"@candlefw/spark": "0.1.0",
 		"@candlefw/url": "^0.1.0",
