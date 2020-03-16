@@ -31,7 +31,7 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
     }
 
     catch (e) {
-        fatalExit(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset);
+        fatalExit(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset, globals);
     }
 }
 /**
