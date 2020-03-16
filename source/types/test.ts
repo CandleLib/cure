@@ -82,4 +82,6 @@ export type Test = {
      * Position Lexer for reporting errors in source
      */
     pos?: Lexer;
+
+    map: string
 };

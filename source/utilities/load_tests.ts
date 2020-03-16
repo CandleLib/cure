@@ -2,7 +2,7 @@ import path from "path";
 
 import URL from "@candlefw/url";
 import { parser, render as $r } from "@candlefw/js";
-import { createSourceMap } from "@candlefw/conflagrate";
+import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
 
 import { Test } from "../types/test.js";
 import { TestAssertionError } from "../types/test_error.js";
@@ -21,7 +21,7 @@ export async function loadTests(url_string, suite) {
         for (const { error: e, ast, imports, name, pos, index } of raw_tests) {
 
             const
-                //map = createSourceMap(),
+                map = createSourceMap(),
                 import_arg_names = [],
                 args = [],
                 import_module_sources = [],
@@ -57,18 +57,21 @@ export async function loadTests(url_string, suite) {
                 catch (e) {
                     error = e;
                 }
-                args.push("$cfw",
-                    "AssertionError",
+                args.push("$cfw", "AssertionError",
                     ...import_arg_names);
             }
+
+            const source = $r(ast, map);
+
+            map.sourceContent.push(text);
 
             suite.tests.push(<Test>{
                 index,
                 name,
-                source: $r(ast),
+                source,
                 import_module_sources,
                 import_arg_specifiers,
-                //map: createSourceMapJSON(map,  < string > text),
+                map: createSourceMapJSON(map, <string>text),
                 origin: url_string,
                 test_function_object_args: args,
                 RUN: true,

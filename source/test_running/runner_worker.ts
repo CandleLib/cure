@@ -15,7 +15,7 @@ parentPort.on("message", async (msg) => {
 
     const
         { test }: { test: Test; } = msg,
-        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source } = test,
+        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
         result: TestResult = { start: performance.now(), end: 0, duration: 0, error: null, test, TIMED_OUT: false };
 
     try {
@@ -46,7 +46,7 @@ parentPort.on("message", async (msg) => {
         result.error = harness.last_error;
     } catch (e) {
 
-        result.error = new TestAssertionError(e, test.pos.line, test.pos.char, "", "");
+        result.error = new TestAssertionError(e, test.pos.line, test.pos.char, "", "", sources, map);
 
         result.end = performance.now();
     }
