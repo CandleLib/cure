@@ -1,4 +1,5 @@
 import { Outcome } from "./globals";
+import { Reporter } from "./reporter";
 
 export type TestFrame = {
 
@@ -18,4 +19,9 @@ export type TestFrame = {
     * Starts the test cycle.
     */
     start: () => Promise<Outcome>;
+
+    /**
+     * Set the reporter used to log test data.
+     */
+    setReporter: (reporter: Reporter) => void
 };

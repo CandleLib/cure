@@ -4,6 +4,7 @@ import { Suite } from "./suite.js";
 import { Test } from "./test.js";
 
 export interface Reporter {
+
     /**
      * Called before tests a run.
      * 
