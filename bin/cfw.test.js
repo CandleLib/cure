@@ -1,16 +1,17 @@
 #!/usr/bin/env node
 
-import { getProcessArgs, xtF, color, xtColor, xtReset } from "@candlefw/wax";
+import { getProcessArgs, xtF, xtColor, xtReset, col_x11 } from "@candlefw/wax";
 
-import { test } from "../build/library/main.js";
+import { createTestFrame, NullReporter } from "../build/library/main.js";
 
 const
-    warning = xtF(xtColor(color.red)),
+    warning = xtF(xtColor(col_x11.red)),
     reset = xtF(xtReset),
     args = getProcessArgs(),
     files = args.__array__.filter(a => a.hyphens == 0).map(a => a.name),
-    WATCH = !!(args.watch || args.w),
+    WATCH = !!(args.w),
     HELP = !!(args.help || args.h || args["?"]) || files.length == 0,
+    OUTPUT = !!(args.o),
 
     HELP_MESSAGE = ` 
 Candlefw Test
@@ -33,7 +34,7 @@ Candlefw Test
         Forces the use of a null reporter and returns the test results
         as a JSON string.
 
-    Watch input files:  --watch | -w
+    Watch Input Files:  -w
         
         Monitor suite files for changes. Reruns tests defined
         in the suite file that has been changed. Also watches 
@@ -42,10 +43,8 @@ Candlefw Test
         i.e.: 
             import { imports } from "./my_imports"
             import { other_imports } from "../other_imports"
-            ;
-
-            const
-        Will not watch files that are imported from node_modules
+            
+        DOES NOT watch files that are imported from node_modules
         or absolute directories:
         
         i.e.:
@@ -53,7 +52,7 @@ Candlefw Test
             import { module } from "/my_module"
             import { other_module } from "npm_module"
 
-README: https://www.github.com/candlefw/test/
+README: https://github.com/CandleFW/test/blob/master/readme.md
 `;
 
 
@@ -68,14 +67,29 @@ async function start() {
         console.log(HELP_MESSAGE);
     } else {
 
-        const frame = test(WATCH, ...files);
+        if (OUTPUT) {
 
-        frame.start().then(d => {
+            const frame = createTestFrame(false, ...files);
 
-            console.dir(d, { depth: null })
+            frame.setReporter(new NullReporter());
 
-            process.exit(d.FAILED ? 255 : 0);
-        });
+            frame.start().then(d => {
+                console.log(JSON.stringify(d))
+
+                process.exit(d.FAILED ? 255 : 0);
+            })
+        } else {
+
+            const frame = createTestFrame(WATCH, ...files);
+
+            frame.start().then(d => {
+
+                if (d.error)
+                    console.error(d);
+
+                process.exit(d.FAILED ? 255 : 0);
+            });
+        }
     }
 }
 
