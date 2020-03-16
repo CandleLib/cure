@@ -1,10 +1,25 @@
 import URL from "@candlefw/url";
+import { lrParse, ParserData } from "@candlefw/hydrocarbon";
+import { Lexer } from "@candlefw/whind";
+import { Source } from "./test";
+import data from "../utilities/error_line_parser.js";
+
+import {
+    getPositionLexerFromJSONSourceMap,
+    getSourceLineColumn,
+    decodeJSONSourceMap
+} from "@candlefw/conflagrate";
 
 export class TestAssertionError {
+
     name: string;
+
     IS_TEST_ERROR: boolean;
+
     match_source: string;
+
     replace_source: string;
+
     message: string;
 
     line: number;
@@ -13,11 +28,10 @@ export class TestAssertionError {
 
     origin: string;
 
+    constructor(message, line, column, match_source, replace_source, sources: Source[] = null, map = null) {
 
-    constructor(message, line, column, match_source, replace_source) {
-
-        this.origin = "";
         this.name = "TestAssertionError";
+        this.origin = "";
         this.IS_TEST_ERROR = true;
         this.line = line;
         this.column = column;
@@ -25,23 +39,57 @@ export class TestAssertionError {
         this.replace_source = replace_source;
 
         if (message instanceof Error) {
-            const error: Error = message;
-            const error_frame = error.stack.split("\n")[1];
-            const start = error_frame.indexOf("(");
-            const end = error_frame.lastIndexOf(")");
-            let data = error_frame.slice(start + 1, end).split(",")[0].split(":");
 
-            this.message = error.stack;
+            const
+                error: Error = message,
+                error_frame = error.stack.split("\n")[1],
+                out = lrParse(new Lexer(error_frame), data, {}).value,
+                loc = out.locations.pop();
 
-            if (data[0] == "file") {
-                data = [data[0] + ":" + data[1], data[2], data[3]];
-                this.origin = (new URL(data[0])).path;
-                this.line = parseInt(data[1]) - 1;
-                this.column = parseInt(data[2]) - 1;
-                //this.message = error.message;
-            }
+            this.message = error.message;
 
-            if (data[0] == "<anonymous>") {
+            if (loc.type == "URL") {
+
+                let RELATIVE_MATCH = false;
+
+                for (const source of sources) {
+
+                    if (source.IS_RELATIVE) {
+
+                        if (source.module_source == loc.url) {
+
+                            RELATIVE_MATCH = true;
+
+                            this.origin = (new URL(data[0])).path;
+
+                            this.line = loc.line;
+
+                            this.column = loc.column;
+
+                            break;
+                        }
+                    }
+                }
+
+                if (!RELATIVE_MATCH) {
+
+                    this.message = error.stack;
+
+                    this.origin = "";
+                }
+
+            } else {
+
+                const { line: source_line, column: source_column }
+                    = getSourceLineColumn(loc.line, loc.col, decodeJSONSourceMap(map));
+
+                this.line = source_line;
+
+                this.column = source_column;
+
+                this.message = error.message;
+
+                this.origin = "";
             }
 
         } else {
