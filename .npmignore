@@ -4,5 +4,6 @@ doc/
 docs/
 workspaces/
 .git/
-
+.travis.yml
+.tsconfig.json
 
