@@ -1,11 +1,11 @@
 #!/usr/bin/env node
 
-import { getProcessArgs, xtF, xtColor, xtReset, col_x11 } from "@candlefw/wax";
+import { getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
 
 import { createTestFrame, NullReporter } from "../build/library/main.js";
 
 const
-    warning = xtF(xtColor(col_x11.red)),
+    warning = xtF(xtColor(col_x11.Red), xtBold),
     reset = xtF(xtReset),
     args = getProcessArgs(),
     files = args.__array__.filter(a => a.hyphens == 0).map(a => a.name),
@@ -74,15 +74,17 @@ async function start() {
             frame.setReporter(new NullReporter());
 
             frame.start().then(d => {
-                console.log(JSON.stringify(d))
+
+                console.log(JSON.stringify(d));
 
                 process.exit(d.FAILED ? 255 : 0);
-            })
+            });
         } else {
 
             const frame = createTestFrame(WATCH, ...files);
 
-            frame.start().then(d => {
+
+            await frame.start().then(d => {
 
                 if (d.error)
                     console.error(d);
