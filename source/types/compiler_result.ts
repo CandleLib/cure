@@ -1,7 +1,7 @@
 import { RawTest } from "./raw_test";
 import { ImportDependNode } from "./import_depend_node";
 
-export type CompileResults = {
+export interface CompileResults {
 
     imports: ImportDependNode[];
 

@@ -7,7 +7,7 @@
 
 <> data → at_module \( location(+,) \)		↦r { {locations : $sym3.flat() } }
 
-<> at_module → τat module_name
+<> at_module → τat module_name ( \[ τas id \] )?
 
 <> module_name → θid 
 	│ module_name .
@@ -23,3 +23,8 @@
 	│ url \/					↦r { $sym1.url += $sym2, $sym1 }
 	│ url \.					↦r { $sym1.url += $sym2, $sym1 }
 	│ url \: \/ \/ 				↦r { { protocol: $sym1.url, url:""} }
+
+<> id → θid 
+	│ \_ 
+	│ id θid
+	│ id \_

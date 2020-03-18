@@ -7,6 +7,7 @@ import { TestFrame } from "../types/test_frame";
 import { runTests } from "../test_running/run_tests.js";
 import { loadSuite } from "./load_suite.js";
 import { Reporter } from "../types/reporter.js";
+import * as colors from "./colors.js";
 
 function endWatchedTests(globals: Globals, resolution) {
 
@@ -24,6 +25,18 @@ function endWatchedTests(globals: Globals, resolution) {
             resolution();
     }
 }
+
+function InitializeReporterColors(reporter: Reporter): Reporter {
+    reporter.colors = Object.assign({}, colors, reporter.colors);
+    return reporter;
+}
+
+/**
+ * Loads tests files and returns a TestFrame from which tests can be run. 
+ * 
+ * @param {boolean} WATCH - If set to true then the tests will automatically rerun when watched files are changed.
+ * @param {string[]} test_suite_url_strings - An array of file paths to retrieve test files from.
+ */
 export function createTestFrame(WATCH = false, ...test_suite_url_strings: string[]): TestFrame {
 
     let resolution = null;
@@ -31,7 +44,7 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
     const globals: Globals = {
         PENDING: false,
         suites: null,
-        reporter: new BasicReporter(),
+        reporter: InitializeReporterColors(new BasicReporter()),
         runner: null,
         watchers: [],
         outcome: { FAILED: true, results: [] },
@@ -42,8 +55,9 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
         }
     };
 
+
     return {
-        setReporter: (reporter: Reporter) => globals.reporter = reporter,
+        setReporter: (reporter: Reporter) => globals.reporter = InitializeReporterColors(reporter),
 
         get WATCHED() { return WATCH; },
 
@@ -53,13 +67,14 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
 
             await URL.polyfill();
 
+
             if (resolution)
                 endWatchedTests(globals, resolution);
 
             resolution = res;
 
-            globals.suites = new Map(test_suite_url_strings.map(url_string => [
-                url_string, { origin: url_string, name: url_string, tests: [] }
+            globals.suites = new Map(test_suite_url_strings.map((url_string, index) => [
+                url_string, { origin: url_string, rigs: [], index }
             ]));
 
             globals.runner = new Runner(Math.max(cpus().length - 1, 1));
@@ -75,7 +90,7 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
 
             globals.PENDING = true;
 
-            await runTests(st.flatMap(suite => suite.tests), st, globals);
+            await runTests(st.flatMap(suite => suite.rigs), st, globals);
 
             globals.PENDING = false;
 

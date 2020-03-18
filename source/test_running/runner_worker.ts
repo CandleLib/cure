@@ -1,10 +1,8 @@
 import { parentPort } from "worker_threads";
 import { performance } from "perf_hooks";
-
 import { TestResult } from "../types/test_result";
-import { Test } from "../types/test";
-import { TestAssertionError } from "../types/test_error.js";
-
+import { TestRig } from "../types/test_rig";
+import { TestError } from "./test_error.js";
 import { harness } from "./test_harness.js";
 
 const
@@ -14,7 +12,7 @@ const
 parentPort.on("message", async (msg) => {
 
     const
-        { test }: { test: Test; } = msg,
+        { test }: { test: TestRig; } = msg,
         { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
         result: TestResult = { start: performance.now(), end: 0, duration: 0, error: null, test, TIMED_OUT: false };
 
@@ -30,7 +28,7 @@ parentPort.on("message", async (msg) => {
 
         const testFunction = new (test.IS_ASYNC ? Function : Function)(...[...args, source]),
 
-            test_args = [harness, TestAssertionError, ...spec.map(e => {
+            test_args = [harness, TestError, ...spec.map(e => {
 
                 const module = ImportedModules.get(e.module_specifier);
 
@@ -44,9 +42,10 @@ parentPort.on("message", async (msg) => {
         result.end = performance.now();
 
         result.error = harness.last_error;
+
     } catch (e) {
 
-        result.error = new TestAssertionError(e, test.pos.line, test.pos.char, "", "", sources, map);
+        result.error = new TestError(e, test.pos.line, test.pos.char, "", "", sources, map);
 
         result.end = performance.now();
     }

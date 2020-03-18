@@ -19,5 +19,4 @@ export {
     TestFrame,
     Outcome,
     createTestFrame
-}
-
+};

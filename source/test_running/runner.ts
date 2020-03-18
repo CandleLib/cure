@@ -1,7 +1,7 @@
 import { Worker, workerData } from "worker_threads";
 import { performance } from "perf_hooks";
 import URL from "@candlefw/url";
-import { Test } from "../types/test";
+import { TestRig } from "../types/test_rig";
 
 
 export class Runner {
@@ -53,7 +53,7 @@ export class Runner {
             wkr.target.terminate();
     }
 
-    * run(tests: Array<Test>, RELOAD_DEPENDS: boolean = false) {
+    * run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false) {
 
         let id = 0, completed = 0;
 

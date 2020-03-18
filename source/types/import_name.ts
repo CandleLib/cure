@@ -1,7 +1,7 @@
 /**
  * Named import reference.
  */
-export type ImportName = {
+export interface ImportName {
     /**
      * The reference name of the import that is available within the script;
      */

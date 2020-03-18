@@ -1,6 +1,6 @@
 import { MinTreeNode } from "@candlefw/js";
 
-export type DependGraphNode = {
+export interface DependGraphNode {
 
     ast: MinTreeNode;
 

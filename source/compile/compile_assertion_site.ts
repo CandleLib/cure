@@ -2,8 +2,9 @@ import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType } from "@candlefw/
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
 
 import { selectBindingCompiler } from "./assertion_compiler_manager.js";
+import { Reporter } from "../main.js";
 
-export function compileAssertionSite(node: MinTreeNode): MinTreeNode {
+export function compileAssertionSite(node: MinTreeNode, reporter: Reporter): MinTreeNode {
 
     const
         expr = node.nodes[0].nodes[0].nodes[0];
@@ -14,16 +15,14 @@ export function compileAssertionSite(node: MinTreeNode): MinTreeNode {
             const
                 js_string = binding_compiler.build(expr),
 
-                error_strings = binding_compiler.getExceptionMessage(expr),
-
-                { highlight, message, match, column, line } = error_strings,
+                { highlight, message, match, column, line } = binding_compiler.getExceptionMessage(expr, reporter),
 
                 error_data = [
                     `\`${message}\``,
                     line || expr.pos.line,
                     column || expr.pos.char,
-                    `\"${match.replace(/"/g, "'")}\"`,
-                    `\"${highlight.replace(/"/g, "'")}\"`
+                    `\`${match.replace(/"/g, "\"")}\``,
+                    `\"${highlight.replace(/"/g, "\\\"")}\"`
                 ];
 
             const

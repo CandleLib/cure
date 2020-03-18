@@ -4,11 +4,19 @@ import URL from "@candlefw/url";
 import { parser, render as $r } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
 
-import { Test } from "../types/test.js";
-import { TestAssertionError } from "../types/test_error.js";
+import { TestRig } from "../types/test_rig.js";
+import { TestError } from "../test_running/test_error.js";
 import { compileTest } from "../compile/compile.js";
+import { TestSuite } from "../types/test_suite.js";
+import { Reporter } from "../main.js";
 
-export async function loadTests(url_string, suite) {
+/**
+ * Creates TestRigs from a test file.
+ * 
+ * @param {string} url_string - A path to the test file.
+ * @param {TestSuite} suite - A TestSuite that the TestRigs will be attached to.
+ */
+export async function loadTests(url_string: string, suite: TestSuite, reporter: Reporter): Promise<void> {
 
     try {
 
@@ -16,7 +24,9 @@ export async function loadTests(url_string, suite) {
             url = new URL(path.resolve(process.cwd(), url_string)),
             text = await url.fetchText(),
             ast = parser(text),
-            { raw_tests } = await compileTest(ast);
+            { raw_tests } = await compileTest(ast, reporter);
+
+        let source = "";
 
         for (const { error: e, ast, imports, name, pos, index } of raw_tests) {
 
@@ -53,20 +63,20 @@ export async function loadTests(url_string, suite) {
                             });
                         }
                     }
-                }
-                catch (e) {
+                } catch (e) {
                     error = e;
                 }
                 args.push("$cfw", "AssertionError",
                     ...import_arg_names);
-            }
 
-            const source = $r(ast, map);
+                source = $r(ast, map);
+            }
 
             map.sourceContent.push(text);
 
-            suite.tests.push(<Test>{
+            suite.rigs.push(<TestRig>{
                 index,
+                suite_index: suite.index,
                 name,
                 source,
                 import_module_sources,
@@ -82,7 +92,7 @@ export async function loadTests(url_string, suite) {
         }
 
     } catch (e) {
-        suite.tests.length = 0;
-        suite.error = new TestAssertionError(e, 0, 0, "", "");
+        suite.rigs.length = 0;
+        suite.error = new TestError(e, 0, 0, "", "");
     }
 }

@@ -1,16 +1,26 @@
+/**
+ * The primary export is a function
+ * @module compile
+ */
+
 import { render as $r, MinTreeNode, exp, stmt } from "@candlefw/js";
 
 import { CompileResults } from "../types/compiler_result.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
 import { RawTest } from "../types/raw_test.js";
 import { compileStatements } from "./compile_statements.js";
-import { compileTestSite } from "./compile_test_site.js";
+import { compileTestSite } from "./compile_test_rig.js";
+import { Reporter } from "../main.js";
 
 
-/*
- * Compiles test blocks from ast objects.
+/**
+ * Compiles TestRigs from ast objects.
+ * 
+ * @param {MinTreeNode} ast 
+ * 
+ * @param {Reporter} reporter - Users reporter.color to add assertion messaging syntax highlights.
  */
-export async function compileTest(ast: MinTreeNode) {
+export async function compileTest(ast: MinTreeNode, reporter: Reporter) {
 
     const
         imports: Array<ImportDependNode> = [],
@@ -28,7 +38,7 @@ export async function compileTest(ast: MinTreeNode) {
 
         site.index = i++;
 
-        const test = compileTestSite(site.name, site, scope.imp);
+        const test = compileTestSite(site.name, site, scope.imp, reporter);
 
         if (test)
             tests.push(test);

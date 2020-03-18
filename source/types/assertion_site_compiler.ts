@@ -1,15 +1,16 @@
 import { MinTreeNodeClass, MinTreeNodeType, MinTreeNode } from "@candlefw/js";
+import { Reporter } from "../main";
 
 /**
  * An object used to compile double parenthesize bindings into a testable and reportable
  * expression.
  */
-export type AssertionSiteCompiler = {
+export interface AssertionSiteCompiler {
 
     /**
      * The signature of the first MinTreeNode in the double parenthesize expression.
      * 
-     * Can either be a MinTreeNodeType or bitwise OR set of MinTreeNodeClasses
+     * Can either be a MinTreeNodeType value or bitwise OR flag of MinTreeNodeClasses values.
      * 
      * Uses a bitwise AND test against the node's type to determine whether this
      * particular binding should advanced to the next stage.
@@ -32,8 +33,9 @@ export type AssertionSiteCompiler = {
 
     /**
      * Return an exception message that will be used as the report if the test fails.
+     *
      */
-    getExceptionMessage: (node: MinTreeNode) => {
+    getExceptionMessage: (node: MinTreeNode, reporter: Reporter) => {
 
         /**
          * Syntax highlighting to add to source trace. 
@@ -50,6 +52,9 @@ export type AssertionSiteCompiler = {
          */
         match: string;
 
+        /**
+         * Original column number of the 
+         */
         column: number,
 
         line: number;

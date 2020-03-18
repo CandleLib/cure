@@ -1,22 +1,22 @@
 import { FSWatcher } from "fs";
 import { Runner } from "../test_running/runner.js";
-import { Suite } from "./suite";
+import { TestSuite } from "./test_suite";
 import { TestResult } from "./test_result.js";
 import { Reporter } from "./reporter.js";
 
-export type Outcome = {
+export interface Outcome {
     error?: Error,
     FAILED: boolean,
-    results: Array<TestResult>
+    results: Array<TestResult>;
 }
 
-export type Globals = {
+export interface Globals {
 
-    suites: Map<string, Suite>;
+    suites: Map<string, TestSuite>;
 
     reporter: Reporter;
 
-    runner: Runner;
+    runner?: Runner;
 
     watchers: FSWatcher[];
 

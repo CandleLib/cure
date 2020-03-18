@@ -1,12 +1,82 @@
 import { xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
-export const c_pending = xtF(xtColor(col_x11.Gray30)),
-    c_done = xtF(xtColor(col_x11.Grey50)),
-    c_success = xtF(xtColor(col_x11.SeaGreen3), xtBold),
-    c_fail = xtF(xtColor(col_x11.Red), xtBold),
-    c_reset = xtF(xtReset),
-    ref = xtF(xtBold, xtColor(col_x11.LightGoldenrod)),
-    fail = xtF(xtBold, xtColor(col_x11.SteelBlue1)),
-    val = xtF(xtBold, xtColor(col_x11.Chartreuse3)),
-    bg = xtF(xtBold, xtColor(col_x11.Gray23)),
-    resB = xtF(xtReset),
-    rst = xtF(xtReset);
+
+export const
+    rst = xtF(xtReset),
+    /**
+     * Background color for characters of minimal importance.
+     */
+    bkgr = xtF(xtColor(col_x11.Gray19)),
+    /**
+     * Color to denote test failure.
+     */
+    fail = xtF(xtColor(col_x11.Red)),
+
+    /**
+     * Color to denote test success.
+     */
+    pass = xtF(xtColor(col_x11.DarkOliveGreen1)),
+
+    /**
+     * General color to highlight an object name such as a member expression or variable.
+     */
+    objA = xtF(xtColor(col_x11.Orange)),
+    /**
+     * General color to highlight an object name such as a member expression or variable.
+     */
+    objB = xtF(xtColor(col_x11.Aquamarine1)),
+    /**
+     * General color to highlight an object name such as a member expression or variable.
+     */
+    objC = xtF(xtColor(col_x11.Plum4)),
+    /**
+     * General color to highlight an object name such as a member expression or variable.
+     */
+    objD = xtF(xtColor(col_x11.Firebrick4)),
+    /**
+     * General color to highlight an literal value, such 0, true, null, undefined
+     */
+    valA = xtF(xtColor(col_x11.CadetBlue2)),
+    /**
+     * General color to highlight an literal value, such 0, true, null, undefined
+     */
+    valB = xtF(xtColor(col_x11.CadetBlue4)),
+    /**
+     * General color to highlight an literal value, such 0, true, null, undefined
+     */
+    valC = xtF(xtColor(col_x11.DarkSlateBlue)),
+    /**
+     * General color to highlight an literal value, such 0, true, null, undefined
+     */
+    valD = xtF(xtColor(col_x11.MediumSlateBlue)),
+    /**
+     * Neutral color to highlight a message such a as tip.
+     */
+    msgA = xtF(xtColor(col_x11.Gray69)),
+    /**
+     * Neutral color to highlight a message such a as tip.
+     */
+    msgB = xtF(xtColor(col_x11.Grey50)),
+    /**
+     * Neutral color to highlight a message such a as tip.
+     */
+    msgC = xtF(xtColor(col_x11.Gray61)),
+    /**
+     * Neutral color to highlight a message such a as tip.
+     */
+    msgD = xtF(xtColor(col_x11.Grey50)),
+    /**
+     * Highlight color to highlight a non test symbol.
+     */
+    symA = xtF(xtColor(col_x11.Gold)),
+    /**
+     * Highlight color to highlight a non test symbol.
+     */
+    symB = xtF(xtColor(col_x11.Gold3)),
+    /**
+     * Highlight color to highlight a non test symbol.
+     */
+    symC = xtF(xtColor(col_x11.Tan2)),
+    /**
+     * Highlight color to highlight a non test symbol.
+     */
+    symD = xtF(xtColor(col_x11.Tan4));

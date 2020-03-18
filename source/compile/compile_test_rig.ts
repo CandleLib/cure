@@ -1,8 +1,8 @@
 import { MinTreeNodeType as $, MinTreeNode, parser } from "@candlefw/js";
 import { traverse, extract, replace } from "@candlefw/conflagrate";
 
-import { TestAssertionError } from "../types/test_error.js";
-import { TestSite } from "../types/test_site.js";
+import { TestError } from "../test_running/test_error.js";
+import { AssertionSite } from "../types/assertion_site.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
 import { RawTest } from "../types/raw_test.js";
 
@@ -10,15 +10,16 @@ import { compileAssertionSite } from "./compile_assertion_site.js";
 import { getUsedStatements } from "./get_used_statements.js";
 import { replaceNodes } from "./replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
+import { Reporter } from "../main.js";
 
-export function compileTestSite(name: string, test_site: TestSite, imports: ImportDependNode[]): RawTest {
+export function compileTestSite(name: string, test_site: AssertionSite, imports: ImportDependNode[], reporter: Reporter): RawTest {
 
     const i = [];
 
     let
         { node, scope, names, index, start } = test_site,
         { root, nodes } = scope,
-        assertion_statement = compileAssertionSite(node);
+        assertion_statement = compileAssertionSite(node, reporter);
 
     if (!assertion_statement) {
 
@@ -29,7 +30,7 @@ export function compileTestSite(name: string, test_site: TestSite, imports: Impo
             index,
             imports: [],
             suite: "", name, ast: null, pos: node.pos,
-            error: new TestAssertionError(
+            error: new TestError(
                 `Could not find a SiteCompiler for MinTreeNode [${$[expr.type]}]`,
                 expr.pos.line,
                 expr.pos.char,

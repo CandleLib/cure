@@ -1,9 +1,10 @@
-import { Test } from "./test.js";
+import { TestRig } from "./test_rig.js";
+import { TestError } from "../test_running/test_error.js";
 
 /**
  * Result object returned after running a test.
  */
-export type TestResult = {
+export interface TestResult {
 
     /**
      * Millisecond timestamp for start of test.
@@ -16,17 +17,18 @@ export type TestResult = {
     end: number;
 
     /**
-     * Number of milleseconds taken to run test.
+     * Number of milleseconds taken to run the test.
      */
     duration: number;
+
 
     /**
      * Original test data.
      */
-    test: Test;
+    test: TestRig;
 
     /**
-     * True if the test exceeded duration limit.
+     * True if the test exceeded the time limit.
      *
      * Default limit is 2000 milliseconds.
      */
@@ -36,5 +38,5 @@ export type TestResult = {
      * An error object if some error was thrown during the execution of 
      * the test.
      */
-    error: Error | null;
+    error: TestError;
 };

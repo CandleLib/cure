@@ -1,7 +1,7 @@
 import { MinTreeNodeType as $, ext, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
 import { traverse, bit_filter, make_skippable, skip_root, extract } from "@candlefw/conflagrate";
 
-import { TestSite } from "../types/test_site.js";
+import { AssertionSite } from "../types/assertion_site.js";
 import { Scope } from "../types/scope.js";
 import { DependGraphNode } from "../types/depend_graph_node.js";
 
@@ -18,11 +18,11 @@ export function compileStatements(
     root_nodes = null,
     USE_ALL = false): {
         scope: Scope;
-        test_sites: TestSite[];
+        test_sites: AssertionSite[];
     } {
 
     const
-        test_sites: TestSite[] = [],
+        test_sites: AssertionSite[] = [],
         scope: Scope = {
             root,
             nodes: root_nodes,
@@ -70,19 +70,20 @@ export function compileStatements(
             case $.FunctionDeclaration: {
 
                 const funct = ext(node);
-
+                //@ts-ignore
                 if (funct.name.value == "AFTER_EACH") {
 
                     scope.pragmas.push({
                         type: "AE",
-                        nodes: sanitize(funct).body
+                        nodes: sanitize(funct).body.nodes || []
                     });
                 }
+                //@ts-ignore
                 else if (funct.name.value == "BEFORE_EACH") {
 
                     scope.pragmas.push({
                         type: "BE",
-                        nodes: sanitize(funct).body
+                        nodes: sanitize(funct).body.nodes || []
                     });
                 }
 
@@ -123,7 +124,7 @@ export function compileStatements(
                         .then(bit_filter("type", MinTreeNodeClass.IDENTIFIER))
                     ) names.add(id.value);
 
-                    test_sites.push(<TestSite>{
+                    test_sites.push(<AssertionSite>{
                         start: scope.stmts.length,
                         node,
                         name,

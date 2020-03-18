@@ -1,23 +1,23 @@
 import fs from "fs";
 
-import { c_fail, c_reset } from "./colors.js";
+import { rst } from "./colors.js";
 
 import { runTests } from "../test_running/run_tests.js";
 import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
 import { fatalExit } from "./fatal_exit.js";
 import { loadTests } from "./load_tests.js";
+import { Globals } from "../types/globals.js";
+import { TestSuite } from "../types/test_suite.js";
 
-export async function loadSuite(suite, globals) {
+export async function loadSuite(suite: TestSuite, globals: Globals) {
 
-    const { runner, reporter, WATCH } = globals;
+    const { reporter, WATCH } = globals;
 
-    suite.tests.length = 0;
+    suite.rigs.length = 0;
 
     suite.error = null;
 
-    suite.name = suite.origin + "";
-
-    await loadTests(suite.origin, suite);
+    await loadTests(suite.origin, suite, reporter);
 
     if (WATCH) {
 
@@ -30,17 +30,15 @@ export async function loadSuite(suite, globals) {
 
                     globals.PENDING = true;
 
-                    suite.tests.length = 0;
+                    suite.rigs.length = 0;
 
                     suite.error = null;
 
-                    suite.name = suite.origin + "";
-
-                    await loadTests(suite.origin, suite);
+                    await loadTests(suite.origin, suite, reporter);
 
                     handleWatchOfRelativeDependencies(suite, globals);
 
-                    await runTests(suite.tests.slice(), [suite], globals);
+                    await runTests(suite.rigs.slice(), [suite], globals);
 
                     globals.PENDING = false;
                 }
@@ -49,7 +47,7 @@ export async function loadSuite(suite, globals) {
             globals.watchers.push(watcher);
         }
         catch (e) {
-            fatalExit(e, c_fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + c_reset, globals);
+            fatalExit(e, reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
         }
     }
 }

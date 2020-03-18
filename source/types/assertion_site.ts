@@ -1,7 +1,7 @@
 import { MinTreeNode } from "@candlefw/js";
 import { Scope } from "./scope";
 
-export type TestSite = {
+export interface AssertionSite {
     /**
      * Index of the assertion site within the source file. Top Down. 
      */

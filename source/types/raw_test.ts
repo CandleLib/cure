@@ -1,8 +1,8 @@
 import { MinTreeNode } from "@candlefw/js";
-import { Lexer } from "@candlefw/whind";
+import { Lexer } from "@candlefw/wind";
 import { ImportDependNode } from "./import_depend_node";
 
-export type RawTest = {
+export interface RawTest {
     /**
      * Index of the assertion site within the source file. Top Down. 
      */

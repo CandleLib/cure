@@ -1,7 +1,15 @@
+/**
+ * @module cfw.test
+ */
+
 import { Outcome } from "./globals";
 import { Reporter } from "./reporter";
 
-export type TestFrame = {
+/**
+ * Returned from a call to `createTestFrame`. Provides an
+ * interface to manage active tests. 
+ */
+export interface TestFrame {
 
     /**
      * True if the argument WATCH was passed to test.
@@ -23,5 +31,5 @@ export type TestFrame = {
     /**
      * Set the reporter used to log test data.
      */
-    setReporter: (reporter: Reporter) => void
+    setReporter: (reporter: Reporter) => void;
 };

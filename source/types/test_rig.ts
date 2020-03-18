@@ -1,7 +1,10 @@
-import { Lexer } from "@candlefw/whind";
-import { TestAssertionError } from "./test_error";
+import { Lexer } from "@candlefw/wind";
+import { TestError } from "../test_running/test_error";
 
-export type ModuleSpecifier = {
+/**
+ * Maps a module name to a file path.
+ */
+export interface ModuleSpecifier {
 
     /**
      * Name of a module export.
@@ -14,7 +17,10 @@ export type ModuleSpecifier = {
     module_name: string;
 };
 
-export type Source = {
+/**
+ * Information
+ */
+export interface ImportSource {
 
     /**
      * Resolved URL of the module. 
@@ -27,7 +33,7 @@ export type Source = {
     import_names: string[];
 
     /**
-     * url of the module
+     * URL of the module
      */
     module_source: string;
 
@@ -37,20 +43,18 @@ export type Source = {
     IS_RELATIVE: boolean;
 };
 
-export type Test = {
+/**
+ * Contains a fully compiled test script that can be run. 
+ */
+export interface TestRig {
 
     /**
-     * Index of the assertion site within the source file. Top Down. 
-     */
-    index: number,
-
-    /**
-     * Name of the test. Includes suite name and redudant name info.
+     * Name of the test. Includes suite name and redundant name info.
      */
     name: string;
 
     /**
-     * A JavaScript string that will run the test. 
+     * The test compiled into JavaScript script string. 
      */
     source: string,
 
@@ -67,7 +71,7 @@ export type Test = {
     /**
      * List of modules to import into the test harness. 
      */
-    import_module_sources: Source[];
+    import_module_sources: ImportSource[];
 
     /**
      * `true` if the test has one or more await expressions
@@ -77,11 +81,25 @@ export type Test = {
     /**
     * An error object if an exception was thrown during test compilation.
     */
-    error?: Error | TestAssertionError;
+    error?: Error | TestError;
+
     /**
-     * Position Lexer for reporting errors in source
+     * Position Lexer for mapping errors back to the source file.
      */
     pos?: Lexer;
 
-    map: string
+    /**
+     * A JSON string source map mapping the compiled test script to the original test file. 
+     */
+    map: string;
+
+    /**
+     * The index location of the test's Assertion Site within the original test file.
+     */
+    index: number;
+
+    /**
+     * The TestSuite.index value.
+     */
+    suite_index: number;
 };

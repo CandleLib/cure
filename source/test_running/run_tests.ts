@@ -4,10 +4,10 @@ import { completedRun, updateRun, startRun } from "../reporting/report.js";
 
 import { Globals } from "source/types/globals.js";
 
-import { Test } from "source/types/test.js";
-import { Suite } from "source/types/suite";
+import { TestRig } from "source/types/test_rig.js";
+import { TestSuite } from "source/types/test_suite";
 
-export async function runTests(final_tests: Test[], suites: Suite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
+export async function runTests(final_tests: TestRig[], suites: TestSuite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
 
     const { runner, reporter, outcome, WATCH } = globals,
         update_timout = 10;
