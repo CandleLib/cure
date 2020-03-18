@@ -1,7 +1,7 @@
 {
     "compileOnSave": true,
     "include": [
-        "./source/**/*"
+        "./source/**/*.ts"
     ],
     "compilerOptions": {
         "types": [
@@ -15,11 +15,15 @@
             "ES2020",
             "DOM"
         ],
+        "removeComments": true,
+        "rootDir": "./source/",
         "module": "ESNext",
         "outDir": "./build/library",
         "declarationDir": "./build/types",
         "declaration": true,
         "moduleResolution": "node",
-        "allowSyntheticDefaultImports": true
+        "allowSyntheticDefaultImports": true,
+        "sourceMap": true,
+        "inlineSources": true
     }
 }
