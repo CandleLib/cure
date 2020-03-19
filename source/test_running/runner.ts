@@ -48,9 +48,10 @@ export class Runner {
     }
 
     destroy() {
-
-        for (const wkr of this.workers)
-            wkr.target.terminate();
+        for (const wkr of this.workers) {
+            if (wkr.target)
+                wkr.target.terminate();
+        }
     }
 
     * run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false) {
