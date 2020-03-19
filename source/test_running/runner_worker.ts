@@ -1,7 +1,7 @@
 import { parentPort } from "worker_threads";
 import { performance } from "perf_hooks";
 import { TestResult } from "../types/test_result";
-import { TestRig } from "../types/test_rig";
+import { TestRig } from "../types/test_rig.js";
 import { TestError } from "./test_error.js";
 import { harness } from "./test_harness.js";
 
@@ -9,12 +9,12 @@ const
     ImportedModules: Map<string, any> = new Map(),
     AsyncFunction = (async function () { }).constructor;
 
-parentPort.on("message", async (msg) => {
+async function RunTest(msg) {
 
     const
         { test }: { test: TestRig; } = msg,
         { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
-        result: TestResult = { start: performance.now(), end: 0, duration: 0, error: null, test, TIMED_OUT: false };
+        result: TestResult = { start: performance.now(), end: 0, duration: 0, error: null, test, TIMED_OUT: false, PASSED: true };
 
     try {
 
@@ -35,6 +35,7 @@ parentPort.on("message", async (msg) => {
                 return module[e.module_name];
             })];
 
+
         result.start = performance.now();
 
         await testFunction.apply({}, test_args);
@@ -43,11 +44,16 @@ parentPort.on("message", async (msg) => {
 
         result.error = harness.last_error;
 
+        if (result.error)
+            result.PASSED = false;
+
     } catch (e) {
 
-        result.error = new TestError(e, test.pos.line, test.pos.char, "", "", sources, map);
+        result.error = new TestError(e, test.pos.line, test.pos.column, "", "", sources, map);
 
         result.end = performance.now();
+
+        result.PASSED = false;
     }
 
     harness.last_error = null;
@@ -55,5 +61,6 @@ parentPort.on("message", async (msg) => {
     result.duration = result.end - result.start;
 
     parentPort.postMessage(result);
+}
 
-});
+parentPort.on("message", RunTest);

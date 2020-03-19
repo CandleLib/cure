@@ -1,9 +1,10 @@
 import { Worker, workerData } from "worker_threads";
 import { performance } from "perf_hooks";
 import URL from "@candlefw/url";
-import { TestRig } from "../types/test_rig";
+import { TestRig } from "../types/test_rig.js";
+import { TestResult } from "../types/test_result";
 
-
+let nonce = 0;
 export class Runner {
 
     number_of_workers: number;
@@ -14,13 +15,17 @@ export class Runner {
 
     module_url: string;
 
+    id: number;
+
     constructor(max_workers: number = 2) {
 
         const
             finished = [],
             module_url = (process.platform == "win32")
-                ? import.meta.url.replace(/file\:\/\/\//g, "")
+                ? import.meta.url.replace(/file\:\/\/\/ /g, "")
                 : (new URL(import.meta.url)).pathname;
+
+        this.id = nonce++;
 
         this.module_url = module_url.replace("runner.js", "runner_worker.js");
 
@@ -72,7 +77,7 @@ export class Runner {
         }
 
         const
-            finished = this.finished,
+            finished: Array<TestResult> = this.finished,
             number_of_tests = tests.length;
 
         finished.length = 0;
@@ -91,9 +96,11 @@ export class Runner {
                             start: 0,
                             end: 0,
                             duration: 0,
+                            //@ts-ignore
                             error: test.error,
                             test: test,
-                            TIMED_OUT: true
+                            TIMED_OUT: true,
+                            PASSED: false
                         });
                     } else {
                         wkr.test = test;
@@ -116,9 +123,11 @@ export class Runner {
                             start: wkr.start,
                             end: wkr.start + dur,
                             duration: dur,
+                            //@ts-ignore
                             error: new Error("Test timed out at " + dur + " milliseconds"),
                             test: wkr.test,
-                            TIMED_OUT: true
+                            TIMED_OUT: true,
+                            PASSED: false
                         });
                     }
                 }

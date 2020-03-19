@@ -28,6 +28,12 @@ export interface TestResult {
     test: TestRig;
 
     /**
+     * True if the test completed without throwing an
+     * exception or timing out
+     */
+    PASSED: boolean;
+
+    /**
      * True if the test exceeded the time limit.
      *
      * Default limit is 2000 milliseconds.
