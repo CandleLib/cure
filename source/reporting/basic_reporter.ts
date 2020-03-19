@@ -17,10 +17,12 @@ function getNameData(name: string) {
     return { suites, name: name_string, sub_test_count: parseInt(sub_test_count) || 0 };
 }
 
-type SuiteData = Map<string, { tests: Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>, suites: any; }>;
+type SuiteData = { tests: Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>, suites: Map<string, SuiteData>; };
 
 export class BasicReporter implements Reporter {
+
     colors: Reporter["colors"];
+
     suites: SuiteData;
 
     time_start: number;
@@ -90,7 +92,7 @@ export class BasicReporter implements Reporter {
                     suites_ = target_suite.suites;
                 };
 
-                target_suite.tests.set(name, { name, complete: false, failed: false });
+                target_suite.tests.set(name, { name, complete: false, failed: false, duration: 0 });
 
             }
         } catch (e) {

@@ -32,4 +32,12 @@ export interface TestFrame {
      * Set the reporter used to log test data.
      */
     setReporter: (reporter: Reporter) => void;
+
+    /**
+     * The number of threads the test frame uses
+     * when running tests.
+     * 
+     * @readonly
+     */
+    number_of_workers: number;
 };
