@@ -74,6 +74,8 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
                 await runTests(suites.flatMap(suite => suite.rigs), Array.from(suites), globals, true);
 
                 globals.PENDING = false;
+
+                console.log("Waiting for changes...");
             }
         });
 
