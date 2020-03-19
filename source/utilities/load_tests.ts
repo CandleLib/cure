@@ -66,7 +66,7 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                 } catch (e) {
                     error = e;
                 }
-                args.push("$cfw", "AssertionError",
+                args.push("$harness", "AssertionError",
                     ...import_arg_names);
 
                 source = $r(ast, map);
