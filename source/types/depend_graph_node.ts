@@ -7,4 +7,6 @@ export interface DependGraphNode {
     imports: Set<string>;
 
     exports: Set<string>;
+
+    AWAIT: boolean;
 };

@@ -12,26 +12,33 @@ import { replaceNodes } from "./replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 import { Reporter } from "../main.js";
 
-export function compileTestSite(name: string, test_site: AssertionSite, imports: ImportDependNode[], reporter: Reporter): RawTest {
+export function compileTestRig(
+    { name, suite_names },
+    { node, scope, names, index, start, AWAIT }: AssertionSite,
+    imports: ImportDependNode[],
+    reporter: Reporter)
+    : RawTest {
 
     const i = [];
 
     let
-        { node, scope, names, index, start } = test_site,
+        IS_ASYNC = AWAIT,
         { root, nodes } = scope,
-        assertion_statement = compileAssertionSite(node, reporter);
+        { ast: assertion_statement, optional_name } = compileAssertionSite(node, reporter);
 
     if (!assertion_statement) {
 
-        const expr = test_site.node.nodes[0].nodes[0].nodes[0];
+        const expr = node.nodes[0].nodes[0].nodes[0];
 
         return {
+            name: [...suite_names, (name || optional_name)].join("-->"),
             IS_ASYNC: false,
             index,
             imports: [],
-            suite: "", name, ast: null, pos: node.pos,
+            ast: null,
+            pos: node.pos,
             error: new TestError(
-                `Could not find a SiteCompiler for MinTreeNode [${$[expr.type]}]`,
+                `Could not find a AssertionSiteCompiler for MinTreeNode [${$[expr.type]}]`,
                 expr.pos.line,
                 expr.pos.char,
                 "",
@@ -42,11 +49,14 @@ export function compileTestSite(name: string, test_site: AssertionSite, imports:
 
         let statements = [];
 
-        const { statements: s, names: n } = getUsedStatements(scope, start, names);
+        const { statements: s, names: n, AWAIT } = getUsedStatements(scope, start, names);
+
+        if (AWAIT)
+            IS_ASYNC = true;
 
         statements = s;
 
-        statements.splice(test_site.start, 0, assertion_statement);
+        statements.splice(start, 0, assertion_statement);
 
         names = n;
 
@@ -75,17 +85,18 @@ export function compileTestSite(name: string, test_site: AssertionSite, imports:
             }
         }
 
-        if (scope.parent)
-            statements = [...compileOuterScope(scope.parent, names), ...statements];
+        const async_check = { is: false };
 
+        if (scope.parent)
+            statements = [...compileOuterScope(scope.parent, names, async_check), ...statements];
         //Add declarations and identify imports. 
         const ast = parser(";");
 
+        if (async_check.is)
+            IS_ASYNC = true;
+
         ast.nodes = statements;
 
-        /**
-         * for (const decl of decl)
-         */
         for (const imp of imports) {
             for (const id of imp.import_names)
                 if (names.has(id.import_name)) {
@@ -93,6 +104,7 @@ export function compileTestSite(name: string, test_site: AssertionSite, imports:
                     break;
                 }
         }
-        return { name, suite: name, ast, imports: i, pos: node.pos, index, IS_ASYNC: false };
+
+        return { name: [...suite_names, (name || optional_name)].join("-->"), ast, imports: i, pos: node.pos, index, IS_ASYNC };
     }
 }

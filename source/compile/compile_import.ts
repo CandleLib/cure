@@ -4,15 +4,17 @@ import URL from "@candlefw/url";
 import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_extended_node";
 import { ImportDependNode } from "../types/import_depend_node";
 
-export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNode[]) {
+export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNode[], full_origin_path: string) {
 
-    let url = new URL(<string>ext(node, true).from.url.value);
+    const module_specifier = <string>ext(node, true).from.url.value;
+
+    let url = new URL(module_specifier);
 
     const obj = <ImportDependNode>{
         imports: new Set,
         exports: new Set,
         import_names: [],
-        module_source: url.path,
+        module_source: url.IS_RELATIVE ? url.path : module_specifier,
         IS_RELATIVE: url.IS_RELATIVE
     };
 

@@ -4,7 +4,7 @@ import { traverse, extract, replace } from "@candlefw/conflagrate";
 import { getUsedStatements } from "./get_used_statements.js";
 import { replaceNodes } from "./replace_nodes.js";
 
-export function compileOuterScope(scope, names) {
+export function compileOuterScope(scope, names, async_check = { is: false }) {
 
     let statements = null;
 
@@ -12,7 +12,9 @@ export function compileOuterScope(scope, names) {
         start = scope.offset,
         root = scope.root,
         nodes = scope.nodes,
-        { statements: s, names: n } = getUsedStatements(scope, start, names);
+        { statements: s, names: n, AWAIT } = getUsedStatements(scope, start, names);
+
+    if (AWAIT) async_check.is = true;
 
     names = n;
 
@@ -32,7 +34,7 @@ export function compileOuterScope(scope, names) {
     }
 
     if (scope.parent)
-        return [...compileOuterScope(scope.parent, names), ...statements];
+        return [...compileOuterScope(scope.parent, names, async_check), ...statements];
     else
         return statements;
 }

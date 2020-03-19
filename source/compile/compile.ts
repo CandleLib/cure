@@ -9,7 +9,7 @@ import { CompileResults } from "../types/compiler_result.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
 import { RawTest } from "../types/raw_test.js";
 import { compileStatements } from "./compile_statements.js";
-import { compileTestSite } from "./compile_test_rig.js";
+import { compileTestRig } from "./compile_test_rig.js";
 import { Reporter } from "../main.js";
 
 
@@ -20,7 +20,7 @@ import { Reporter } from "../main.js";
  * 
  * @param {Reporter} reporter - Users reporter.color to add assertion messaging syntax highlights.
  */
-export async function compileTest(ast: MinTreeNode, reporter: Reporter) {
+export async function compileTest(ast: MinTreeNode, reporter: Reporter, full_origin_path: string) {
 
     const
         imports: Array<ImportDependNode> = [],
@@ -28,7 +28,7 @@ export async function compileTest(ast: MinTreeNode, reporter: Reporter) {
 
     let i = 0;
 
-    const { test_sites, scope } = compileStatements(ast);
+    const { test_sites, scope } = compileStatements(ast, full_origin_path);
 
     /*********************************************************
      * Assertion test sites.
@@ -38,7 +38,7 @@ export async function compileTest(ast: MinTreeNode, reporter: Reporter) {
 
         site.index = i++;
 
-        const test = compileTestSite(site.name, site, scope.imp, reporter);
+        const test = compileTestRig(site.name_data, site, scope.imp, reporter);
 
         if (test)
             tests.push(test);

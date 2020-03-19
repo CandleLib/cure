@@ -26,7 +26,7 @@ parentPort.on("message", async (msg) => {
             }
         }
 
-        const testFunction = new (test.IS_ASYNC ? Function : Function)(...[...args, source]),
+        const testFunction = (test.IS_ASYNC ? AsyncFunction : Function)(...[...args, source]),
 
             test_args = [harness, TestError, ...spec.map(e => {
 

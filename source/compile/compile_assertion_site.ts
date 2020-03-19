@@ -4,7 +4,14 @@ import { traverse, bit_filter, make_replaceable, extract, replace } from "@candl
 import { selectBindingCompiler } from "./assertion_compiler_manager.js";
 import { Reporter } from "../main.js";
 
-export function compileAssertionSite(node: MinTreeNode, reporter: Reporter): MinTreeNode {
+/**
+ * Compiles an Assertion Site. 
+ * 
+ * @param node - An expression node within the double parenthesize Assertion Site. 
+ * @param reporter - A Reporter for color data.
+ */
+export function compileAssertionSite(node: MinTreeNode, reporter: Reporter)
+    : { ast: MinTreeNode, optional_name: string; } {
 
     const
         expr = node.nodes[0].nodes[0].nodes[0];
@@ -26,7 +33,10 @@ export function compileAssertionSite(node: MinTreeNode, reporter: Reporter): Min
                 ];
 
             const
-                thr = stmt(`if(${js_string}) $cfw.setException(new AssertionError(${error_data}));`),
+                thr =
+                    message ?
+                        stmt(`if(${js_string}) $harness.setException(new AssertionError(${error_data}));`)
+                        : stmt(`if(${js_string});`),
 
                 landing = { ast: null };
 
@@ -44,10 +54,10 @@ export function compileAssertionSite(node: MinTreeNode, reporter: Reporter): Min
                     node.replace(expr);
             }
 
-            return landing.ast;
+            return { ast: landing.ast, optional_name: match };
         }
     }
 
     //create new script
-    return null;
+    return { ast: null, optional_name: "unknown test" };
 }

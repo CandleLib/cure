@@ -24,11 +24,11 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
             url = new URL(path.resolve(process.cwd(), url_string)),
             text = await url.fetchText(),
             ast = parser(text),
-            { raw_tests } = await compileTest(ast, reporter);
+            { raw_tests } = await compileTest(ast, reporter, url.path);
 
         let source = "";
 
-        for (const { error: e, ast, imports, name, pos, index } of raw_tests) {
+        for (const { error: e, ast, imports, name, pos, index, IS_ASYNC } of raw_tests) {
 
             const
                 map = createSourceMap(),
@@ -72,7 +72,8 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                 source = $r(ast, map);
             }
 
-            map.sourceContent.push(text);
+            //map.sourceContent.push(text);
+            map.sources.set(url_string, 0);
 
             suite.rigs.push(<TestRig>{
                 index,
@@ -81,11 +82,11 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                 source,
                 import_module_sources,
                 import_arg_specifiers,
-                map: createSourceMapJSON(map, <string>text),
+                map: createSourceMapJSON(map),
                 origin: url_string,
                 test_function_object_args: args,
                 RUN: true,
-                IS_ASYNC: false,
+                IS_ASYNC,
                 error,
                 pos
             });

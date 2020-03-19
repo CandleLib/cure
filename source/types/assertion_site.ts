@@ -11,9 +11,11 @@ export interface AssertionSite {
 
     node: MinTreeNode;
 
-    name: string;
+    name_data: { name: string, suite_names: string[]; };
 
     scope: Scope;
 
     names: Set<string>;
+
+    AWAIT: boolean;
 };
