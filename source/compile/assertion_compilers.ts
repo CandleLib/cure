@@ -2,7 +2,7 @@ import { render as $r, MinTreeNodeType, MinTreeNodeClass, ext } from "@candlefw/
 
 import { AssertionSiteCompiler } from "../types/assertion_site_compiler.js";
 
-import { rst } from "../utilities/colors.js";
+import { rst, valD } from "../utilities/colors.js";
 
 function sanitizeTemplate(string) {
     return string;
@@ -67,7 +67,7 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
                 message: `${fail}Expected ${$(left_value)} ${equality_map[node.symbol]} ${$(right_value)}`,
                 highlight: [objA + $r(left), symA + node.symbol, objB + $r(right) + fail].join(" "),
                 match: node.pos.slice(),
-                column: right.pos.char - equal.symbol.length - 1,
+                column: right.pos.column - equal.symbol.length - 1,
                 line: right.pos.line
             };
         },
@@ -156,8 +156,94 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
                 message: `${fail}Expected ${bkgr}[${objA + unary.expression.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral($harness.regA)}${bkgr}]${fail} to throw an exception${fail}`,
                 highlight: objA + unary.pos.slice() + fail,
                 match: node.pos.slice(),
-                column: node.nodes[0].pos.char,
+                column: node.nodes[0].pos.column,
                 line: 0
+            };
+        },
+    },
+
+    <AssertionSiteCompiler>{
+
+        signature: MinTreeNodeType.Parenthesized,
+
+        test: node => {
+            return true;
+        },
+
+        build: node => {
+            return `void ${node.pos.slice()}`;
+        },
+
+        getExceptionMessage: (node, rp) => {
+
+            const
+
+                { fail, bkgr, symA, objA, valA, objB, valB, msgA } = rp.colors;
+
+            return {
+                message: ``,
+                highlight: [valA + node.pos.slice() + fail].join(" "),
+                match: node.pos.slice(),
+                column: node.pos.column + 1,
+                line: node.pos.line
+            };
+        },
+    },
+
+    <AssertionSiteCompiler>{
+
+        signature: MinTreeNodeClass.IDENTIFIER,
+
+        test: node => {
+            return true;
+        },
+
+        build: node => {
+            return `true`;
+        },
+
+        getExceptionMessage: (node, rp) => {
+
+            const
+
+                { fail, objA, msgA, valA, bkgr, symA } = rp.colors;
+
+            return {
+                message: `${fail} Identifier  ${bkgr}[${objA + node.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral(${node.pos.slice()})}${bkgr}]${fail} does not provide any useful test information.`
+                    + `\n    ${msgA}Should this have been a ${valD}Call Expression${msgA}?${fail}\n`,
+                highlight: objA + node.pos.slice() + fail,
+                match: node.pos.slice(),
+                column: node.pos.column,
+                line: node.pos.line
+            };
+        },
+    },
+
+    <AssertionSiteCompiler>{
+
+        signature: MinTreeNodeType.MemberExpression,
+
+        test: node => {
+            return true;
+        },
+
+        build: node => {
+            return `true`;
+        },
+
+        getExceptionMessage: (node, rp) => {
+
+            const
+
+                { fail, objA, msgA, valA, bkgr, symA } = rp.colors;
+
+            return {
+                message: `${fail} Identifier  ${bkgr}[${objA + node.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral(${node.pos.slice()})}${bkgr}]${fail} does not provide any useful test information.`
+                    + `\n    ${msgA}Should this have been a ${valD}Call Expression${msgA}?${fail}\n`,
+                highlight: objA + node.pos.slice() + fail,
+                match: node.pos.slice(),
+                column: node.pos.column,
+                line: node.pos.line
             };
         },
     },
@@ -195,7 +281,7 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
                     + `\n    ${msgA}Should this have been an Equality Expression or Relational Expression?${fail}\n`,
                 highlight: [valA + $r(left), rst + node.symbol, fail + $r(right) + rst + fail].join(" "),
                 match: node.pos.slice(),
-                column: right.pos.char - assign.symbol.length - 1,
+                column: right.pos.column - assign.symbol.length - 1,
                 line: right.pos.line
             };
         },
