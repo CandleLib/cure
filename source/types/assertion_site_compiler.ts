@@ -26,14 +26,24 @@ export interface AssertionSiteCompiler {
     test: (node: MinTreeNode) => boolean,
 
     /**
-     * Return a javascript expression string that evaluates to `true` or `false`
+     * Return a JavaScript expression string that evaluates to `true` or `false`.
+     * 
+     * An assertion site is converted to:
+     * 
+     * ```javascript
+     * if( build_expression ){ 
+     *  // Code to handle a failed assertion
+     * }
+     * ```
+     * Thus, if the build expression evaluates to `true`, this will cause an assertion to fail.
+     * 
+     * 
+     * @param {MinTreeNode} node The first AST node within the double parenthesize AssertionSite.
      */
-    build: (node: MinTreeNode) => string | MinTreeNode;
-
+    build: (node: MinTreeNode) => string;
 
     /**
      * Return an exception message that will be used as the report if the test fails.
-     *
      */
     getExceptionMessage: (node: MinTreeNode, reporter: Reporter) => {
 
@@ -53,10 +63,13 @@ export interface AssertionSiteCompiler {
         match: string;
 
         /**
-         * Original column number of the 
+         * Original column number of the assertion site in the source code.
          */
         column: number,
 
+        /**
+         * Original line number of the assertion site in the source code.
+         */
         line: number;
     };
 };
