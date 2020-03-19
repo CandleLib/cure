@@ -9,53 +9,8 @@ import URL from "@candlefw/url";
 import { parser, MinTreeNodeType, ext } from "@candlefw/js";
 import { traverse, filter } from "@candlefw/conflagrate";
 
-const fsp = fs.promises;
-
-const WatchMap: Map<string, Map<string, TestSuite>> = new Map();
-
-/**
- * Reads import statements from imported files and attempts to load relative targets for watching purposes. 
- * This is done recursively until no other files can be watched.
- * 
- * @param filepath 
- * @param suite 
- * @param globals 
- */
-async function loadImports(filepath: string, suite: TestSuite, globals: Globals) {
-
-    if (WatchMap.has(filepath))
-        return;
-
-    const org_url = new URL(filepath);
-
-    if (org_url.ext == "js") {
-        try {
-            const string = await fsp.readFile(org_url.path, { encoding: "utf8" });
-
-            const ast = parser(string);
-
-
-            for (const imp of traverse(ast, "nodes").then(filter("type", MinTreeNodeType.FromClause))) {
-
-                const url = new URL(<string>ext(imp).url.value);
-
-                if (url.IS_RELATIVE) {
-
-                    const { path } = URL.resolveRelative(url, org_url);
-
-                    createRelativeFileWatcher(path, globals);
-
-                    WatchMap.get(path).set(suite.origin, suite);
-
-                    loadImports(path, suite, globals);
-                }
-            }
-
-        } catch (e) {
-            console.log(e);
-        }
-    }
-}
+const fsp = fs.promises,
+    WatchMap: Map<string, Map<string, TestSuite>> = new Map();
 
 function createRelativeFileWatcher(path: string, globals: Globals) {
 
@@ -86,6 +41,51 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
         fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
     }
 }
+
+/**
+ * Reads import statements from imported files and attempts to load relative targets for watching purposes. 
+ * This is done recursively until no other files can be watched.
+ * 
+ * @param filepath 
+ * @param suite 
+ * @param globals 
+ */
+async function loadImports(filepath: string, suite: TestSuite, globals: Globals) {
+
+
+    if (!WatchMap.has(filepath)) {
+
+        createRelativeFileWatcher(filepath, globals);
+
+        const org_url = new URL(filepath);
+
+        if (org_url.ext == "js") {
+            try {
+                const
+                    string = await fsp.readFile(org_url.path, { encoding: "utf8" }),
+                    ast = parser(string);
+
+                for (const imp of traverse(ast, "nodes").then(filter("type", MinTreeNodeType.FromClause))) {
+
+                    const url = new URL(<string>ext(imp).url.value);
+
+                    if (url.IS_RELATIVE) {
+
+                        const { path } = URL.resolveRelative(url, org_url);
+
+                        loadImports(path, suite, globals);
+                    }
+                }
+
+            } catch (e) {
+                console.log(e);
+            }
+        }
+    }
+
+    WatchMap.get(filepath).set(suite.origin, suite);
+}
+
 /**
  * Handles the creation of file watchers for relative imported modules.
  */
