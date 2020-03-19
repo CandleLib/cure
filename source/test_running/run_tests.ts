@@ -10,13 +10,13 @@ import { TestSuite } from "source/types/test_suite";
 export async function runTests(final_tests: TestRig[], suites: TestSuite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
 
     const { runner, reporter, outcome, WATCH } = globals,
-        update_timout = 10;
+        update_timout = 0;
 
     let FAILED = false, t = update_timout;
 
     await startRun(final_tests, suites, reporter);
 
-    outcome.results.length = 0
+    outcome.results.length = 0;
 
     for (const res of runner.run(final_tests, RELOAD_DEPENDS)) {
 
@@ -24,21 +24,26 @@ export async function runTests(final_tests: TestRig[], suites: TestSuite[], glob
 
             outcome.results.push(...res);
 
-            if (WATCH && t-- < 0) {
-
-                t = update_timout;
-                updateRun(outcome.results, suites, reporter);
-            }
+            //if (t-- < 0) {
+            updateRun(outcome.results, suites, reporter);
+            t = update_timout;
+            //}
         }
-        await spark.sleep(1);
+        await spark.sleep(0);
     }
 
+    outcome.results
+        .sort((a, b) => a.test.index < b.test.index ? -1 : 1)
+        .sort((a, b) => a.test.suite_index < b.test.suite_index ? -1 : 1);
+
     try {
-        FAILED = await completedRun(outcome.results, suites, reporter, WATCH ? undefined : console);
+        FAILED = await completedRun(outcome.results, suites, reporter);
     } catch (e) {
         FAILED = true;
         console.error(e);
     }
+
+
 
     outcome.FAILED = FAILED;
 

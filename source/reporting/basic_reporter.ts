@@ -7,24 +7,28 @@ import { TestResult } from "../types/test_result.js";
 import { rst } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
 import { TestSuite } from "../types/test_suite.js";
+import { TestRig } from "../types/test_rig.js";
 
 function getNameData(name: string) {
-    const name_parts = name.split(".");
+    const name_parts = name.split("-->");
     const suites = name_parts.slice(0, -1);
     const [, name_string, , sub_test_count] = name_parts.pop().match(/([^\@]+)(\@\:(\d+))?/);
 
     return { suites, name: name_string, sub_test_count: parseInt(sub_test_count) || 0 };
 }
 
+type SuiteData = Map<string, { tests: Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>, suites: any; }>;
+
 export class BasicReporter implements Reporter {
     colors: Reporter["colors"];
-    suites: Map<string, any>;
+    suites: SuiteData;
 
     time_start: number;
 
     constructor() { this.suites = null; this.time_start = 0; }
 
-    render(suites = { suites: this.suites }, prepend = "") {
+    render(suites = this.suites, prepend = "") {
+
         const strings = [], { fail, msgA, pass, msgB } = this.colors;
 
         for (const [key, suite] of suites.suites.entries()) {
@@ -32,6 +36,7 @@ export class BasicReporter implements Reporter {
             strings.push(prepend + key + ":");
 
             for (const test of suite.tests.values()) {
+
 
                 if (test.complete) {
                     const dur = ` - ${((test.duration * (test.duration < 1 ? 1000 : 1)) | 0)}${test.duration < 1 ? "μs" : "ms"}`;
@@ -55,58 +60,75 @@ export class BasicReporter implements Reporter {
         return strings.join("\n");
     }
 
-    async start(pending_tests, suites, terminal: CLITextDraw | Console) {
+    async start(pending_tests: TestRig[], suites: TestSuite[], terminal: CLITextDraw | Console) {
+
+        pending_tests = pending_tests.slice()
+            .sort((a, b) => a.index < b.index ? -1 : 1)
+            .sort((a, b) => a.suite_index < b.suite_index ? -1 : 1);
 
         this.time_start = performance.now();
 
         //order tests according to suite
-        this.suites = new Map;
+        this.suites = { suites: new Map, tests: new Map };
+
+        try {
 
 
-        for (const e of pending_tests) {
-            let suites_ = this.suites, target_suite = null;
+            for (const e of pending_tests) {
 
-            const { suites, name, sub_test_count } = getNameData(e.name);
+                let suites_ = this.suites.suites, target_suite = this.suites;
 
-            for (const suite of suites) {
-                if (!suites_.has(suite)) {
-                    suites_.set(suite, { tests: new Map(), suites: new Map() });
-                }
-                target_suite = suites_.get(suite);
-                suites_ = target_suite.suites;
+                const { suites, name } = getNameData(e.name);
+
+                for (const suite of suites) {
+
+                    if (!suites_.has(suite))
+                        suites_.set(suite, { tests: <Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>>new Map(), suites: new Map() });
+
+                    target_suite = suites_.get(suite);
+
+                    suites_ = target_suite.suites;
+                };
+
+                target_suite.tests.set(name, { name, complete: false, failed: false });
+
             }
-
-            target_suite.tests.set(name, { name, complete: false, failed: false });
+        } catch (e) {
+            console.log(e);
         }
+
     }
 
-    async update(results: Array<TestResult>, suites, terminal: CLITextDraw | Console, COMPLETE = false) {
-        terminal.clear();
+    async update(results: Array<TestResult>, suites: TestSuite[], terminal: CLITextDraw | Console, COMPLETE = false) {
 
+
+        terminal.clear();
 
 
         for (const { test, error, duration } of results) {
 
-            let suites_ = this.suites, target_suite = null;
+            let suites_ = this.suites.suites, target_suite = this.suites;
 
-            const { suites, name, sub_test_count } = getNameData(test.name);
+            const { suites, name } = getNameData(test.name);
 
             for (const suite of suites) {
-                if (!suites_.has(suite)) {
-                    suites_.set(suite, { tests: new Map(), suites: new Map() });
-                }
+
+                if (!suites_.has(suite))
+                    suites_.set(suite, { tests: <Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>>new Map(), suites: new Map() });
+
                 target_suite = suites_.get(suite);
+
                 suites_ = target_suite.suites;
-            }
+            };
 
             target_suite.tests.set(name, { name, complete: true, failed: !!error, duration });
         }
 
         const out = this.render();
 
-        if (!COMPLETE) {
+        if (!COMPLETE)
             terminal.log(out);
-        }
+
         return out;
     }
 
@@ -124,13 +146,9 @@ export class BasicReporter implements Reporter {
 
         try {
             for (const { test, error } of results
-                .sort((a, b) => a.test.index < b.test.index ? -1 : 1)
-                .sort((a, b) => a.test.suite_index < b.test.suite_index ? -1 : 1)
             ) {
 
                 const { suites: suites_name, name } = getNameData(test.name);
-
-
 
                 if (error) {
                     failed++;
@@ -152,7 +170,7 @@ export class BasicReporter implements Reporter {
                             lex.next();
                         }
 
-                        errors.push(`[ ${msgA + suites_name.join("|")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                        errors.push(`${rst}[ ${msgA + suites_name.join("|")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
                             fail
                             + lex.errorMessage(error.message, origin, 120)
                                 .replace(error.match_source, error.replace_source)
@@ -161,7 +179,7 @@ export class BasicReporter implements Reporter {
                             }\n${rst}`);
 
                     } else {
-                        errors.push(`[ ${msgA + suites_name.join("|")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                        errors.push(`${rst}[ ${msgA + suites_name.join("|")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
                             fail + error.message.split("\n").join("\n   ")}\n`);
                     }
                 }
@@ -171,13 +189,13 @@ export class BasicReporter implements Reporter {
 
                 if (suite.error) {
                     failed++;
-                    errors.push(`Suite ${fail + suite.origin + rst} failed:\n\n    ${
+                    errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${
                         fail + suite.error.message.split("\n").join("\n   ")}\n${rst}`);
                 }
             }
         } catch (e) {
             failed++;
-            errors.push(`Reporter failed:\n\n    ${
+            errors.push(`${rst}Reporter failed:\n\n    ${
                 fail + e.stack.split("\n").join("\n   ")}\n${rst}`);
         }
 
