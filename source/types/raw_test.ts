@@ -8,8 +8,6 @@ export interface RawTest {
      */
     index: number,
 
-    suite: string;
-
     name: string;
 
     ast: MinTreeNode;
