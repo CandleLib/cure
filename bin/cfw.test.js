@@ -9,6 +9,7 @@ const
     reset = xtF(xtReset),
     args = getProcessArgs(),
     files = args.__array__.filter(a => a.hyphens == 0).map(a => a.name),
+    number_of_workers = args.threads ? parseInt(args.threads.value) : 1,
     WATCH = !!(args.w),
     HELP = !!(args.help || args.h || args["?"]) || files.length == 0,
     OUTPUT = !!(args.o),
@@ -33,6 +34,11 @@ Candlefw Test
         
         Forces the use of a null reporter and returns the test results
         as a JSON string.
+
+    Number of Worker Threads: --threads <count>  
+        
+        Number of workers threads to use to run tests concurrently.
+        Minimum is 1 thread,
 
     Watch Input Files:  -w
         
@@ -69,7 +75,7 @@ async function start() {
 
         if (OUTPUT) {
 
-            const frame = createTestFrame(false, ...files);
+            const frame = createTestFrame({ WATCH: false, number_of_workers }, ...files);
 
             frame.setReporter(new NullReporter());
 
@@ -81,7 +87,7 @@ async function start() {
             });
         } else {
 
-            const frame = createTestFrame(WATCH, ...files);
+            const frame = createTestFrame({ WATCH, number_of_workers }, ...files);
 
 
             await frame.start().then(d => {
