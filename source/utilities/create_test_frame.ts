@@ -1,5 +1,5 @@
-import { cpus } from "os";
 import URL from "@candlefw/url";
+
 import { Runner } from "../test_running/runner.js";
 import { BasicReporter } from "../reporting/basic_reporter.js";
 import { Globals, Outcome } from "../types/globals";
@@ -31,17 +31,20 @@ function InitializeReporterColors(reporter: Reporter): Reporter {
     return reporter;
 }
 
+
 /**
  * Loads tests files and returns a TestFrame from which tests can be run. 
  * 
  * @param {boolean} WATCH - If set to true then the tests will automatically rerun when watched files are changed.
  * @param {string[]} test_suite_url_strings - An array of file paths to retrieve test files from.
  */
-export function createTestFrame(WATCH = false, ...test_suite_url_strings: string[]): TestFrame {
+export function createTestFrame(
+    { WATCH = false, number_of_workers = 2 }
+        = { WATCH: false, number_of_workers: 2 }, ...test_suite_url_strings: string[]): TestFrame {
 
     let resolution = null;
 
-    const globals: Globals = {
+    let globals: Globals = {
         PENDING: false,
         suites: null,
         reporter: InitializeReporterColors(new BasicReporter()),
@@ -55,9 +58,12 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
         }
     };
 
-
     return {
-        setReporter: (reporter: Reporter) => globals.reporter = InitializeReporterColors(reporter),
+        setReporter: (reporter: Reporter) => {
+            globals.reporter = InitializeReporterColors(reporter);
+        },
+
+        get number_of_workers() { return number_of_workers; },
 
         get WATCHED() { return WATCH; },
 
@@ -66,7 +72,6 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
         start: (): Promise<Outcome> => new Promise(async (res) => {
 
             await URL.polyfill();
-
 
             if (resolution)
                 endWatchedTests(globals, resolution);
@@ -77,20 +82,26 @@ export function createTestFrame(WATCH = false, ...test_suite_url_strings: string
                 url_string, { origin: url_string, rigs: [], index }
             ]));
 
-            globals.runner = new Runner(Math.max(cpus().length - 1, 1));
+            globals.runner = new Runner(Math.max(number_of_workers, 1));
 
             globals.watchers.length = 0;
 
             const { suites, runner } = globals;
 
-            for (const suite of suites.values())
-                await loadSuite(suite, globals);
+            try {
 
-            const st = Array.from(suites.values());
+                for (const suite of suites.values())
+                    await loadSuite(suite, globals);
 
-            globals.PENDING = true;
+                const st = Array.from(suites.values());
 
-            await runTests(st.flatMap(suite => suite.rigs), st, globals);
+                globals.PENDING = true;
+
+                await runTests(st.flatMap(suite => suite.rigs), st, globals);
+
+            } catch (e) {
+                globals.outcome.error = e;
+            }
 
             globals.PENDING = false;
 
