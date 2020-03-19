@@ -104,15 +104,15 @@ export async function handleWatchOfRelativeDependencies(suite: TestSuite, global
 
             active_paths.add(path);
 
-            if (!WatchMap.has(path))
-                createRelativeFileWatcher(path, globals);
+            //if (!WatchMap.has(path))
+            //    createRelativeFileWatcher(path, globals);
         });
 
     //Remove suite from existing maps
-    [...WatchMap.values()].map(wm => {
-        if (wm.has(origin))
-            wm.delete(origin);
-    });
+    //[...WatchMap.values()].map(wm => {
+    //    if (wm.has(origin))
+    //        wm.delete(origin);
+    //});
 
     //And suite to the newly identifier watched file handlers
     for (const path of active_paths.values())
