@@ -14,7 +14,7 @@ export class TestError {
     name: string;
 
     IS_TEST_ERROR: boolean;
-
+ 
     match_source: string;
 
     replace_source: string;
@@ -27,17 +27,21 @@ export class TestError {
 
     origin: string;
 
+    original_error_stack: string;
+
     constructor(message, line, column, match_source, replace_source, sources: ImportSource[] = [], map = null) {
 
-        this.name = "TestAssertionError";
+        this.name = "TestError";
         this.origin = "";
         this.IS_TEST_ERROR = true;
         this.line = line;
         this.column = column;
         this.match_source = match_source;
         this.replace_source = replace_source;
+        this.original_error_stack = "";
 
         if (message instanceof Error) {
+
 
             const
                 error: Error = message,
@@ -46,7 +50,10 @@ export class TestError {
 
             this.message = error.message;
 
+            this.original_error_stack = error.stack;
+
             let out;
+
 
             try {
                 out = lrParse(new Lexer(error_frame), data, {});
