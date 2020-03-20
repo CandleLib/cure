@@ -7,7 +7,7 @@ import { RawTestRig } from "../types/raw_test.js";
 import { compileAssertionSite, } from "./compile_assertion_site.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 import { Reporter } from "../main.js";
-import { createTestAST } from "./createTestAST.js";
+import { createTestAST } from "./create_test_ast.js";
 import { DependGraphNode } from "../types/depend_graph_node.js";
 import { TestMap } from "../types/test_rig.js";
 
@@ -58,9 +58,9 @@ export function compileSequencedTestRig(
         }
     }
 
-    const async_check = { is: false };
-
-    const stmts: MinTreeNode[] = [...compileOuterScope(scope, names, async_check), ...our_stmts];
+    const
+        async_check = { is: false },
+        stmts: MinTreeNode[] = [...compileOuterScope(scope, names, async_check), ...our_stmts];
 
     if (async_check.is)
         IS_ASYNC = true;

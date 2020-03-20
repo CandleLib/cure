@@ -2,7 +2,7 @@ import { MinTreeNodeClass, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
 import { traverse, bit_filter, filter } from "@candlefw/conflagrate";
 import { AssertionSite } from "../types/assertion_site.js";
 import { Scope } from "../types/scope.js";
-export function createUncompiledAssertionSite(scope: Scope, node: MinTreeNode, suite_names: string[]): AssertionSite {
+export function createAssertionSite(scope: Scope, node: MinTreeNode, suite_names: string[]): AssertionSite {
 
     /*********************************************************
      * ADD Assertion site.

@@ -11,7 +11,7 @@ import { getUsedStatements } from "./get_used_statements.js";
 import { replaceNodes } from "./replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 import { Reporter } from "../main.js";
-import { createTestAST } from "./createTestAST.js";
+import { createTestAST } from "./create_test_ast.js";
 
 export function compileTestRig(
     { name_data: { name, suite_names }, ast: node, scope, names, index, start, AWAIT }: AssertionSite,

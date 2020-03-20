@@ -2,8 +2,8 @@ import { MinTreeNode, MinTreeNodeType, ext } from "@candlefw/js";
 import { traverse, skip_root, make_skippable } from "@candlefw/conflagrate";
 import { Scope } from "../types/scope.js";
 import { AssertionSite } from "../types/assertion_site.js";
-import { extractIdentifierDependencies } from "./extractIdentifierDependencies.js";
-import { createUncompiledAssertionSite } from "./createUncompiledAssertionSite.js";
+import { extractIdentifierDependencies } from "./extract_identifier_dependencies.js";
+import { createAssertionSite } from "./create_assertion_site.js";
 
 /**
  * Compiles a sequence of assertion sites found within
@@ -52,7 +52,7 @@ export function compileSequence(labelled_statement: MinTreeNode, scope: Scope, s
                 &&
                 expression.expression.type == MinTreeNodeType.Parenthesized
             ) {
-                statements.push(createUncompiledAssertionSite(scope, node, suite_names));
+                statements.push(createAssertionSite(scope, node, suite_names));
 
                 node.skip();
 

@@ -7,9 +7,8 @@ import { Scope } from "../types/scope.js";
 import { compileImport } from "./compile_import.js";
 import { sanitize } from "./sanitize.js";
 import { compileSequence } from "./compile_sequence.js";
-import { createUncompiledAssertionSite } from "./createUncompiledAssertionSite.js";
-import { extractIdentifierDependencies } from "./extractIdentifierDependencies.js";
-import { test } from "./assertion_compiler_manager.js";
+import { createAssertionSite } from "./create_assertion_site.js";
+import { extractIdentifierDependencies } from "./extract_identifier_dependencies.js";
 
 
 export function compileStatements(
@@ -91,7 +90,7 @@ export function compileStatements(
                         node.skip();
                         continue main;
                     case "SEQUENCE":
-                        test_sites.push(compileSequence(node, scope, suite_names));
+                        test_sites.push(compileSequence(node, scope, suite_names.slice()));
                         node.skip();
                         continue main;
                 }
@@ -128,7 +127,7 @@ export function compileStatements(
 
                     expression.expression.type == $.Parenthesized) {
 
-                    test_sites.push(createUncompiledAssertionSite(scope, node, suite_names));
+                    test_sites.push(createAssertionSite(scope, node, suite_names));
 
                     node.skip();
 
