@@ -12,7 +12,10 @@ const $ = sanitizeTemplate;
 
 const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
 
-    {
+    /**
+     * Relational and Equality Expressions
+     */
+    <AssertionSiteCompiler>{
 
         signature: MinTreeNodeClass.BINARY_EXPRESSION,
 
@@ -73,6 +76,9 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
+    /**
+     * Boolean
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeType.BooleanLiteral,
@@ -102,7 +108,9 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
-
+    /**
+     * Call Expression Should Not Throw
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeType.CallExpression,
@@ -132,7 +140,9 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
-
+    /**
+     * Call Expression Should Throw
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeType.UnaryExpression,
@@ -162,6 +172,9 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
+    /**
+     * Parenthesized expressions - Expect 3rd party assertion function call
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeType.Parenthesized,
@@ -190,6 +203,54 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
+    /**
+     * Instanceof Expression
+     */
+    <AssertionSiteCompiler>{
+
+        signature: MinTreeNodeClass.BINARY_EXPRESSION,
+
+        test: node => node.type == MinTreeNodeType.InstanceOfExpression,
+
+        build: node => {
+            return `!(${node.pos.slice()})`;
+        },
+
+        getExceptionMessage: (node, rp) => {
+
+            const
+
+                { fail, bkgr, symA, objA, valA, objB, valB, msgA } = rp.colors,
+
+                instof = ext(node),
+
+                left = instof.left,
+
+                right = instof.right,
+
+                left_value = `${bkgr}[${objA + $r(left) + symA} ⇒ ${valA}\${$harness.makeLiteral(${$r(left)})}${bkgr}]${fail}`,
+
+                right_value = `${bkgr}[${objB + $r(right) + symA} ⇒ ${valB}\${$harness.makeLiteral(${$r(right)})}${bkgr}]${fail}`;
+
+            return {
+                message: `${fail} ${right_value} was not found in the prototype chain of ${left_value}`,
+                highlight: [objA + $r(left), rst + "instanceof", objB + $r(right) + rst + fail].join(" "),
+                match: node.pos.slice(),
+                column: right.pos.column - 10,
+                line: right.pos.line
+            };
+        },
+    },
+
+    /**
+     * The following expression are considered 
+     */
+
+    /**
+     * Identifier - It's pure uselessness.
+     * 
+     * TODO - Should truthiness be evaluated instead?
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeClass.IDENTIFIER,
@@ -219,6 +280,11 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
+    /**
+     * Member Expression - It's pure uselessness.
+     *
+     * TODO - Should truthiness be evaluated instead?
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeType.MemberExpression,
@@ -248,6 +314,10 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
         },
     },
 
+    /**
+     * Assignment Expression - Can't happen, breaks independent nature of tests.
+     * 
+     */
     <AssertionSiteCompiler>{
 
         signature: MinTreeNodeType.AssignmentExpression,
@@ -264,7 +334,7 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
 
             const
 
-                { fail, bkgr, symA, objA, valA, objB, valB, msgA } = rp.colors,
+                { fail, bkgr, symA, objA, valA, objB, valB, msgA, valC } = rp.colors,
 
                 assign = ext(node),
 
@@ -278,7 +348,7 @@ const default_assertions_site_compilers: Array<AssertionSiteCompiler> = [
 
             return {
                 message: `${fail}Assignment [${left_value} ${rst + assign.symbol} ${right_value}] not allowed in assertion site`
-                    + `\n    ${msgA}Should this have been an Equality Expression or Relational Expression?${fail}\n`,
+                    + `\n    ${msgA}Should this have been an ${valD}Equality Expression${msgA} or ${valD}Relational Expression${msgA}?${fail}\n`,
                 highlight: [valA + $r(left), rst + node.symbol, fail + $r(right) + rst + fail].join(" "),
                 match: node.pos.slice(),
                 column: right.pos.column - assign.symbol.length - 1,
