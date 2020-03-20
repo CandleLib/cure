@@ -13,9 +13,14 @@ const
     WATCH = !!(args.w),
     HELP = !!(args.help || args.h || args["?"]) || files.length == 0,
     OUTPUT = !!(args.o),
+    INSTRUMENT = (
+        args.__array__[0]
+        &&
+        args.__array__[0].name.toLowerCase() == "instrument"
+    ),
 
     HELP_MESSAGE = ` 
-Candlefw Test
+Candlefw Test - DeLIGHTful testing. 
 
     cfw_test [Options] [...Input_Files]
 
@@ -61,17 +66,32 @@ Candlefw Test
 README: https://github.com/CandleFW/test/blob/master/readme.md
 `;
 
-
 async function start() {
 
     process.title = "cfw.test";
 
-    if (HELP) {
+    /**
+     * Instrumenting reads the project.json file, and uses it to prepare a test suite file.
+     * 
+     * This process includes the following steps, in no particular order:
+     * - Get the name of the project and use it to name the spec file. 
+     * - Get the main entry point and read its exports to add to the spec file.
+     * - Create a test folder (if one is not present) and create test spec file. 
+     * - Add a script entry in the package.json for testing with cfw.test 
+     * (Fatally Warn about overwriting existing scripts)
+     */
+    if (INSTRUMENT) {
+
+    }
+
+    else if (HELP || files.length == 0) {
         if (files.length == 0)
             console.log(warning + "NO SUITE FILES FOUND" + reset);
 
         console.log(HELP_MESSAGE);
-    } else {
+    }
+
+    else {
 
         if (OUTPUT) {
 

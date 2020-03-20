@@ -8,6 +8,7 @@ import { runTests } from "../test_running/run_tests.js";
 import { loadSuite } from "./load_suite.js";
 import { Reporter } from "../types/reporter.js";
 import * as colors from "./colors.js";
+import { TestFrameOptions } from "../types/test_frame_options";
 
 function endWatchedTests(globals: Globals, resolution) {
 
@@ -31,16 +32,27 @@ function InitializeReporterColors(reporter: Reporter): Reporter {
     return reporter;
 }
 
+const DefaultOptions: TestFrameOptions = {
+    WATCH: false,
+    number_of_workers: 2,
+    assertion_compilers: []
+};
 
 /**
  * Loads tests files and returns a TestFrame from which tests can be run. 
  * 
- * @param {boolean} WATCH - If set to true then the tests will automatically rerun when watched files are changed.
+ * @param {TestFrameOptions} - A TestFrameOptions object.
  * @param {string[]} test_suite_url_strings - An array of file paths to retrieve test files from.
  */
 export function createTestFrame(
-    { WATCH = false, number_of_workers = 2 }
-        = { WATCH: false, number_of_workers: 2 }, ...test_suite_url_strings: string[]): TestFrame {
+    {
+        WATCH = false,
+        number_of_workers = 2,
+        assertion_compilers = []
+    }: TestFrameOptions
+        = DefaultOptions,
+    ...test_suite_url_strings: string[]
+): TestFrame {
 
     let resolution = null;
 
