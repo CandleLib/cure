@@ -43,10 +43,16 @@ export interface ImportSource {
     IS_RELATIVE: boolean;
 };
 
+export interface TestMap {
+    name: string;
+    index: number;
+};
+
 /**
  * Contains a fully compiled test script that can be run. 
  */
 export interface TestRig {
+    type: "SEQUENCE" | "DISCRETE",
 
     /**
      * Name of the test. Includes suite name and redundant name info.
@@ -102,4 +108,11 @@ export interface TestRig {
      * The TestSuite.index value.
      */
     suite_index: number;
+
+    /**
+    * In a SEQUENCE TestRig, test_maps map individual assertion 
+    * sites to virtual test outcomes.
+    */
+    test_maps?: TestMap[];
 };
+

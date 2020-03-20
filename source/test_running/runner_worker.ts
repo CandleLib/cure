@@ -14,7 +14,10 @@ async function RunTest(msg) {
     const
         { test }: { test: TestRig; } = msg,
         { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
-        result: TestResult = { start: performance.now(), end: 0, duration: 0, error: null, test, TIMED_OUT: false, PASSED: true };
+        result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
+
+    harness.errors = [];
+    harness.test_index = -1;
 
     try {
 
@@ -42,25 +45,30 @@ async function RunTest(msg) {
 
         result.end = performance.now();
 
-        result.error = harness.last_error;
+        result.errors = harness.errors;
 
-        if (result.error)
+        if (result.errors.length > 0)
             result.PASSED = false;
 
     } catch (e) {
 
-        result.error = new TestError(e, test.pos.line, test.pos.column, "", "", sources, map);
+        result.errors.push(new TestError(e, test.pos.line, test.pos.column, "", "", sources, map));
 
         result.end = performance.now();
 
         result.PASSED = false;
     }
 
-    harness.last_error = null;
+    try {
 
-    result.duration = result.end - result.start;
+        harness.last_error = null;
 
-    parentPort.postMessage(result);
+        result.duration = result.end - result.start;
+
+        parentPort.postMessage(result);
+    } catch (e) {
+        console.log(e);
+    }
 }
 
 parentPort.on("message", RunTest);

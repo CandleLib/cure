@@ -44,5 +44,5 @@ export interface TestResult {
      * An error object if some error was thrown during the execution of 
      * the test.
      */
-    error: TestError;
+    errors: TestError[];
 };

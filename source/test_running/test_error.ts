@@ -14,7 +14,7 @@ export class TestError {
     name: string;
 
     IS_TEST_ERROR: boolean;
- 
+
     match_source: string;
 
     replace_source: string;
@@ -29,6 +29,8 @@ export class TestError {
 
     original_error_stack: string;
 
+    index: number;
+
     constructor(message, line, column, match_source, replace_source, sources: ImportSource[] = [], map = null) {
 
         this.name = "TestError";
@@ -39,21 +41,19 @@ export class TestError {
         this.match_source = match_source;
         this.replace_source = replace_source;
         this.original_error_stack = "";
+        this.index = -1;
 
         if (message instanceof Error) {
-
 
             const
                 error: Error = message,
                 error_frame = error.stack.split("\n")[1];
-
 
             this.message = error.message;
 
             this.original_error_stack = error.stack;
 
             let out;
-
 
             try {
                 out = lrParse(new Lexer(error_frame), data, {});

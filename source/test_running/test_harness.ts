@@ -6,6 +6,10 @@ import { TestError } from "./test_error.js";
  */
 export const harness = {
 
+    test_index: -1,
+
+    errors: <Array<TestError>>[],
+
     /**
      * A temporary variable that can be used to hold assertion site object data.
      */
@@ -113,7 +117,7 @@ export const harness = {
 
         catch (e) {
             harness.caught_exception = e;
-            harness.last_error = e;
+            harness.errors.push(e);
             return true;
         }
 
@@ -139,12 +143,16 @@ export const harness = {
     },
 
     /**
-     * Sets harness.last_error from e.
+     * Add error to test harness.
      */
     setException: (e) => {
         if (!(e instanceof TestError))
             throw TypeError("Expected an Error object to be thrown.");
-        harness.last_error = e;
+
+        if (harness.test_index > 0)
+            e.index = harness.test_index;
+
+        harness.errors.push(e);
 
     }
 };

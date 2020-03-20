@@ -59,7 +59,7 @@ export class Runner {
         }
     }
 
-    * run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false) {
+    * run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false): Generator<TestResult[]> {
 
         let id = 0, completed = 0;
 
@@ -84,7 +84,7 @@ export class Runner {
 
         while (completed < number_of_tests) {
 
-            let out = null;
+            let out: TestResult[] = null;
 
             for (const wkr of this.workers) {
 

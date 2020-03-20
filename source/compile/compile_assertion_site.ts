@@ -1,4 +1,4 @@
-import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType } from "@candlefw/js";
+import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
 
 import { selectBindingCompiler } from "./assertion_compiler_manager.js";
@@ -14,6 +14,7 @@ export function compileAssertionSite(node: MinTreeNode, reporter: Reporter)
     : { ast: MinTreeNode, optional_name: string; } {
 
     const
+        //     stmt       -> paren -> paren -> exp
         expr = node.nodes[0].nodes[0].nodes[0];
 
     for (const binding_compiler of selectBindingCompiler(expr)) {
@@ -30,19 +31,18 @@ export function compileAssertionSite(node: MinTreeNode, reporter: Reporter)
                     column || expr.pos.char,
                     `\`${match.replace(/"/g, "\"")}\``,
                     `\"${highlight.replace(/"/g, "\\\"")}\"`
-                ];
+                ],
 
-            const
                 thr =
                     message ?
                         stmt(`if(${js_string}) $harness.setException(new AssertionError(${error_data}));`)
                         : stmt(`if(${js_string});`),
 
-                landing = { ast: null };
+                receiver = { ast: null };
 
             for (const node of traverse(thr, "nodes")
 
-                .then(extract(landing))
+                .then(extract(receiver))
 
                 .then(replace(node => (node.pos = expr.pos, node)))
 
@@ -54,10 +54,10 @@ export function compileAssertionSite(node: MinTreeNode, reporter: Reporter)
                     node.replace(expr);
             }
 
-            return { ast: landing.ast, optional_name: match };
+            return { ast: receiver.ast || exp(";"), optional_name: match };
         }
     }
 
-    //create new script
-    return { ast: null, optional_name: "unknown test" };
+    //Bypass the test
+    return { ast: expr, optional_name: `Could not find a AssertionSiteCompiler for MinTreeNode [${MinTreeNodeType[expr.type]}]`, };
 }

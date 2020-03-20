@@ -35,7 +35,8 @@ export interface AssertionSiteCompiler {
      *  // Code to handle a failed assertion
      * }
      * ```
-     * Thus, if the build expression evaluates to `true`, this will cause an assertion to fail.
+     * Thus, if the build expression evaluates to a truthy value, the assertion failure 
+     * code branch will run.
      * 
      * 
      * @param {MinTreeNode} node The first AST node within the double parenthesize AssertionSite.

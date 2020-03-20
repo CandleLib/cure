@@ -1,14 +1,19 @@
-import { MinTreeNodeType as $, ext, MinTreeNodeClass, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
-import { traverse, bit_filter, make_skippable, skip_root, extract, filter } from "@candlefw/conflagrate";
+import { MinTreeNodeType as $, ext, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
+import { traverse, bit_filter, make_skippable, skip_root, extract } from "@candlefw/conflagrate";
 
 import { AssertionSite } from "../types/assertion_site.js";
 import { Scope } from "../types/scope.js";
-import { DependGraphNode } from "../types/depend_graph_node.js";
 
 import { compileImport } from "./compile_import.js";
 import { sanitize } from "./sanitize.js";
+import { compileSequence } from "./compile_sequence.js";
+import { createUncompiledAssertionSite } from "./createUncompiledAssertionSite.js";
+import { extractIdentifierDependencies } from "./extractIdentifierDependencies.js";
+import { test } from "./assertion_compiler_manager.js";
+
 
 export function compileStatements(
+
     ast: MinTreeNode,
     full_origin_path: string,
     parent_scope = null,
@@ -21,8 +26,6 @@ export function compileStatements(
         scope: Scope;
         test_sites: AssertionSite[];
     } {
-
-    let LOCAL_SUITE_NAME = suite_names.length == 0;;
 
     const
         test_sites: AssertionSite[] = [],
@@ -42,7 +45,7 @@ export function compileStatements(
     /**
      * The active suite/test name
      */
-    for (const node of traverse(ast, "nodes")
+    main: for (const node of traverse(ast, "nodes")
         .then(bit_filter("type", MinTreeNodeClass.STATEMENT))
         .then(make_skippable())
         .then(extract(receiver))
@@ -52,9 +55,7 @@ export function compileStatements(
         switch (node.type) {
 
             case $.ImportDeclaration: {
-
                 compileImport(node, scope.imp, full_origin_path);
-
             } continue;
 
             case $.ExportDeclaration: continue;
@@ -70,26 +71,33 @@ export function compileStatements(
                 node.skip();
             } continue;
 
+            case $.LabeledStatement: {
+
+                const labeled = ext(node);
+
+                switch (<string>labeled.label.value) {
+                    case "AFTER_EACH":
+                        scope.pragmas.push({
+                            type: "AE",
+                            nodes: sanitize(labeled).statement.nodes || []
+                        });
+                        node.skip();
+                        continue main;
+                    case "BEFORE_EACH":
+                        scope.pragmas.push({
+                            type: "BE",
+                            nodes: sanitize(labeled).statement.nodes || []
+                        });
+                        node.skip();
+                        continue main;
+                    case "SEQUENCE":
+                        test_sites.push(compileSequence(node, scope, suite_names));
+                        node.skip();
+                        continue main;
+                }
+            }
+
             case $.FunctionDeclaration: {
-
-                const funct = ext(node);
-                //@ts-ignore
-                if (funct.name.value == "AFTER_EACH") {
-
-                    scope.pragmas.push({
-                        type: "AE",
-                        nodes: sanitize(funct).body.nodes || []
-                    });
-                }
-                //@ts-ignore
-                else if (funct.name.value == "BEFORE_EACH") {
-
-                    scope.pragmas.push({
-                        type: "BE",
-                        nodes: sanitize(funct).body.nodes || []
-                    });
-                }
-
                 const new_node = sanitize(node);
             } break;
 
@@ -109,112 +117,45 @@ export function compileStatements(
             } break;
 
             case $.ExpressionStatement: {
-                const { expression } = ext(node, true);
-                let AWAIT = false;
 
-                if (expression.type == $.Parenthesized &&
+
+                const { expression } = ext(node, true);
+
+
+                if (expression.type == $.Parenthesized
+
+                    &&
 
                     expression.expression.type == $.Parenthesized) {
 
-                    const name = (active_test_name || "");
-
-                    /*********************************************************
-                     * ADD Assertion site.
-                     *********************************************************/
-                    const names = new Set();
-
-                    for (const id of traverse(node, "nodes")
-                        .then(bit_filter("type", MinTreeNodeClass.IDENTIFIER))
-                    ) {
-                        if (id.type & MinTreeNodeClass.PROPERTY_NAME)
-                            continue;
-                        names.add(id.value);
-                    };
-
-                    for (const id of traverse(node, "nodes")
-                        .then(filter("type", MinTreeNodeType.AwaitExpression))
-                    ) { AWAIT = true; break; };
-
-                    const nm = suite_names.pop();
-
-                    test_sites.push(<AssertionSite>{
-                        start: scope.stmts.length,
-                        node,
-                        name_data: { name: nm == "#" ? "" : nm, suite_names: suite_names.slice() },
-                        scope,
-                        names,
-                        AWAIT
-                    });
+                    test_sites.push(createUncompiledAssertionSite(scope, node, suite_names));
 
                     node.skip();
 
                     continue;
                 } else if (expression.type == $.StringLiteral) {
 
+                    if (suite_names.slice(-1)[0] == "#")
+                        suite_names.pop();
+
                     suite_names.push(<string>expression.value);
 
                     continue;
 
-                } else if (expression.type == $.CallExpression) {
-                }
+                } else if (expression.type == $.CallExpression) { }
             } break;
         }
 
         /*********************************************************
          * ADD DependGraphNode
-         *********************************************************/
+         *****************************************  ****************/
 
-        const statement_tracker = <DependGraphNode>{
-            AWAIT: false,
-            ast: node,
-            imports: new Set(),
-            exports: new Set()
-        };
-
-        //Extract References and Bindings and check for await expression
-        for (const id of traverse(node, "nodes").then(filter("type",
-            MinTreeNodeType.AwaitExpression,
-            $.IdentifierBinding,
-            $.Identifier,
-            $.IdentifierReference,
-            $.IdentifierName
-
-        ))) {
-
-            if (id.type & MinTreeNodeClass.PROPERTY_NAME)
-                continue;
-
-            if (id.type == MinTreeNodeType.AwaitExpression) {
-                statement_tracker.AWAIT = true;
-                continue;
-            }
-
-            switch (id.type) {
-
-                case $.IdentifierBinding:
-                    statement_tracker.exports.add(<string>id.value);
-                    break;
-
-                case $.Identifier:
-                case $.IdentifierReference:
-                case $.IdentifierName:
-                default:
-                    statement_tracker.imports.add(<string>id.value);
-                    statement_tracker.exports.add(<string>id.value);
-                    break;
-            }
-            //            statement_tracker.exports.add(<string>id.value);
-        }
-
-        //search for await expression
-
-        scope.stmts.push(statement_tracker);
-
+        const { AWAIT, exports, imports } =
+            extractIdentifierDependencies(node);
+        scope.stmts.push({ AWAIT, ast: node, imports, exports });
         scope.offset = scope.stmts.length;
-
         //Only want top level statements
         node.skip();
     }
-
     return { test_sites, scope };
 }

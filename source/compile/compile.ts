@@ -7,10 +7,11 @@ import { render as $r, MinTreeNode, exp, stmt } from "@candlefw/js";
 
 import { CompileResults } from "../types/compiler_result.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
-import { RawTest } from "../types/raw_test.js";
+import { RawTestRig } from "../types/raw_test.js";
 import { compileStatements } from "./compile_statements.js";
 import { compileTestRig } from "./compile_test_rig.js";
 import { Reporter } from "../main.js";
+import { compileSequencedTestRig } from "./compile_sequenced_test_rig.js";
 
 
 /**
@@ -24,9 +25,9 @@ export async function compileTest(ast: MinTreeNode, reporter: Reporter, full_ori
 
     const
         imports: Array<ImportDependNode> = [],
-        tests: Array<RawTest> = [];
+        tests: Array<RawTestRig> = [];
 
-    let i = 0;
+    let i = 0, test = null;
 
     const { test_sites, scope } = compileStatements(ast, full_origin_path);
 
@@ -36,9 +37,21 @@ export async function compileTest(ast: MinTreeNode, reporter: Reporter, full_ori
 
     for (const site of test_sites) {
 
-        site.index = i++;
+        site.index = i;
 
-        const test = compileTestRig(site.name_data, site, scope.imp, reporter);
+        switch (site.type) {
+            case "SEQUENCED":
+                //test = null;
+                test = compileSequencedTestRig(site, scope.imp, reporter);
+                break;
+
+            case "THREADED":
+            default:
+                test = compileTestRig(site, scope.imp, reporter);
+                break;
+        }
+
+        i = site.index + 1;
 
         if (test)
             tests.push(test);

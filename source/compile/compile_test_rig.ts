@@ -1,25 +1,23 @@
-import { MinTreeNodeType as $, MinTreeNode, parser } from "@candlefw/js";
+import { MinTreeNodeType as $, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
 import { traverse, extract, replace } from "@candlefw/conflagrate";
 
 import { TestError } from "../test_running/test_error.js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
-import { RawTest } from "../types/raw_test.js";
+import { RawTestRig } from "../types/raw_test.js";
 
 import { compileAssertionSite } from "./compile_assertion_site.js";
 import { getUsedStatements } from "./get_used_statements.js";
 import { replaceNodes } from "./replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 import { Reporter } from "../main.js";
+import { createTestAST } from "./createTestAST.js";
 
 export function compileTestRig(
-    { name, suite_names },
-    { node, scope, names, index, start, AWAIT }: AssertionSite,
+    { name_data: { name, suite_names }, ast: node, scope, names, index, start, AWAIT }: AssertionSite,
     imports: ImportDependNode[],
     reporter: Reporter)
-    : RawTest {
-
-    const i = [];
+    : RawTestRig {
 
     let
         IS_ASYNC = AWAIT,
@@ -31,6 +29,7 @@ export function compileTestRig(
         const expr = node.nodes[0].nodes[0].nodes[0];
 
         return {
+            type: "DISCRETE",
             name: [...suite_names, (name || optional_name)].join("-->"),
             IS_ASYNC: false,
             index,
@@ -49,7 +48,8 @@ export function compileTestRig(
 
         let statements = [];
 
-        const { statements: s, names: n, AWAIT } = getUsedStatements(scope, start, names);
+        const { statements: s, names: n, AWAIT }
+            = getUsedStatements(scope, start, names);
 
         if (AWAIT)
             IS_ASYNC = true;
@@ -89,22 +89,19 @@ export function compileTestRig(
 
         if (scope.parent)
             statements = [...compileOuterScope(scope.parent, names, async_check), ...statements];
-        //Add declarations and identify imports. 
-        const ast = parser(";");
 
         if (async_check.is)
             IS_ASYNC = true;
 
-        ast.nodes = statements;
+        const { ast, imported_dependencies } = createTestAST(statements, names, imports);
 
-        for (const imp of imports) {
-            for (const id of imp.import_names)
-                if (names.has(id.import_name)) {
-                    i.push(imp);
-                    break;
-                }
-        }
-
-        return { name: [...suite_names, (name || optional_name)].join("-->"), ast, imports: i, pos: node.pos, index, IS_ASYNC };
+        return {
+            type: "DISCRETE",
+            name: [...suite_names,
+            (name || optional_name)].join("-->"),
+            ast, imports: imported_dependencies, pos: node.pos, index, IS_ASYNC
+        };
     }
 }
+
+

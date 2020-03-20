@@ -10,11 +10,13 @@ import { TestSuite } from "../types/test_suite.js";
 import { TestRig } from "../types/test_rig.js";
 
 function getNameData(name: string) {
-    const name_parts = name.split("-->");
-    const suites = name_parts.slice(0, -1);
-    const [, name_string, , sub_test_count] = name_parts.pop().match(/([^\@]+)(\@\:(\d+))?/);
 
-    return { suites, name: name_string, sub_test_count: parseInt(sub_test_count) || 0 };
+    const
+        name_parts = name.split("-->"),
+        suites = name_parts.slice(0, -1),
+        name_string = name_parts.pop();
+
+    return { suites, name: name_string };
 }
 
 type SuiteData = { tests: Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>, suites: Map<string, SuiteData>; };
@@ -31,7 +33,9 @@ export class BasicReporter implements Reporter {
 
     render(suites = this.suites, prepend = "") {
 
-        const strings = [], { fail, msgA, pass, msgB } = this.colors;
+        const
+            strings = [],
+            { fail, msgA, pass, msgB } = this.colors;
 
         for (const [key, suite] of suites.suites.entries()) {
 
@@ -63,6 +67,8 @@ export class BasicReporter implements Reporter {
     }
 
     async start(pending_tests: TestRig[], suites: TestSuite[], terminal: CLITextDraw | Console) {
+
+
 
         pending_tests = pending_tests.slice()
             .sort((a, b) => a.index < b.index ? -1 : 1)
@@ -103,11 +109,9 @@ export class BasicReporter implements Reporter {
 
     async update(results: Array<TestResult>, suites: TestSuite[], terminal: CLITextDraw | Console, COMPLETE = false) {
 
-
         terminal.clear();
 
-
-        for (const { test, error, duration } of results) {
+        for (const { test, errors, duration } of results) {
 
             let suites_ = this.suites.suites, target_suite = this.suites;
 
@@ -123,7 +127,7 @@ export class BasicReporter implements Reporter {
                 suites_ = target_suite.suites;
             };
 
-            target_suite.tests.set(name, { name, complete: true, failed: !!error, duration });
+            target_suite.tests.set(name, { name, complete: true, failed: errors.length > 0, duration });
         }
 
         const out = this.render();
@@ -147,15 +151,17 @@ export class BasicReporter implements Reporter {
             failed = 0;
 
         try {
-            for (const { test, error } of results
+            for (const { test, errors: test_errors } of results
             ) {
 
                 const { suites: suites_name, name } = getNameData(test.name);
 
-                if (error) {
+                if (test_errors.length > 0) {
                     failed++;
 
                     FAILED = true;
+
+                    const error = test_errors.slice(-1)[0];
 
                     if (error.IS_TEST_ERROR) {
 

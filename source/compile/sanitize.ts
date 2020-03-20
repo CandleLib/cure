@@ -7,14 +7,16 @@ import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_exte
  * 
  * @param {MinTreeNode | MinTreeExtendedNode} ast 
  */
-export function sanitize(ast: MinTreeExtendedNode | MinTreeNode) {
+export function sanitize<T>(ast: T): T {
+
+    type $T = T & { nodes: $T[], type: number; };
 
     const receiver = { ast: null };
     /**
      * The active suite/test name
      */
 
-    for (const node of traverse(ast, "nodes")
+    for (const node of traverse(<$T>ast, "nodes")
         .then(filter("type", MinTreeNodeType.ExpressionStatement))
         .then(make_replaceable())
         .then(extract(receiver))
