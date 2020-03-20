@@ -3,6 +3,7 @@
 import { getPackageJSON, instrument, processPackageData, createSpecFile } from "../build/library/utilities/instrument.js";
 import { sym_version } from "../build/library/utilities/sym_version.js";
 import fs from "fs";
+import path from "path";
 
 {
     "Gets package.json";
@@ -38,7 +39,7 @@ import fs from "fs";
 {
     "Creates spec file";
 
-    "Creates spec files string from data from source file: sym_version.js";
+    "Creates spec files string from source file: sym_version.js";
 
     const sym_version_string =
         `import {sym_version} from "../build/library/utilities/sym_version.js"; "cfw.test sym_version test spec"; "TODO - test: sym_version"; ((sym_version));`;
@@ -46,7 +47,7 @@ import fs from "fs";
     ((await createSpecFile("cfw.test sym_version", "./build/library/utilities/sym_version.js") == sym_version_string));
 
 
-    "Creates spec files string from data from source file: instrument.js";
+    "Creates spec files string from source file: instrument.js";
 
     const inspect_string =
         `import {test,getPackageJSON,createSpecFile,processPackageData,instrument} from "../build/library/utilities/instrument.js"; ` +
@@ -54,18 +55,49 @@ import fs from "fs";
         `createSpecFile"; ((createSpecFile)); "TODO - test: processPackageData"; ((processPackageData)); "TODO - test: instrument"; ((instrument));`;
 
     ((await createSpecFile("cfw.test inspect", "./build/library/utilities/instrument.js") == inspect_string));
+
+    "Creates spec files string from source file: main.js";
+
+    const main_string =
+        `import {NullReporter,BasicReporter,createTestFrame} from "../build/library/main.js"; "cfw.test inspect test spec"; `
+        + `"TODO - test: NullReporter"; ((NullReporter)); "TODO - test: BasicReporter"; ((BasicReporter)); "TODO - test: `
+        + `createTestFrame"; ((createTestFrame));`;
+
+    ((await createSpecFile("cfw.test inspect", "./build/library/main.js") == main_string));
 }
 
+
 SEQUENCE: {
-    "Simulated Test";
+    "Simulated Test"; "#";
 
-    const fsp = fs.promises;
+    const
+        fsp = fs.promises,
+        dir = "./__temp__/",
+        build_dir = "./build/library/";
+
     //Copy data to new location.
-    await fsp.mkdir("./__temp__/");
+    try {
+        await fsp.mkdir(dir, { recursive: true });
+        await fsp.mkdir(path.join(dir, build_dir), { recursive: true });
+        await fsp.copyFile("./package.json", path.join(dir, "package.json"));
+        await fsp.copyFile(path.join(build_dir, "main.js"), path.join(dir, build_dir, "main.js"));
+    } catch (e) {
+        $harness.setException(e);
+        /*  Don't really care if this fails. 
+            Likely the directory and file 
+            already exists */ }
 
-    await fsp.copyFile("./package.json", "./__temp__/package.json");
+    await instrument(dir, true);
 
-    AFTER: {
+    (((await fsp.readFile(path.join(dir, "test/candlefw.test.spec.js")))));
 
-    }
+    (((await fsp.readFile(path.join(dir, "package.json")))));
+
+    const data = JSON.parse(await fsp.readFile(path.join(dir, "package.json")));
+
+    ((data.devDependencies["@candlefw/test"] == sym_version));
+
+    ((data.scripts.test == "cfw.test ./test/candlefw.test.spec.js"));
+
+    (((await fsp.rmdir(dir, { recursive: true }))));
 }

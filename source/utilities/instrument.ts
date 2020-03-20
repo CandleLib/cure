@@ -18,11 +18,11 @@ export const test = null;
  * Locates the nearest package.json file. Searches up the directory structure until one is found.
  * If no package.json file can be found, then the return object property FOUND will be false.
  */
-export async function getPackageJSON(): Promise<{ package: object, package_dir: string; FOUND: boolean; }> {
+export async function getPackageJSON(cwd: string = process.cwd()): Promise<{ package: Package, package_dir: string; FOUND: boolean; }> {
     //hunt down package.json
 
     const
-        url = new URL(process.cwd()),
+        url = new URL(cwd),
         base_path = url.path.split("/").filter(s => s !== "..");
 
     let i = base_path.length,
@@ -50,11 +50,12 @@ export async function getPackageJSON(): Promise<{ package: object, package_dir: 
         }
     }
 
-    return { package: JSON.parse(pkg), package_dir: cwd_, FOUND };
+    return { package: <Package>JSON.parse(pkg), package_dir: cwd_, FOUND };
 }
 
 export async function createSpecFile(pkg_name: string, source_file_path: string, pwd: string = process.cwd())
     : Promise<string> {
+
     await URL.polyfill();
 
     const
@@ -88,6 +89,15 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
                                 imports.push(ext(id.nodes[0]));
                         }
                         break;
+                    case MinTreeNodeType.ExportClause:
+                        for (const id of traverse(name, "nodes", 2)
+                            .then(skip_root())) {
+                            if (id.type & MinTreeNodeClass.IDENTIFIER)
+                                imports.push(ext(id));
+                            else
+                                imports.push(ext(id.nodes[0]));
+                        }
+                        break;
                 }
             }
     }
@@ -111,8 +121,18 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
 
     return render(new_ast);
 }
+interface Package {
+    main: string;
+    type: "module" | "commonjs";
+    name: string;
+    scripts: {
+        test?: string;
+    };
+    devDependencies: object;
+}
 
-export function processPackageData(pkg) {
+export function processPackageData(pkg: Package, FORCE: boolean = false) {
+
 
     let {
         main,
@@ -120,15 +140,7 @@ export function processPackageData(pkg) {
         name,
         scripts,
         devDependencies,
-    } = <{
-        main: string,
-        type: "module" | "commonjs",
-        name: string,
-        scripts: {
-            test: string;
-        },
-        devDependencies: object;
-    }>pkg;
+    } = pkg;
 
     if (type !== "module")
         throw new TypeError(`cfw.test only works on module packages. The package type of [${name}] is [${type || "not defined"}]`);
@@ -141,14 +153,21 @@ export function processPackageData(pkg) {
 
     devDependencies["@candlefw/test"] = sym_version;
 
-    if (main) {
-        //create main file
-    }
+    const test_name = name.replace(/[\@\/\\]/g, " ").trim().split(" ").join(".") + ".spec.js";
+
+    if (!scripts)
+        pkg.scripts = { test: "" };
+
+    if (pkg.scripts.test && !FORCE)
+        throw new Error(`This will overwrite existing test script [ ${pkg.scripts.test} ]. Aborting.`);
+
+    pkg.scripts.test = `cfw.test ./test/${test_name}`;
+    pkg.scripts["test.watch"] = `cfw.test -w ./test/${test_name}`;
 
     return {
         main,
         name,
-
+        test_name
     };
 }
 
@@ -164,19 +183,21 @@ export function processPackageData(pkg) {
  * (Fatally Warn about overwriting existing scripts)
  * - (FUTURE) Use TypeScript typing information to generate basic tests. 
  */
-export async function instrument(): Promise<string> {
+export async function instrument(dir: string = process.cwd(), FORCE: boolean = false): Promise<string> {
 
-    const package_data = await getPackageJSON();
+    const package_data = await getPackageJSON(dir);
 
     if (package_data.FOUND) {
 
-        processPackageData(package_data.pkg);
+        const
+            { package: pkg, package_dir: dir } = package_data,
+            { main, name, test_name } = processPackageData(pkg, FORCE),
+            file = await createSpecFile(name, main, dir),
+            package_json = JSON.stringify(pkg, null, 4);
 
-        const {
-            package_dir: cwd,
-            package: pkg
-        } = package_data;
-
+        await fsp.writeFile(path.join(dir, "package.json"), package_json, { encoding: "utf8" });
+        await fsp.mkdir(path.join(dir, "test"), { recursive: true });
+        await fsp.writeFile(path.join(dir, "test", test_name), file, { encoding: "utf8" });
     }
 
     return "";

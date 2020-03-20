@@ -3,6 +3,8 @@
 import { getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
 
 import { createTestFrame, NullReporter } from "../build/library/main.js";
+import { instrument } from "../build/library/utilities/instrument.js";
+
 
 const
     warning = xtF(xtColor(col_x11.Red), xtBold),
@@ -13,6 +15,7 @@ const
     WATCH = !!(args.w),
     HELP = !!(args.help || args.h || args["?"]) || files.length == 0,
     OUTPUT = !!(args.o),
+    FORCE = !!(args.f),
     INSTRUMENT = (
         args.__array__[0]
         &&
@@ -81,7 +84,8 @@ async function start() {
      * (Fatally Warn about overwriting existing scripts)
      */
     if (INSTRUMENT) {
-
+        console.log()
+        instrument()
     }
 
     else if (HELP || files.length == 0) {

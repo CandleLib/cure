@@ -147,12 +147,11 @@ export const harness = {
      */
     setException: (e) => {
         if (!(e instanceof TestError))
-            throw TypeError("Expected an Error object to be thrown.");
+            e = new TestError(e);
 
         if (harness.test_index > 0)
             e.index = harness.test_index;
 
         harness.errors.push(e);
-
     }
 };
