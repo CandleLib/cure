@@ -38,6 +38,9 @@ function mapResults(rst: TestResult) {
                 const result = results[error.index];
                 result.PASSED = false;
                 result.errors.push(error);
+            } else for (const result of results) {
+                result.PASSED = false;
+                result.errors.push(error);
             }
         }
 
