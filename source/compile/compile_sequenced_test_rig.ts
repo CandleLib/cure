@@ -33,7 +33,7 @@ export function compileSequencedTestRig(
 
             const
                 assert: AssertionSite = <AssertionSite>stmt,
-                { name_data: { name, suite_names } } = assert,
+                { name_data: { name, suite_names }, AWAIT } = assert,
                 { ast, optional_name } = compileAssertionSite(assert.ast, reporter);
 
             tests.push({
@@ -42,6 +42,8 @@ export function compileSequencedTestRig(
                 index: index + test_index,
             });
 
+            if (AWAIT) IS_ASYNC = true;
+
             for (const name of assert.names.values())
                 names.add(name);
 
@@ -49,18 +51,20 @@ export function compileSequencedTestRig(
 
         } else {
 
-            const depend_node = <DependGraphNode>stmt;
+            const { AWAIT, imports, ast } = <DependGraphNode>stmt;
 
-            for (const name of depend_node.imports.values())
+            if (AWAIT) IS_ASYNC = true;
+
+            for (const name of imports.values())
                 names.add(name);
 
-            our_stmts.push(depend_node.ast);
+            our_stmts.push(ast);
         }
     }
 
-    const
-        async_check = { is: false },
-        stmts: MinTreeNode[] = [...compileOuterScope(scope, names, async_check), ...our_stmts];
+    const async_check = { is: false };
+
+    const stmts: MinTreeNode[] = [...compileOuterScope(scope, names, async_check), ...our_stmts];
 
     if (async_check.is)
         IS_ASYNC = true;
