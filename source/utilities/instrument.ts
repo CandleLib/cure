@@ -95,7 +95,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
                             if (id.type & MinTreeNodeClass.IDENTIFIER)
                                 imports.push(ext(id));
                             else
-                                imports.push(ext(id.nodes[0]));
+                                imports.push(ext(id.nodes[1]));
                         }
                         break;
                 }
@@ -112,8 +112,10 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
         for (const imp of imports) {
             imp_str.push(imp.value);
 
-            new_ast.nodes.push(stmt(`"TODO - test: ${imp.value}";`));
-            new_ast.nodes.push(stmt(`((${imp.value}))`));
+            new_ast.nodes.push(stmt(`{ 
+                "TODO: Test ${imp.value}";"#";
+                ((${imp.value}))
+            }`));
         }
 
         new_ast.nodes.unshift(stmt(`import {${imp_str.join(",")}} from ".${source_file_path}"`));

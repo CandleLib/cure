@@ -4,6 +4,7 @@ import { getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlef
 
 import { createTestFrame, NullReporter } from "../build/library/main.js";
 import { instrument } from "../build/library/utilities/instrument.js";
+import { sym_version } from "../build/library/utilities/sym_version.js";
 
 
 const
@@ -21,11 +22,39 @@ const
         &&
         args.__array__[0].name.toLowerCase() == "instrument"
     ),
+    TL = `Delightfully Brilliant Testing.`,
+    INSTRUMENT_HELP_MASSAGE = `
+
+Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)}
+
+Instrumenting
+
+    cfw.test instrument [Options]
+
+Builds test file from package.json data
+
+    [Options]
+
+        Show help message: -h | -?  
+        
+            Display this help message and exit. 
+            Overrides other options.
+
+        Force: -f 
+
+            Setting the force option will overwrite the spec file
+            and package.json test scripts settings if they have 
+            been set.
+    `,
 
     HELP_MESSAGE = ` 
-Candlefw Test - DeLIGHTful testing. 
+Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)} 
 
-    cfw_test [Options] [...Input_Files]
+    cfw.test [Command?] [Options] [...Input_Files]
+
+[Command]
+    
+    instrument - Builds test file from package.json data.
 
 [Input Files]:
     
@@ -34,9 +63,10 @@ Candlefw Test - DeLIGHTful testing.
 [Options]: 
 
 
-    Show help message: --help | -h | -?  
+    Show help message: -h | -?  
         
-        Display this help message.
+        Display this help message and exit. 
+        Overrides other options.
 
     Output Result: -o   
         
@@ -83,19 +113,20 @@ async function start() {
      * - Add a script entry in the package.json for testing with cfw.test 
      * (Fatally Warn about overwriting existing scripts)
      */
+
     if (INSTRUMENT) {
-        console.log()
-        instrument()
-    }
 
-    else if (HELP || files.length == 0) {
-        if (files.length == 0)
-            console.log(warning + "NO SUITE FILES FOUND" + reset);
+        if (HELP) return void console.log(INSTRUMENT_HELP_MASSAGE);
 
-        console.log(HELP_MESSAGE);
-    }
+        console.log("Instrumenting");
 
-    else {
+        await instrument(process.cwd(), FORCE);
+
+    } else {
+
+        if (files.length == 0) console.log(warning + "NO SUITE FILES FOUND" + reset);
+
+        if (HELP || files.length == 0) return void console.log(HELP_MESSAGE);
 
         if (OUTPUT) {
 
@@ -112,7 +143,6 @@ async function start() {
         } else {
 
             const frame = createTestFrame({ WATCH, number_of_workers }, ...files);
-
 
             await frame.start().then(d => {
 
