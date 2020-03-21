@@ -56,7 +56,7 @@ export const harness = {
             case "object":
                 if (value instanceof Error)
                     return `[${value.name}]{ message: "${value.message}" }`;
-                return util.inspect(value);
+                return util.inspect(value, false, 3, true);
                 return JSON.stringify(value);
             default:
                 return value;

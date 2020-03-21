@@ -5,7 +5,7 @@ import { TestResult } from "./test_result.js";
 import { Reporter } from "./reporter.js";
 
 export interface Outcome {
-    error?: Error,
+    errors?: Error[],
     FAILED: boolean,
     results: Array<TestResult>;
 }

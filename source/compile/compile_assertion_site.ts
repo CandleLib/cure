@@ -10,12 +10,9 @@ import { Reporter } from "../main.js";
  * @param node - An expression node within the double parenthesize Assertion Site. 
  * @param reporter - A Reporter for color data.
  */
-export function compileAssertionSite(node: MinTreeNode, reporter: Reporter)
+export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
     : { ast: MinTreeNode, optional_name: string; } {
 
-    const
-        //     stmt       -> paren -> paren -> exp
-        expr = node.nodes[0].nodes[0].nodes[0];
 
     for (const binding_compiler of selectBindingCompiler(expr)) {
         if (binding_compiler.test(expr)) {

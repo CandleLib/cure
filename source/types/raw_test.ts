@@ -4,6 +4,7 @@ import { ImportDependNode } from "./import_depend_node";
 
 export interface RawTestRig {
     type: "SEQUENCE" | "DISCRETE",
+
     /**
      * Index of the assertion site within the source file. Top Down. 
      */
@@ -38,4 +39,7 @@ export interface RawTestRig {
         index: number,
         error?: Error;
     }>;
+    SOLO: boolean;
+    RUN: boolean;
+    INSPECT: boolean;
 };

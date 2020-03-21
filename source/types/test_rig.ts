@@ -114,5 +114,43 @@ export interface TestRig {
     * sites to virtual test outcomes.
     */
     test_maps?: TestMap[];
+
+    /**
+     * Flag for only running and reporting the results of this TestRig. 
+     * 
+     * Enabled through marking an assertion site in one of the following 
+     * ways:
+     * 
+     * >```js
+     * >solo(( .... ))
+     * >//or
+     * >    s(( .... ))
+     * >//or
+     * >mono(( .... ))
+     * >//or
+     * >    m(( .... ))
+     * >```
+     * 
+     * If other assertion site are marked as `SOLO`, then those tests will
+     * run alongside each other.
+     */
+    SOLO: boolean;
+    RUN: boolean;
+
+    /**
+     * Flag for Reporter to output the details of this test. 
+     * 
+     * Enabled through marking an assertion site in one of the following
+     * ways:
+     *
+     * >```js
+     * >inspect(( .... ))
+     * >//or
+     * >       i(( .... ))
+     * >```
+     *
+     * This affects other tests in the same manner as `SOLO`.
+     */
+    INSPECT: boolean;
 };
 

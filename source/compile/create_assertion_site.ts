@@ -2,7 +2,7 @@ import { MinTreeNodeClass, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
 import { traverse, bit_filter, filter } from "@candlefw/conflagrate";
 import { AssertionSite } from "../types/assertion_site.js";
 import { Scope } from "../types/scope.js";
-export function createAssertionSite(scope: Scope, node: MinTreeNode, suite_names: string[]): AssertionSite {
+export function createAssertionSite(scope: Scope, expression: MinTreeNode, suite_names: string[], SOLO = false, INSPECT = false, RUN = true): AssertionSite {
 
     /*********************************************************
      * ADD Assertion site.
@@ -13,7 +13,7 @@ export function createAssertionSite(scope: Scope, node: MinTreeNode, suite_names
 
     let AWAIT: boolean = false;
 
-    for (const id of traverse(node, "nodes")
+    for (const id of traverse(expression, "nodes")
 
         .then(bit_filter("type", MinTreeNodeClass.IDENTIFIER))
     ) {
@@ -22,7 +22,7 @@ export function createAssertionSite(scope: Scope, node: MinTreeNode, suite_names
         names.add(id.value);
     }
 
-    for (const id of traverse(node, "nodes")
+    for (const id of traverse(expression, "nodes")
 
         .then(filter("type", MinTreeNodeType.AwaitExpression))
     ) {
@@ -35,7 +35,7 @@ export function createAssertionSite(scope: Scope, node: MinTreeNode, suite_names
     return <AssertionSite>{
         type: "THREADED",
         start: scope.stmts.length,
-        ast: node,
+        ast: expression,
         name_data: {
             name: nm == "#"
                 ? ""
@@ -48,6 +48,9 @@ export function createAssertionSite(scope: Scope, node: MinTreeNode, suite_names
         },
         scope,
         names,
-        AWAIT
+        AWAIT,
+        SOLO,
+        INSPECT,
+        RUN
     };
 }

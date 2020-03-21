@@ -20,8 +20,19 @@ function endWatchedTests(globals: Globals, resolution) {
 
     if (resolution) {
 
-        if (globals.outcome)
+        if (globals.outcome) {
+
+            globals.outcome.rigs = [];
+
+            for (const suite of globals.suites.values()) {
+                if (suite.error)
+                    globals.outcome.errors.push(suite.error);
+                for (const test_rig of suite.rigs)
+                    globals.outcome.rigs.push(test_rig);
+            }
+
             resolution(globals.outcome);
+        }
         else
             resolution();
     }
@@ -62,10 +73,11 @@ export function createTestFrame(
         reporter: InitializeReporterColors(new BasicReporter()),
         runner: null,
         watchers: [],
-        outcome: { FAILED: true, results: [] },
+        outcome: { FAILED: true, results: [], errors: [] },
         WATCH,
         exit: error => {
-            globals.outcome.error = error;
+            if (error)
+                globals.outcome.errors.push(error);
             endWatchedTests(globals, resolution);
         }
     };
@@ -112,7 +124,7 @@ export function createTestFrame(
                 await runTests(st.flatMap(suite => suite.rigs), st, globals);
 
             } catch (e) {
-                globals.outcome.error = e;
+                globals.outcome.errors.push[e];
             }
 
             globals.PENDING = false;
@@ -124,8 +136,7 @@ export function createTestFrame(
                     endWatchedTests(globals, resolution);
                 });
             } else {
-                runner.destroy();
-                resolution(globals.outcome);
+                endWatchedTests(globals, resolution);
             }
         })
     };

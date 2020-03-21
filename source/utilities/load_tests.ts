@@ -28,7 +28,7 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
 
         let source = "";
 
-        for (const { error: e, ast, imports, name, pos, index, IS_ASYNC, type, test_maps } of raw_tests) {
+        for (const { error: e, ast, imports, name, pos, index, type, test_maps, IS_ASYNC, SOLO, RUN, INSPECT } of raw_tests) {
 
             const
                 map = createSourceMap(),
@@ -88,9 +88,11 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                 test_function_object_args: args,
                 error,
                 pos,
+                test_maps,
                 IS_ASYNC,
-                RUN: true,
-                test_maps
+                SOLO,
+                RUN,
+                INSPECT
             });
         }
 

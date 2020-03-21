@@ -52,7 +52,7 @@ export function compileSequence(labelled_statement: MinTreeNode, scope: Scope, s
                 &&
                 expression.expression.type == MinTreeNodeType.Parenthesized
             ) {
-                statements.push(createAssertionSite(scope, node, suite_names));
+                statements.push(createAssertionSite(scope, expression.expression.expression, suite_names));
 
                 node.skip();
 
@@ -66,6 +66,21 @@ export function compileSequence(labelled_statement: MinTreeNode, scope: Scope, s
 
                 continue;
 
+            } else if (expression.type == MinTreeNodeType.CallExpression) {
+                const
+                    name = (expression.nodes[0].value + "").toLocaleLowerCase(),
+                    first_arg = node.nodes[0].nodes[0];
+
+                if (first_arg && first_arg.type == MinTreeNodeType.Parenthesized) {
+                    const
+                        SOLO = ["solo", "mono", "s", "m"].includes(name),
+                        INSPECT = ["inspect", "i"].includes(name),
+                        RUN = !["skip", "sk"].includes(name);
+
+                    statements.push(createAssertionSite(scope, first_arg.nodes[0], suite_names, SOLO, INSPECT, RUN));
+
+                    node.skip();
+                }
             }
         }
 

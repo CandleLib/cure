@@ -48,9 +48,18 @@ function mapResults(rst: TestResult) {
     }
     return rst;
 }
-export async function runTests(final_tests: TestRig[], suites: TestSuite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
+export async function runTests(tests: TestRig[], suites: TestSuite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
 
-    const { runner, reporter, outcome } = globals,
+    let SOLO_RUN = false;
+
+    const final_tests = tests
+        .map(test => {
+            if (test.SOLO || test.INSPECT)
+                SOLO_RUN = true;
+            return test;
+        })
+        .filter(test => test.RUN && (!SOLO_RUN || test.INSPECT || test.SOLO)),
+        { runner, reporter, outcome } = globals,
         update_timout = 0;
 
     let FAILED = false, t = update_timout;

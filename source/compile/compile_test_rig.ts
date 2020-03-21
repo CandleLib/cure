@@ -14,7 +14,7 @@ import { Reporter } from "../main.js";
 import { createTestAST } from "./create_test_ast.js";
 
 export function compileTestRig(
-    { name_data: { name, suite_names }, ast: node, scope, names, index, start, AWAIT }: AssertionSite,
+    { name_data: { name, suite_names }, ast: node, scope, names, index, start, AWAIT, SOLO, INSPECT, RUN }: AssertionSite,
     imports: ImportDependNode[],
     reporter: Reporter)
     : RawTestRig {
@@ -36,6 +36,7 @@ export function compileTestRig(
             imports: [],
             ast: null,
             pos: node.pos,
+            SOLO, INSPECT, RUN,
             error: new TestError(
                 `Could not find a AssertionSiteCompiler for MinTreeNode [${$[expr.type]}]`,
                 expr.pos.line,
@@ -99,7 +100,10 @@ export function compileTestRig(
             type: "DISCRETE",
             name: [...suite_names,
             (name || optional_name)].join("-->"),
-            ast, imports: imported_dependencies, pos: node.pos, index, IS_ASYNC
+            ast, imports: imported_dependencies, pos: node.pos,
+            index,
+            SOLO, INSPECT, RUN,
+            IS_ASYNC
         };
     }
 }

@@ -4,10 +4,11 @@ import { Lexer } from "@candlefw/wind";
 import { Reporter } from "../types/reporter.js";
 import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "../types/test_result.js";
-import { rst } from "../utilities/colors.js";
+import { rst, objB } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
 import { TestSuite } from "../types/test_suite.js";
 import { TestRig } from "../types/test_rig.js";
+import { inspect } from "util";
 
 function getNameData(name: string) {
 
@@ -127,7 +128,7 @@ export class BasicReporter implements Reporter {
                 suites_ = target_suite.suites;
             };
 
-            target_suite.tests.set(name, { name, complete: true, failed: errors.length > 0, duration });
+            target_suite.tests.set(name, { name, complete: true, failed: errors ? errors.length > 0 : true, duration });
         }
 
         const out = this.render();
@@ -142,8 +143,8 @@ export class BasicReporter implements Reporter {
 
         const
             strings = [await this.update(results, suites, terminal, true)],
-            { fail, msgA, pass } = this.colors,
-            errors = [];
+            { fail, msgA, pass, objB, valB } = this.colors,
+            errors = [], inspections = [];
 
         let
             FAILED = false,
@@ -151,12 +152,15 @@ export class BasicReporter implements Reporter {
             failed = 0;
 
         try {
-            for (const { test, errors: test_errors } of results
-            ) {
+            for (const result of results) {
+                const { test, errors: test_errors } = result;
+
+                if (!test_errors)
+                    terminal.log(`Missing test_errors from test ${inspect(result)}`);
 
                 const { suites: suites_name, name } = getNameData(test.name);
 
-                if (test_errors.length > 0) {
+                if (test_errors && test_errors.length > 0) {
                     failed++;
 
                     FAILED = true;
@@ -191,6 +195,13 @@ export class BasicReporter implements Reporter {
                             fail + error.message.split("\n").join("\n   ")}\n`);
                     }
                 }
+
+                if (test.INSPECT)
+                    errors.push(`${objB}[ ${msgA + suites_name.join("|")} - ${rst + name + objB} ] ${objB}inspection${rst}:`,
+                        inspect(result, false, 5, true)
+                            .split("\n")
+                            .join("\n   ")
+                    );
             }
 
             for (const suite of suites) {
@@ -198,20 +209,20 @@ export class BasicReporter implements Reporter {
                 if (suite.error) {
                     failed++;
                     errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${
-                        fail + suite.error.message.split("\n").join("\n   ")}\n${rst}`);
+                        fail + suite.error.message.split("\n").join("\n   ")}\n${rst}`, "");
                 }
             }
         } catch (e) {
             failed++;
             errors.push(`${rst}Reporter failed:\n\n    ${
-                fail + e.stack.split("\n").join("\n   ")}\n${rst}`);
+                fail + e.stack.split("\n").join("\n   ")}\n${rst}`, "");
         }
 
         strings.push(`${total} test${total !== 1 ? "s" : ""} run. ${total > 0 ? (failed > 0
             ? fail + `${failed} failed test${(failed !== 1 ? "s" : "") + rst} :: ${pass + (total - failed)} successful test${total - failed !== 1 ? "s" : ""}`
             : pass + "All tests succeeded") : ""} ${rst}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
 
-        terminal.log(strings.join("\n"), errors.join("\n"), "\n" + rst);
+        terminal.log(strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst);
 
         await spark.sleep(1);
 

@@ -23,4 +23,7 @@ export interface AssertionSite {
     AWAIT: boolean;
 
     statements?: Array<AssertionSite | DependGraphNode>;
+    SOLO: boolean;
+    RUN: boolean;
+    INSPECT: boolean;
 };

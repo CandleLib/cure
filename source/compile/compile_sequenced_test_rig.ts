@@ -80,6 +80,9 @@ export function compileSequencedTestRig(
         pos: node.pos,
         index: index + test_index,
         IS_ASYNC,
+        SOLO: false,
+        RUN: true,
+        INSPECT: false,
         test_maps: tests
     };
 }

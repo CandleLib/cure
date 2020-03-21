@@ -124,7 +124,7 @@ export class Runner {
                             end: wkr.start + dur,
                             duration: dur,
                             //@ts-ignore
-                            error: new Error("Test timed out at " + dur + " milliseconds"),
+                            errors: [new Error("Test timed out at " + dur + " milliseconds")],
                             test: wkr.test,
                             TIMED_OUT: true,
                             PASSED: false

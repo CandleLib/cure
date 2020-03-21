@@ -9,6 +9,7 @@ import { sanitize } from "./sanitize.js";
 import { compileSequence } from "./compile_sequence.js";
 import { createAssertionSite } from "./create_assertion_site.js";
 import { extractIdentifierDependencies } from "./extract_identifier_dependencies.js";
+import { inspect } from "util";
 
 
 export function compileStatements(
@@ -127,7 +128,7 @@ export function compileStatements(
 
                     expression.expression.type == $.Parenthesized) {
 
-                    test_sites.push(createAssertionSite(scope, node, suite_names));
+                    test_sites.push(createAssertionSite(scope, expression.expression.expression, suite_names));
 
                     node.skip();
 
@@ -141,7 +142,34 @@ export function compileStatements(
 
                     continue;
 
-                } else if (expression.type == $.CallExpression) { }
+                } else if (expression.type == $.CallExpression) {
+                    const
+                        name = (expression.nodes[0].value + "").toLocaleLowerCase();
+
+                    if (expression.arguments.nodes.length == 1) {
+
+                        const first_arg = expression.arguments.nodes[0];
+
+                        if (first_arg && first_arg.type == $.Parenthesized) {
+
+                            const
+                                SOLO = ["solo", "mono", "s", "m"].includes(name),
+                                INSPECT = ["inspect", "i"].includes(name),
+                                RUN = !["skip", "sk"].includes(name);
+
+                            /**
+                             * Only create assertion site if the the call expression has one of the above listed identifier names.
+                             * If the name is something else, skip the statement entirely to prevent reference errors in other assertion
+                             * sites.
+                             */
+                            if (SOLO || INSPECT || RUN)
+                                test_sites.push(createAssertionSite(scope, first_arg.nodes[0], suite_names, SOLO, INSPECT, RUN));
+
+                            node.skip();
+                            continue;
+                        }
+                    }
+                }
             } break;
         }
 
