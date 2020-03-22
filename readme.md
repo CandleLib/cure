@@ -13,3 +13,20 @@
 
 </h6>
 
+
+- In depth error messaging
+    - Useful actionable error messages
+    - File reports 
+
+- Configure tests
+    - Inspect test data
+    - Export test data
+    - Skip tests
+    - *** Search tests
+
+- Test while coding - banish console.log 
+
+- Build new tests from existing test data.
+
+
+
