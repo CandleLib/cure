@@ -2,13 +2,13 @@ import { MinTreeNodeClass, MinTreeNodeType, MinTreeNode } from "@candlefw/js";
 import { Reporter } from "../main";
 
 /**
- * An object used to compile double parenthesize bindings into a testable and reportable
+ * An object used to compile double parenthesis bindings into a testable and reportable
  * expression.
  */
 export interface AssertionSiteCompiler {
 
     /**
-     * The signature of the first MinTreeNode in the double parenthesize expression.
+     * The signature of the first MinTreeNode in the double parenthesis expression.
      * 
      * Can either be a MinTreeNodeType value or bitwise OR flag of MinTreeNodeClasses values.
      * 
@@ -39,7 +39,7 @@ export interface AssertionSiteCompiler {
      * code branch will run.
      * 
      * 
-     * @param {MinTreeNode} node The first AST node within the double parenthesize AssertionSite.
+     * @param {MinTreeNode} node The first AST node within the double parenthesis AssertionSite.
      */
     build: (node: MinTreeNode) => string;
 
