@@ -18,6 +18,7 @@ async function RunTest(msg) {
         { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
         result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
 
+    harness.imports = import_module_sources;
     harness.errors = [];
     harness.test_index = -1;
 

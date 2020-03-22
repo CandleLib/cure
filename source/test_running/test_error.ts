@@ -1,5 +1,5 @@
 import URL from "@candlefw/url";
-import { lrParse, ParserData } from "@candlefw/hydrocarbon";
+import { lrParse } from "@candlefw/hydrocarbon";
 import { Lexer } from "@candlefw/wind";
 import { ImportSource } from "../types/test_rig";
 import data from "../utilities/error_line_parser.js";
