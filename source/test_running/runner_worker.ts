@@ -9,6 +9,8 @@ const
     ImportedModules: Map<string, any> = new Map(),
     AsyncFunction = (async function () { }).constructor;
 
+global.harness = harness;
+
 async function RunTest(msg) {
 
     const

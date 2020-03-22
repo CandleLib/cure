@@ -60,7 +60,7 @@ export async function runTests(tests: TestRig[], suites: TestSuite[], globals: G
         })
         .filter(test => test.RUN && (!SOLO_RUN || test.INSPECT || test.SOLO)),
         { runner, reporter, outcome } = globals,
-        update_timout = 0;
+        update_timout = 5;
 
     let FAILED = false, t = update_timout;
 
@@ -82,9 +82,11 @@ export async function runTests(tests: TestRig[], suites: TestSuite[], globals: G
 
                 outcome.results.push(...(res).flatMap(mapResults));
 
-                updateRun(outcome.results, suites, reporter);
+                if (t-- < 1) {
+                    updateRun(outcome.results, suites, reporter);
+                    t = update_timout;
+                }
 
-                t = update_timout;
             }
             await spark.sleep(0);
         } catch (e) {

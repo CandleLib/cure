@@ -133,8 +133,10 @@ export class BasicReporter implements Reporter {
 
         const out = this.render();
 
-        if (!COMPLETE)
+        if (!COMPLETE) {
             terminal.log(out);
+            await terminal.print();
+        }
 
         return out;
     }
@@ -182,25 +184,25 @@ export class BasicReporter implements Reporter {
                             lex.next();
                         }
 
-                        errors.push(`${rst}[ ${msgA + suites_name.join("|")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                        errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
                             fail
                             + lex.errorMessage(error.message, origin, 120)
                                 .replace(error.match_source, error.replace_source)
                                 .split("\n")
-                                .join("\n   ")
+                                .join("\n    ")
                             }\n${rst}`);
 
                     } else {
-                        errors.push(`${rst}[ ${msgA + suites_name.join("|")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
-                            fail + error.message.split("\n").join("\n   ")}\n`);
+                        errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                            fail + error.message.split("\n").join("\n    ")}\n`);
                     }
                 }
 
                 if (test.INSPECT)
-                    errors.push(`${objB}[ ${msgA + suites_name.join("|")} - ${rst + name + objB} ] ${objB}inspection${rst}:`,
-                        inspect(result, false, 5, true)
+                    errors.push(`${objB}[ ${msgA + suites_name.join(" > ")} - ${rst + name + objB} ] ${objB}inspection${rst}:`,
+                        "   " + inspect(result, false, 5, true)
                             .split("\n")
-                            .join("\n   ")
+                            .join("\n    ")
                     );
             }
 
@@ -209,7 +211,7 @@ export class BasicReporter implements Reporter {
                 if (suite.error) {
                     failed++;
                     errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${
-                        fail + suite.error.message.split("\n").join("\n   ")}\n${rst}`, "");
+                        fail + suite.error.message.split("\n").join("\n    ")}\n${rst}`, "");
                 }
             }
         } catch (e) {
@@ -224,7 +226,7 @@ export class BasicReporter implements Reporter {
 
         terminal.log(strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst);
 
-        await spark.sleep(1);
+        await terminal.print();
 
         return FAILED;
     }

@@ -1,6 +1,7 @@
 import equal from "deep-equal";
-import util from "util";
+import util, { inspect } from "util";
 import { TestError } from "./test_error.js";
+import { P } from "@candlefw/wind/build/types/ascii_code_points";
 /**
  * Provides methods and properties that are used during the reporting 
  */
@@ -153,5 +154,11 @@ export const harness = {
             e.index = harness.test_index;
 
         harness.errors.push(e);
+    },
+
+    inspect(object) {
+        const e = new Error(util.inspect(object, true, 8, true));
+        e.name = "cfw.test harness inspection intercept\n";
+        throw e;
     }
 };
