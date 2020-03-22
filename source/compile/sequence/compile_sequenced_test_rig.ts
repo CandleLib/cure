@@ -1,15 +1,15 @@
 import { stmt as $, render, MinTreeNodeType, MinTreeNode } from "@candlefw/js";
 
-import { AssertionSite } from "../types/assertion_site.js";
-import { ImportDependNode } from "../types/import_depend_node.js";
+import { AssertionSite } from "../../types/assertion_site.js";
+import { ImportDependNode } from "../../types/import_depend_node.js";
 
-import { RawTestRig } from "../types/raw_test.js";
-import { compileAssertionSite, } from "./compile_assertion_site.js";
-import { compileOuterScope } from "./compile_outer_scope.js";
-import { Reporter } from "../main.js";
-import { createTestAST } from "./create_test_ast.js";
-import { DependGraphNode } from "../types/depend_graph_node.js";
-import { TestMap } from "../types/test_rig.js";
+import { RawTestRig } from "../../types/raw_test.js";
+import { compileAssertionSite, } from "../assertion_site/compile_assertion_site.js";
+import { compileOuterScope } from "../compile_outer_scope.js";
+import { Reporter } from "../../main.js";
+import { createTestAST } from "../create_test_ast.js";
+import { DependGraphNode } from "../../types/depend_graph_node.js";
+import { TestMap } from "../../types/test_rig.js";
 
 export function compileSequencedTestRig(
     {

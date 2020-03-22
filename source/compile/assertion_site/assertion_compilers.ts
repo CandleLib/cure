@@ -1,8 +1,8 @@
 import { render as $r, MinTreeNodeType, MinTreeNodeClass, ext } from "@candlefw/js";
 
-import { AssertionSiteCompiler } from "../types/assertion_site_compiler.js";
+import { AssertionSiteCompiler } from "../../types/assertion_site_compiler.js";
 
-import { rst, valD } from "../utilities/colors.js";
+import { rst, valD } from "../../utilities/colors.js";
 
 function sanitizeTemplate(string) {
     return string;

@@ -11,7 +11,7 @@ import { RawTestRig } from "../types/raw_test.js";
 import { compileStatements } from "./compile_statements.js";
 import { compileTestRig } from "./compile_test_rig.js";
 import { Reporter } from "../main.js";
-import { compileSequencedTestRig } from "./compile_sequenced_test_rig.js";
+import { compileSequencedTestRig } from "./sequence/compile_sequenced_test_rig.js";
 
 
 /**

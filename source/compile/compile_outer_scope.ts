@@ -1,8 +1,8 @@
 import { MinTreeNode } from "@candlefw/js";
 import { traverse, extract, replace } from "@candlefw/conflagrate";
 
-import { getUsedStatements } from "./get_used_statements.js";
-import { replaceNodes } from "./replace_nodes.js";
+import { getUsedStatements } from "./utils/get_used_statements.js";
+import { replaceNodes } from "./utils/replace_nodes.js";
 
 export function compileOuterScope(scope, names, async_check = { is: false }) {
 

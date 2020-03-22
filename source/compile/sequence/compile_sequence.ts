@@ -1,9 +1,9 @@
 import { MinTreeNode, MinTreeNodeType, ext } from "@candlefw/js";
 import { traverse, skip_root, make_skippable } from "@candlefw/conflagrate";
-import { Scope } from "../types/scope.js";
-import { AssertionSite } from "../types/assertion_site.js";
-import { extractIdentifierDependencies } from "./extract_identifier_dependencies.js";
-import { createAssertionSite } from "./create_assertion_site.js";
+import { Scope } from "../../types/scope.js";
+import { AssertionSite } from "../../types/assertion_site.js";
+import { extractIdentifierDependencies } from "../utils/extract_identifier_dependencies.js";
+import { createAssertionSite } from "../assertion_site/create_assertion_site.js";
 
 /**
  * Compiles a sequence of assertion sites found within

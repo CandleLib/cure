@@ -2,7 +2,7 @@ import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp } from "@cand
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
 
 import { selectBindingCompiler } from "./assertion_compiler_manager.js";
-import { Reporter } from "../main.js";
+import { Reporter } from "../../main.js";
 
 /**
  * Compiles an Assertion Site. 

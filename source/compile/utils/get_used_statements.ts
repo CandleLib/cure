@@ -1,4 +1,4 @@
-import { Scope } from "../types/scope.js";
+import { Scope } from "../../types/scope.js";
 import { render } from "@candlefw/js";
 
 function partialIntersectionOfSets(setA, setB) {

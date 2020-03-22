@@ -6,9 +6,9 @@ import { AssertionSite } from "../types/assertion_site.js";
 import { ImportDependNode } from "../types/import_depend_node.js";
 import { RawTestRig } from "../types/raw_test.js";
 
-import { compileAssertionSite } from "./compile_assertion_site.js";
-import { getUsedStatements } from "./get_used_statements.js";
-import { replaceNodes } from "./replace_nodes.js";
+import { compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
+import { getUsedStatements } from "./utils/get_used_statements.js";
+import { replaceNodes } from "./utils/replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 import { Reporter } from "../main.js";
 import { createTestAST } from "./create_test_ast.js";

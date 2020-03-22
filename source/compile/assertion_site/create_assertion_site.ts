@@ -1,7 +1,7 @@
 import { MinTreeNodeClass, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
 import { traverse, bit_filter, filter } from "@candlefw/conflagrate";
-import { AssertionSite } from "../types/assertion_site.js";
-import { Scope } from "../types/scope.js";
+import { AssertionSite } from "../../types/assertion_site.js";
+import { Scope } from "../../types/scope.js";
 export function createAssertionSite(scope: Scope, expression: MinTreeNode, suite_names: string[], SOLO = false, INSPECT = false, RUN = true): AssertionSite {
 
     /*********************************************************

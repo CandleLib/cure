@@ -1,15 +1,14 @@
-import { MinTreeNodeType as $, ext, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
+import { MinTreeNodeType as $, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
 import { traverse, bit_filter, make_skippable, skip_root, extract } from "@candlefw/conflagrate";
 
 import { AssertionSite } from "../types/assertion_site.js";
 import { Scope } from "../types/scope.js";
 
 import { compileImport } from "./compile_import.js";
-import { sanitize } from "./sanitize.js";
-import { compileSequence } from "./compile_sequence.js";
-import { createAssertionSite } from "./create_assertion_site.js";
-import { extractIdentifierDependencies } from "./extract_identifier_dependencies.js";
-import { inspect } from "util";
+import { sanitize } from "./utils/sanitize.js";
+import { compileSequence } from "./sequence/compile_sequence.js";
+import { createAssertionSite } from "./assertion_site/create_assertion_site.js";
+import { extractIdentifierDependencies } from "./utils/extract_identifier_dependencies.js";
 
 
 export function compileStatements(
@@ -22,13 +21,14 @@ export function compileStatements(
     name_iterations: number = 0,
     root = null,
     root_nodes = null,
-    USE_ALL = false): {
+    USE_ALL = false,
+    SKIP_ALL = false): {
         scope: Scope;
         test_sites: AssertionSite[];
     } {
 
     const
-        test_sites: AssertionSite[] = [],
+        assert_sites: AssertionSite[] = [],
         scope: Scope = {
             root,
             nodes: root_nodes,
@@ -54,81 +54,91 @@ export function compileStatements(
 
         switch (node.type) {
 
-            case $.ImportDeclaration: {
-                compileImport(node, scope.imp, full_origin_path);
-            } continue;
+            case $.ImportDeclaration: { compileImport(node, scope.imp, full_origin_path); } continue;
 
             case $.ExportDeclaration: continue;
 
-            case $.BlockStatement: {
+            case $.WhileStatement: {
+
                 const new_node = sanitize(node);
 
-                /*********************************************************
-                 * Reserve Block statement
-                 *********************************************************/
-                test_sites.push(...compileStatements(node, full_origin_path, scope, suite_names.slice(), active_test_name, name_iterations, new_node, new_node.nodes, true).test_sites);
+                assert_sites.push(...compileStatements(
+                    node.nodes[1], full_origin_path, scope, suite_names.slice(), active_test_name, name_iterations, new_node, new_node.nodes[1].nodes, true
+                ).test_sites);
+
+                node.skip();
+            } continue;
+
+            case $.BlockStatement: {
+
+                const new_node = sanitize(node);
+
+                assert_sites.push(...compileStatements(
+                    node, full_origin_path, scope, suite_names.slice(), active_test_name, name_iterations, new_node, new_node.nodes, false
+                ).test_sites);
 
                 node.skip();
             } continue;
 
             case $.LabeledStatement: {
 
-                const labeled = ext(node);
+                const [, statement] = node.nodes;
 
-                switch (<string>labeled.label.value) {
+                switch (<string>node.nodes[0].value) {
+
                     case "AFTER_EACH":
                         scope.pragmas.push({
                             type: "AE",
-                            nodes: sanitize(labeled).statement.nodes || []
+                            nodes: sanitize(node).nodes[1].nodes || []
                         });
                         node.skip();
                         continue main;
+
                     case "BEFORE_EACH":
                         scope.pragmas.push({
                             type: "BE",
-                            nodes: sanitize(labeled).statement.nodes || []
+                            nodes: sanitize(node).nodes[1].nodes || []
                         });
                         node.skip();
                         continue main;
+
                     case "SEQUENCE":
-                        test_sites.push(compileSequence(node, scope, suite_names.slice()));
+                        assert_sites.push(compileSequence(node, scope, suite_names.slice()));
+                        node.skip();
+                        continue main;
+
+                    case "SKIP":
+                        const new_node = sanitize(statement);
+                        if (statement.type == $.BlockStatement)
+                            assert_sites.push(...compileStatements(
+                                statement, full_origin_path, scope, suite_names.slice(), active_test_name, name_iterations, statement, statement.nodes, false, true
+                            ).test_sites);
                         node.skip();
                         continue main;
                 }
             }
 
             case $.FunctionDeclaration: {
-                const new_node = sanitize(node);
+                //const new_node = sanitize(node);
             } break;
 
-            case $.WhileStatement: {
-                const new_node = sanitize(node);
-
-                /*********************************************************
-                 * Reserve Block statement
-                 *********************************************************/
-                test_sites.push(...compileStatements(node.nodes[1], full_origin_path, scope, suite_names.slice(), active_test_name, name_iterations, new_node, new_node.nodes[1].nodes, true).test_sites);
-
-                node.skip();
-            } continue;
-
             case $.Class: {
-                const new_node = sanitize(node);
+                // const new_node = sanitize(node);
             } break;
 
             case $.ExpressionStatement: {
 
 
-                const { expression } = ext(node, true);
+                const [expression] = node.nodes;
 
 
                 if (expression.type == $.Parenthesized
 
                     &&
 
-                    expression.expression.type == $.Parenthesized) {
+                    expression.nodes[0].type == $.Parenthesized) {
 
-                    test_sites.push(createAssertionSite(scope, expression.expression.expression, suite_names));
+                    assert_sites.push(createAssertionSite(scope, expression.nodes[0].nodes[0], suite_names));
 
                     node.skip();
 
@@ -144,26 +154,27 @@ export function compileStatements(
 
                 } else if (expression.type == $.CallExpression) {
                     const
-                        name = (expression.nodes[0].value + "").toLocaleLowerCase();
+                        name = (expression.nodes[0].value + "").toLocaleLowerCase(),
+                        [, args] = expression.nodes;
 
-                    if (expression.arguments.nodes.length == 1) {
+                    if (args.nodes.length == 1) {
 
-                        const first_arg = expression.arguments.nodes[0];
+                        const [first_arg] = args.nodes;
 
                         if (first_arg && first_arg.type == $.Parenthesized) {
 
                             const
-                                SOLO = ["solo", "mono", "s", "m"].includes(name),
+                                SOLO = ["solo", "only", "s", "o"].includes(name),
                                 INSPECT = ["inspect", "i"].includes(name),
-                                RUN = !["skip", "sk"].includes(name);
+                                SKIP = ["skip", "sk"].includes(name);
 
                             /**
                              * Only create assertion site if the the call expression has one of the above listed identifier names.
                              * If the name is something else, skip the statement entirely to prevent reference errors in other assertion
                              * sites.
                              */
-                            if (SOLO || INSPECT || RUN)
-                                test_sites.push(createAssertionSite(scope, first_arg.nodes[0], suite_names, SOLO, INSPECT, RUN));
+                            if (SOLO || INSPECT || SKIP)
+                                assert_sites.push(createAssertionSite(scope, first_arg.nodes[0], suite_names, SOLO, INSPECT, !SKIP));
 
                             node.skip();
                             continue;
@@ -175,14 +186,22 @@ export function compileStatements(
 
         /*********************************************************
          * ADD DependGraphNode
-         *****************************************  ****************/
+         *********************************************************/
 
         const { AWAIT, exports, imports } =
             extractIdentifierDependencies(node);
+
         scope.stmts.push({ AWAIT, ast: node, imports, exports });
+
         scope.offset = scope.stmts.length;
         //Only want top level statements
         node.skip();
+
     }
-    return { test_sites, scope };
+
+    if (SKIP_ALL)
+        for (const site of assert_sites)
+            site.RUN = false;
+
+    return { test_sites: assert_sites, scope };
 }
