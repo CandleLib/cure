@@ -1,7 +1,9 @@
 import { parentPort } from "worker_threads";
 import { performance } from "perf_hooks";
-import { TestResult } from "../types/test_result";
+
 import { TestRig } from "../types/test_rig.js";
+import { TestResult } from "../types/test_result.js";
+
 import { TestError } from "./test_error.js";
 import { harness } from "./test_harness.js";
 
@@ -9,20 +11,30 @@ const
     ImportedModules: Map<string, any> = new Map(),
     AsyncFunction = (async function () { }).constructor;
 
-global.harness = harness;
+let accessible_files: Set<string> = new Set();
 
 async function RunTest(msg) {
 
+    if (msg.accessible_files) {
+        for (const full_file_path of msg.accessible_files)
+            accessible_files.add(full_file_path);
+        return;
+    }
+
     const
         { test }: { test: TestRig; } = msg,
-        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
+        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map, origin } = test,
         result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
 
-    harness.imports = import_module_sources;
-    harness.errors = [];
-    harness.test_index = -1;
-
     try {
+        harness.imports = sources;
+
+        harness.errors = [];
+
+        harness.test_index = -1;
+
+        harness.origin = origin;
+
 
         for (const { source } of sources) {
 
@@ -54,24 +66,29 @@ async function RunTest(msg) {
             result.PASSED = false;
 
     } catch (e) {
+        let error = null;
 
-        result.errors.push(new TestError(e, test.pos.line, test.pos.column, "", "", sources, map));
+        try {
+            error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", accessible_files, map));
+        } catch (ee) {
+            error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
+        }
+
+        error.index = harness.test_index;
+
+        result.errors.push(error);
 
         result.end = performance.now();
 
         result.PASSED = false;
     }
 
-    try {
+    harness.last_error = null;
 
-        harness.last_error = null;
+    result.duration = result.end - result.start;
 
-        result.duration = result.end - result.start;
+    parentPort.postMessage(result);
 
-        parentPort.postMessage(result);
-    } catch (e) {
-        console.log(e);
-    }
 }
 
 parentPort.on("message", RunTest);
