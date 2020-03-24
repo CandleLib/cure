@@ -1,6 +1,6 @@
 import URL from "@candlefw/url";
 
-import { Runner } from "../test_running/runner.js";
+import { RunnerBoss } from "../test_running/runner_boss.js";
 import { BasicReporter } from "../reporting/basic_reporter.js";
 import { Globals, Outcome } from "../types/globals";
 import { TestFrame } from "../types/test_frame";
@@ -9,6 +9,7 @@ import { loadSuite } from "./load_suite.js";
 import { Reporter } from "../types/reporter.js";
 import * as colors from "./colors.js";
 import { TestFrameOptions } from "../types/test_frame_options";
+import { TestError } from "../test_running/test_error.js";
 
 function endWatchedTests(globals: Globals, resolution) {
 
@@ -73,11 +74,20 @@ export function createTestFrame(
         reporter: InitializeReporterColors(new BasicReporter()),
         runner: null,
         watchers: [],
+        watched_files_map: new Map(),
         outcome: { FAILED: true, results: [], errors: [] },
         WATCH,
-        exit: error => {
-            if (error)
+        exit: (reason = "Exiting for an unknown reason", error) => {
+
+            const { fail } = globals.reporter.colors;
+
+            console.log("\n" + fail + reason + colors.rst + "\n");
+
+            if (error) {
+                console.error(error);
                 globals.outcome.errors.push(error);
+            }
+
             endWatchedTests(globals, resolution);
         }
     };
@@ -106,7 +116,7 @@ export function createTestFrame(
                 url_string, { origin: url_string, rigs: [], index }
             ]));
 
-            globals.runner = new Runner(Math.max(number_of_workers, 1));
+            globals.runner = new RunnerBoss(Math.max(number_of_workers, 1));
 
             globals.watchers.length = 0;
 
@@ -124,7 +134,7 @@ export function createTestFrame(
                 await runTests(st.flatMap(suite => suite.rigs), st, globals);
 
             } catch (e) {
-                globals.outcome.errors.push[e];
+                globals.outcome.errors.push(new TestError(e, module.filename));
             }
 
             globals.PENDING = false;
