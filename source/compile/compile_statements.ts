@@ -1,4 +1,4 @@
-import { MinTreeNodeType as $, MinTreeNodeClass, MinTreeNode, render, extendAll, exp, stmt } from "@candlefw/js";
+import { MinTreeNodeType as $, MinTreeNodeClass, MinTreeNode, render, extendAll, exp, stmt, MinTreeNodeType } from "@candlefw/js";
 import { traverse, bit_filter, make_skippable, skip_root } from "@candlefw/conflagrate";
 
 import { AssertionSite, AssertionSiteSequence } from "../types/assertion_site.js";
@@ -11,6 +11,15 @@ import { createAssertionSite } from "./assertion_site/create_assertion_site.js";
 import { extractIdentifierDependencies } from "./utils/extract_identifier_dependencies.js";
 import { Reporter } from "../main.js";
 import { inspect } from "../test_running/test_harness.js";
+
+/**
+ * Generates a graph accessible symbols from any givin line within a 
+ * source file.
+ */
+export function generateSymbolGraph(ast: MinTreeNode):
+    any {
+    return ast;
+}
 
 export function compileStatements(
 
@@ -44,7 +53,7 @@ export function compileStatements(
         imports = <Set<string>>new Set(),
         exports = <Set<string>>new Set();
 
-    main: for (let node of traverse(ast, "nodes", 2)
+    main: for (let { node } of traverse(ast, "nodes", 2)
         .then(bit_filter("type", MinTreeNodeClass.STATEMENT))
         .then(skip_root())
     ) {

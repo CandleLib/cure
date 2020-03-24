@@ -18,7 +18,7 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNo
         IS_RELATIVE: url.IS_RELATIVE
     };
 
-    for (const id of traverse(node, "nodes")
+    for (const { node: id } of traverse(node, "nodes")
         .then(filter("type",
             MinTreeNodeType.Specifier,
             MinTreeNodeType.IdentifierModule,

@@ -67,11 +67,11 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
 
     let n = [];
 
-    for (const node of traverse(ast, "nodes")
+    for (const { node } of traverse(ast, "nodes")
         .then(filter("type", MinTreeNodeType.ExportDeclaration))
     ) {
         if (node.nodes[0])
-            for (const name of traverse(node.nodes[0], "nodes", 1)) {
+            for (const { node: name } of traverse(node.nodes[0], "nodes", 1)) {
                 switch (name.type) {
                     case MinTreeNodeType.FunctionDeclaration:
                         imports.push(ext(name.nodes[0]));
@@ -81,7 +81,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
                         break;
                     case MinTreeNodeType.VariableDeclaration:
                     case MinTreeNodeType.LexicalDeclaration:
-                        for (const id of traverse(name, "nodes", 2)
+                        for (const { node: id } of traverse(name, "nodes", 2)
                             .then(skip_root())) {
                             if (id.type == MinTreeNodeType.BindingExpression)
                                 imports.push(ext(id.nodes[0]));
@@ -90,7 +90,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
                         }
                         break;
                     case MinTreeNodeType.ExportClause:
-                        for (const id of traverse(name, "nodes", 2)
+                        for (const { node: id } of traverse(name, "nodes", 2)
                             .then(skip_root())) {
                             if (id.type & MinTreeNodeClass.IDENTIFIER)
                                 imports.push(ext(id));

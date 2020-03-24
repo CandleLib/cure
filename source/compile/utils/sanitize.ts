@@ -16,7 +16,7 @@ export function sanitize<T>(ast: T): T {
      * The active suite/test name
      */
 
-    for (const node of traverse(<$T>ast, "nodes")
+    for (const { node } of traverse(<$T>ast, "nodes")
         .then(filter("type", $.ExpressionStatement))
         .then(make_replaceable())
         .then(extract(receiver))

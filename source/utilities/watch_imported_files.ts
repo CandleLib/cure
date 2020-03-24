@@ -64,7 +64,7 @@ async function loadImports(filepath: string, suite: TestSuite, globals: Globals)
                     string = await fsp.readFile(org_url.path, { encoding: "utf8" }),
                     ast = parser(string);
 
-                for (const imp of traverse(ast, "nodes").then(filter("type", MinTreeNodeType.FromClause))) {
+                for (const { node: imp } of traverse(ast, "nodes").then(filter("type", MinTreeNodeType.FromClause))) {
 
                     const url = new URL(<string>ext(imp).url.value);
 

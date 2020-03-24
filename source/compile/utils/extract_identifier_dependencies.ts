@@ -51,7 +51,7 @@ function eid(
     const typ = [];
     if (ast)
         //Extract References and Bindings and check for await expression
-        for (const node of traverse(ast, "nodes")
+        for (const { node } of traverse(ast, "nodes")
             .then(skip_root())
             .then(make_skippable())
         ) {

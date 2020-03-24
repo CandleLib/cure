@@ -41,7 +41,7 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter, orig
                 receiver = { ast: null };
 
 
-            for (const node of traverse(thr, "nodes")
+            for (const { node } of traverse(thr, "nodes")
 
                 .then(extract(receiver))
 

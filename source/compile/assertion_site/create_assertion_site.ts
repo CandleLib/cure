@@ -13,7 +13,7 @@ export function createAssertionSite(scope: Scope, expression: MinTreeNode, suite
 
     let AWAIT: boolean = false;
 
-    for (const id of traverse(expression, "nodes")
+    for (const { node: id } of traverse(expression, "nodes")
 
         .then(bit_filter("type", MinTreeNodeClass.IDENTIFIER))
     ) {

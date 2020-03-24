@@ -86,7 +86,7 @@ export function compileSequence(ast: MinTreeNode, parent_scope: Scope, suite_nam
 
     let test_index = 0, number_of_statements = 0;
 
-    for (const node of traverse(ast, "nodes")
+    for (const { node } of traverse(ast, "nodes")
         .then(skip_root())
         .then(make_replaceable())
         .then(extract(receiver))
