@@ -1,14 +1,15 @@
 import path from "path";
 
 import URL from "@candlefw/url";
-import { parser, render as $r } from "@candlefw/js";
+import { parser, render as $r, MinTreeNodeDefinition } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
 
 import { TestRig } from "../types/test_rig.js";
-import { TestError } from "../test_running/test_error.js";
 import { compileTest } from "../compile/compile.js";
 import { TestSuite } from "../types/test_suite.js";
-import { Reporter } from "../main.js";
+import { Globals } from "../types/globals.js";
+import { format_rules } from "./format_rules.js";
+import { TestError } from "../test_running/test_error.js";
 
 /**
  * Creates TestRigs from a test file.
@@ -16,7 +17,7 @@ import { Reporter } from "../main.js";
  * @param {string} url_string - A path to the test file.
  * @param {TestSuite} suite - A TestSuite that the TestRigs will be attached to.
  */
-export async function loadTests(url_string: string, suite: TestSuite, reporter: Reporter): Promise<void> {
+export async function loadTests(url_string: string, suite: TestSuite, globals: Globals): Promise<void> {
 
     try {
 
@@ -24,14 +25,14 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
             url = new URL(path.resolve(process.cwd(), url_string)),
             text = await url.fetchText(),
             ast = parser(text),
-            { raw_tests } = await compileTest(ast, reporter, url.path);
+            { raw_tests } = await compileTest(ast, globals.reporter, url_string);
 
         let source = "";
 
         for (const { error: e, ast, imports, name, pos, index, type, test_maps, IS_ASYNC, SOLO, RUN, INSPECT } of raw_tests) {
 
             const
-                map = createSourceMap(),
+                mappings = <Array<number[]>>[],
                 import_arg_names = [],
                 args = [],
                 import_module_sources = [],
@@ -53,6 +54,10 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
 
                         import_module_sources.push({ source, IS_RELATIVE });
 
+                        //Prime watched files.
+                        //if (!globals.watched_files_map.has(source))
+                        //    globals.watched_files_map.set(source, null);
+
                         for (const import_spec of imports) {
 
                             import_arg_names.push(import_spec.import_name);
@@ -64,16 +69,15 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                         }
                     }
                 } catch (e) {
-                    error = e;
+                    error = new TestError(e, url_string);
                 }
                 args.push("$harness", "AssertionError",
                     ...import_arg_names);
 
-                source = $r(ast, map);
+                source = $r(ast, mappings, 0, null, format_rules);
             }
 
-            //map.sourceContent.push(text);
-            map.sources.set(url_string, 0);
+            const sm = createSourceMap(mappings, "", "", [url_string], [], []);
 
             suite.rigs.push(<TestRig>{
                 type,
@@ -83,7 +87,7 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                 source,
                 import_module_sources,
                 import_arg_specifiers,
-                map: createSourceMapJSON(map),
+                map: createSourceMapJSON(sm),
                 origin: url_string,
                 test_function_object_args: args,
                 error,
@@ -95,9 +99,9 @@ export async function loadTests(url_string: string, suite: TestSuite, reporter: 
                 INSPECT
             });
         }
-
+        // inspect(0, 1, 2);
     } catch (e) {
         suite.rigs.length = 0;
-        suite.error = new TestError(e, 0, 0, "", "");
+        suite.error = new TestError(e, suite.origin, 0, 0, "", "");
     }
 }
