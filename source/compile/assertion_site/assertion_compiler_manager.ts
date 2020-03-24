@@ -27,11 +27,16 @@ export function loadBindingCompiler(obj: AssertionSiteCompiler) {
     return true;
 };
 
-export function selectBindingCompiler(node: MinTreeNode): AssertionSiteCompiler[] {
+export function* selectBindingCompiler(node: MinTreeNode): Generator<AssertionSiteCompiler> {
 
     const type = node.type;
+
+    for (const c of BindingCompilers) {
+        if (((c.signature & (type & 0xFFFFFF))) && ((!(c.signature & 0xFF000000)) || c.signature == type))
+            yield c;
+    }
     //return BindingCompilers
-    return BindingCompilers.filter(c => ((c.signature & (type & 0xFFFFFF))) && ((!(c.signature & 0xFF000000)) || c.signature == type));
+    //return BindingCompilers.filter(c => );
 };
 
 export function clearBindingsCompilers() {

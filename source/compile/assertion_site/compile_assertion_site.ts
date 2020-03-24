@@ -1,4 +1,4 @@
-import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp } from "@candlefw/js";
+import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp, parser } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
 
 import { selectBindingCompiler } from "./assertion_compiler_manager.js";
@@ -9,12 +9,14 @@ import { Reporter } from "../../main.js";
  * 
  * @param node - An expression node within the double parenthesize Assertion Site. 
  * @param reporter - A Reporter for color data.
+ * @param origin File path of the source test file.
  */
-export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
+export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter, origin: string = "")
     : { ast: MinTreeNode, optional_name: string; } {
 
 
     for (const binding_compiler of selectBindingCompiler(expr)) {
+
         if (binding_compiler.test(expr)) {
 
             const
@@ -24,18 +26,20 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
 
                 error_data = [
                     `\`${message}\``,
+                    `"${origin}"`,
                     line || expr.pos.line,
                     column || expr.pos.char,
                     `\`${match.replace(/"/g, "\"")}\``,
                     `\"${highlight.replace(/"/g, "\\\"")}\"`
-                ],
-
+                ];
+            const
                 thr =
                     message ?
-                        stmt(`if(${js_string}) $harness.setException(new AssertionError(${error_data}));`)
-                        : stmt(`if(${js_string});`),
+                        parser(`if(${js_string}) $harness.setException(new AssertionError(${error_data}));`)
+                        : parser(`if(${js_string});`),
 
                 receiver = { ast: null };
+
 
             for (const node of traverse(thr, "nodes")
 
@@ -51,7 +55,7 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
                     node.replace(expr);
             }
 
-            return { ast: receiver.ast || exp(";"), optional_name: match };
+            return { ast: receiver.ast || stmt(";"), optional_name: match };
         }
     }
 

@@ -3,38 +3,45 @@ import { traverse, extract, replace } from "@candlefw/conflagrate";
 
 import { getUsedStatements } from "./utils/get_used_statements.js";
 import { replaceNodes } from "./utils/replace_nodes.js";
+import { inspect } from "../test_running/test_harness.js";
 
 export function compileOuterScope(scope, names, async_check = { is: false }) {
 
-    let statements = null;
+    let statements = [];
 
-    const
-        start = scope.offset,
-        root = scope.root,
-        nodes = scope.nodes,
-        { statements: s, names: n, AWAIT } = getUsedStatements(scope, start, names);
+    // inspect(0, 4, scope.parent;
 
-    if (AWAIT) async_check.is = true;
+    if (scope.parent) {
 
-    names = n;
+        const
+            start = scope.offset,
+            //root = scope.root,
+            //nodes = scope.nodes,
+            parent = scope.parent,
+            { statements: s, names: n, AWAIT } = getUsedStatements(parent, start, names);
 
-    statements = s;
+        if (AWAIT) async_check.is = true;
 
-    if (root) {
+        names = n;
 
-        const receiver = { ast: <MinTreeNode>null };
+        statements = s;
+        /*
+        if (root) {
 
-        nodes.length = 0;
+            const receiver = { ast: <MinTreeNode>null };
 
-        nodes.push(...statements);
+            nodes.length = 0;
 
-        traverse(root, "nodes").then(replace(replaceNodes)).then(extract(receiver)).run();
+            nodes.push(...statements);
 
-        statements = [receiver.ast];
+            traverse(root, "nodes").then(replace(replaceNodes)).then(extract(receiver)).run();
+
+            statements = [receiver.ast];
+        }*/
+
+        if (scope.parent)
+            return [...compileOuterScope(scope.parent, names, async_check), ...statements];
     }
 
-    if (scope.parent)
-        return [...compileOuterScope(scope.parent, names, async_check), ...statements];
-    else
-        return statements;
+    return statements;
 }

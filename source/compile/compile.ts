@@ -12,6 +12,7 @@ import { compileStatements } from "./compile_statements.js";
 import { compileTestRig } from "./compile_test_rig.js";
 import { Reporter } from "../main.js";
 import { compileSequencedTestRig } from "./sequence/compile_sequenced_test_rig.js";
+import { inspect } from "../test_running/test_harness.js";
 
 
 /**
@@ -21,7 +22,7 @@ import { compileSequencedTestRig } from "./sequence/compile_sequenced_test_rig.j
  * 
  * @param {Reporter} reporter - Users reporter.color to add assertion messaging syntax highlights.
  */
-export async function compileTest(ast: MinTreeNode, reporter: Reporter, full_origin_path: string) {
+export async function compileTest(ast: MinTreeNode, reporter: Reporter, origin: string) {
 
     const
         imports: Array<ImportDependNode> = [],
@@ -29,29 +30,31 @@ export async function compileTest(ast: MinTreeNode, reporter: Reporter, full_ori
 
     let i = 0, test = null;
 
-    const { test_sites, scope } = compileStatements(ast, full_origin_path);
+    const { assertion_sites, scope } = compileStatements(ast, origin, reporter);
 
     /*********************************************************
      * Assertion test sites.
      *********************************************************/
 
-    for (const site of test_sites) {
+
+    for (const site of assertion_sites) {
 
         site.index = i;
 
         switch (site.type) {
+
             case "SEQUENCED":
-                //test = null;
-                test = compileSequencedTestRig(site, scope.imp, reporter);
+                test = compileSequencedTestRig(site, scope.imp);
+                i = site.index + test.test_maps.length;
                 break;
 
-            case "THREADED":
             default:
-                test = compileTestRig(site, scope.imp, reporter);
+                test = compileTestRig(site, scope.imp, reporter, origin);
+                i = site.index + 1;
                 break;
         }
 
-        i = site.index + 1;
+
 
         if (test)
             tests.push(test);

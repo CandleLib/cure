@@ -1,5 +1,4 @@
-import { MinTreeNodeType as $, MinTreeNode, MinTreeNodeType } from "@candlefw/js";
-import { traverse, extract, replace } from "@candlefw/conflagrate";
+import { MinTreeNodeType } from "@candlefw/js";
 
 import { TestError } from "../test_running/test_error.js";
 import { AssertionSite } from "../types/assertion_site.js";
@@ -8,21 +7,26 @@ import { RawTestRig } from "../types/raw_test.js";
 
 import { compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
 import { getUsedStatements } from "./utils/get_used_statements.js";
-import { replaceNodes } from "./utils/replace_nodes.js";
 import { compileOuterScope } from "./compile_outer_scope.js";
 import { Reporter } from "../main.js";
 import { createTestAST } from "./create_test_ast.js";
 
-export function compileTestRig(
-    { name_data: { name, suite_names }, ast: node, scope, names, index, start, AWAIT, SOLO, INSPECT, RUN }: AssertionSite,
-    imports: ImportDependNode[],
-    reporter: Reporter)
+export function
+
+
+    compileTestRig(
+        { name_data: { name, suite_names }, ast: node, scope, names, index, start, AWAIT, SOLO, INSPECT, RUN }: AssertionSite,
+        imports: ImportDependNode[],
+        reporter: Reporter,
+        origin: string)
     : RawTestRig {
 
     let
         IS_ASYNC = AWAIT,
-        { root, nodes } = scope,
-        { ast: assertion_statement, optional_name } = compileAssertionSite(node, reporter);
+        //{ root, nodes } = scope,
+        { ast: assertion_statement, optional_name } = compileAssertionSite(node, reporter, origin);
+
+
 
     if (!assertion_statement) {
 
@@ -38,7 +42,8 @@ export function compileTestRig(
             pos: node.pos,
             SOLO, INSPECT, RUN,
             error: new TestError(
-                `Could not find a AssertionSiteCompiler for MinTreeNode [${$[expr.type]}]`,
+                `Could not find a AssertionSiteCompiler for MinTreeNode [${MinTreeNodeType[expr.type]}]`,
+                origin,
                 expr.pos.line,
                 expr.pos.char,
                 "",
@@ -49,8 +54,8 @@ export function compileTestRig(
 
         let statements = [];
 
-        const { statements: s, names: n, AWAIT }
-            = getUsedStatements(scope, start, names);
+        const { statements: s, names: n, AWAIT } = getUsedStatements(scope, start, names),
+            async_check = { is: false };
 
         if (AWAIT)
             IS_ASYNC = true;
@@ -61,35 +66,8 @@ export function compileTestRig(
 
         names = n;
 
-        if (root) {
-
-            const receiver = { ast: <MinTreeNode>null };
-
-            nodes.length = 0;
-
-            nodes.push(...statements);
-
-            traverse(root, "nodes").then(replace(replaceNodes)).then(extract(receiver)).run();
-
-            statements = [receiver.ast];
-        }
-
-        for (const pragma of scope.pragmas) {
-
-            switch (pragma.type) {
-                case "AE":
-                    statements.push(...pragma.nodes);
-                    break;
-                case "BE":
-                    statements.unshift(...pragma.nodes);
-                    break;
-            }
-        }
-
-        const async_check = { is: false };
-
         if (scope.parent)
-            statements = [...compileOuterScope(scope.parent, names, async_check), ...statements];
+            statements = [...compileOuterScope(scope, names, async_check), ...statements];
 
         if (async_check.is)
             IS_ASYNC = true;
@@ -100,7 +78,9 @@ export function compileTestRig(
             type: "DISCRETE",
             name: [...suite_names,
             (name || optional_name)].join("-->"),
-            ast, imports: imported_dependencies, pos: node.pos,
+            ast,
+            imports: imported_dependencies,
+            pos: node.pos,
             index,
             SOLO, INSPECT, RUN,
             IS_ASYNC

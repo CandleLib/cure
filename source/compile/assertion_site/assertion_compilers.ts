@@ -25,6 +25,7 @@ const
             },
 
             build: node => {
+
                 const equality_map = {
                     "==": "$harness.equal",
                     "!=": "$harness.notEqual"
@@ -123,7 +124,7 @@ const
             getExceptionMessage: (node, rp) => {
 
                 const
-                    { fail, bkgr, symA, objA, valA } = rp.colors, ;
+                    { fail, bkgr, symA, objA, valA } = rp.colors;
 
                 return {
                     message: `${fail}Expected ${bkgr}[${objA + node.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral($harness.caught_exception)}${bkgr}]${fail} to not throw an exception${fail}`,
@@ -152,8 +153,7 @@ const
 
             getExceptionMessage: (node, rp) => {
 
-                const
-                    { fail, bkgr, symA, objA, valA } = rp.colors,
+                const { fail, bkgr, symA, objA, valA } = rp.colors,
 
                     unary = node,
 
@@ -309,7 +309,6 @@ const
 
         /**
          * Assignment Expression - Can't happen, breaks independent nature of tests.
-         * 
          */
         <AssertionSiteCompiler>{
 

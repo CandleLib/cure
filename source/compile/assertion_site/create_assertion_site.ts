@@ -9,7 +9,7 @@ export function createAssertionSite(scope: Scope, expression: MinTreeNode, suite
      *********************************************************/
     const
         names = new Set(),
-        nm = suite_names.pop();
+        nm = suite_names.slice(-1)[0];
 
     let AWAIT: boolean = false;
 
@@ -30,8 +30,6 @@ export function createAssertionSite(scope: Scope, expression: MinTreeNode, suite
         break;
     }
 
-    suite_names.push("#");
-
     return <AssertionSite>{
         type: "THREADED",
         start: scope.stmts.length,
@@ -39,7 +37,7 @@ export function createAssertionSite(scope: Scope, expression: MinTreeNode, suite
         name_data: {
             name: nm == "#"
                 ? ""
-                : nm, suite_names: suite_names
+                : nm, suite_names: suite_names.slice(0, -1)
                     .reduce(
                         (r, s) => (s == "#"
                             ? 0

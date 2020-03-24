@@ -4,7 +4,7 @@ import URL from "@candlefw/url";
 import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_extended_node";
 import { ImportDependNode } from "../types/import_depend_node";
 
-export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNode[], full_origin_path: string) {
+export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNode[]) {
 
     const module_specifier = <string>ext(node, true).from.url.value;
 
