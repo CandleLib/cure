@@ -8,6 +8,52 @@ import { TestRig } from "../types/test_rig.js";
 import { TestError } from "../test_running/test_error.js";
 import { inspect } from "util";
 
+/**
+ * Creates a printable inspection message.
+ * @param result 
+ * @param test 
+ * @param suite 
+ * @param reporter 
+ */
+async function createInspectionMessage(result: TestResult, test: TestRig, suite: TestSuite, reporter: Reporter): Promise<string> {
+    let errors = [];
+
+    for (let error of result.errors) {
+
+        if (error.WORKER)
+            error = Object.assign(new TestError(""), error);
+
+        errors.push(await error.toAsyncBlameString());
+    }
+
+
+    const
+        { msgD, pass, symD, valB, symC, symA } = reporter.colors,
+        str_col = symC,
+        num_col = symA,
+        str =
+            `${rst}
+Test Duration: ${num_col + result.duration + rst}
+Test Start Time: ${num_col + result.start + rst}
+Test End Time: ${num_col + result.end + rst}
+
+Source File: ${str_col + suite.origin + rst}
+
+Dependencies:
+    ${str_col + (test.import_module_sources.map(e => e.source.trim()).join("\n     ") || pass + "none") + rst}
+
+-------------------------------------------------------------------------------
+Test Rig Source Code:
+
+    ${test.source.trim().split("\n").join("\n    ")}
+
+-------------------------------------------------------------------------------
+${rst}
+`;
+
+    return str.trim();
+}
+
 function getNameData(name: string) {
 
     const
@@ -152,6 +198,7 @@ export class BasicReporter implements Reporter {
 
         try {
             for (const result of results) {
+
                 const { test, errors: test_errors } = result;
 
                 if (!test_errors)
@@ -160,39 +207,45 @@ export class BasicReporter implements Reporter {
                 const { suites: suites_name, name } = getNameData(test.name);
 
                 if (test_errors && test_errors.length > 0) {
-                    failed++;
 
-                    FAILED = true;
+                    for (let error of test_errors) {
 
-                    let error = test_errors.slice(-1)[0];
+                        failed++;
 
-                    if (error.WORKER)
-                        error = Object.assign(new TestError(""), error);
+                        FAILED = true;
 
-                    if (error.origin) {
+                        if (error.WORKER)
+                            error = Object.assign(new TestError(""), error);
 
-                        const lex = await error.blameSource();
+                        if (error.origin) {
 
-                        errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
-                            fail
-                            + lex.errorMessage(error.message, error.origin, 120)
-                                .replace(error.match_source, error.replace_source)
-                                .split("\n")
-                                .join("\n    ")
-                            }\n${rst}`);
+                            const lex = await error.blameSource();
 
-                    } else {
-                        errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
-                            fail + error.message.split("\n").join("\n    ")}\n`);
+                            errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                                fail
+                                + lex.errorMessage(error.message, error.origin, 120)
+                                    .replace(error.match_source, error.replace_source)
+                                    .split("\n")
+                                    .join("\n    ")
+                                }\n${rst}`);
+
+                        } else {
+                            errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                                fail + error.message.split("\n").join("\n    ")}\n`);
+                        }
                     }
                 }
 
-                if (test.INSPECT)
+                if (test.INSPECT) {
+                    const suite = suites[test.suite_index];
+
+
                     errors.push(`${objB}[ ${msgA + suites_name.join(" > ")} - ${rst + name + objB} ] ${objB}inspection${rst}:`,
-                        "   " + inspect(result, false, 5, true)
+                        "   " + (await createInspectionMessage(result, test, suite, this))
                             .split("\n")
                             .join("\n    ")
                     );
+                }
             }
 
             for (const suite of suites) {

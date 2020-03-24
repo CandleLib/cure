@@ -13,6 +13,13 @@ import { TestRig } from "./test_rig.js";
 export interface Reporter {
 
     /**
+     * Called during suite building.
+     * 
+     * @param {string} message - A message indicating the current status of suite building.
+     */
+    buildUpdate?: (message: string[], suites: TestSuite[], terminal: CLITextDraw | Console) => void;
+
+    /**
      * Called before tests a run.
      * 
      * @param {TestRig[]} pending_tests - All tests that will be run.

@@ -63,6 +63,11 @@ class TestError {
     WORKER: boolean;
 
     /**
+     * Flag that determines if the original source file can be blamed.
+     */
+    BLAMABLE: boolean;
+
+    /**
      * Creates a TestError object.
      * 
      * This object is used to report all errors that are caught within cfw.test, including
@@ -87,6 +92,7 @@ class TestError {
         this.original_error_stack = "";
         this.index = -1;
         this.WORKER = WORKER;
+        this.BLAMABLE = true;
 
         if (message instanceof Error) {
 
@@ -117,7 +123,10 @@ class TestError {
 
                     this.column = loc.col;
 
+
                 } else {
+
+                    this.BLAMABLE = false;
 
                     this.message = error.stack;
 
@@ -136,6 +145,7 @@ class TestError {
                 this.column = source_column;
 
                 this.message = error.message;
+
             }
 
         } else {
@@ -148,6 +158,8 @@ class TestError {
      * Will read sourcemap data and follow mappings back to original file.
      */
     async blameSource(): Promise<Lexer> {
+
+        if (!this.BLAMABLE) return null;
 
         let
             origin = this.origin,
@@ -179,6 +191,19 @@ class TestError {
         }
 
         return lex;
+    }
+
+    async toAsyncBlameString() {
+        const lex = this.blameSource();
+
+        if (lex) {
+            return `${(await lex).errorMessage(this.message)}`;
+        } else
+            return this.message;
+    }
+
+    toString() {
+        return this.message;
     }
 }
 

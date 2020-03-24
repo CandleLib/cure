@@ -11,7 +11,7 @@ import * as colors from "./colors.js";
 import { TestFrameOptions } from "../types/test_frame_options";
 import { TestError } from "../test_running/test_error.js";
 
-function endWatchedTests(globals: Globals, resolution) {
+function endWatchedTests(globals: Globals, resolution: (arg: Outcome) => void) {
 
     for (const watcher of globals.watchers)
         watcher.close();
@@ -35,7 +35,7 @@ function endWatchedTests(globals: Globals, resolution) {
             resolution(globals.outcome);
         }
         else
-            resolution();
+            resolution(globals.outcome);
     }
 }
 
@@ -61,8 +61,7 @@ export function createTestFrame(
         WATCH = false,
         number_of_workers = 2,
         assertion_compilers = []
-    }: TestFrameOptions
-        = DefaultOptions,
+    }: TestFrameOptions,
     ...test_suite_url_strings: string[]
 ): TestFrame {
 
@@ -85,7 +84,7 @@ export function createTestFrame(
 
             if (error) {
                 console.error(error);
-                globals.outcome.errors.push(error);
+                globals.outcome.errors.push(new TestError(error));
             }
 
             endWatchedTests(globals, resolution);
