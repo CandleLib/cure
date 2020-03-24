@@ -9,22 +9,19 @@ import URL from "@candlefw/url";
 import { parser, MinTreeNodeType, ext } from "@candlefw/js";
 import { traverse, filter } from "@candlefw/conflagrate";
 
-const fsp = fs.promises,
-    WatchMap: Map<string, Map<string, TestSuite>> = new Map();
+const fsp = fs.promises;
 
 function createRelativeFileWatcher(path: string, globals: Globals) {
 
-    const url = new URL(path);
-
-    WatchMap.set(path, new Map());
-
     try {
+
         const watcher = fs.watch(path, async function () {
+
             if (!globals.PENDING) {
 
                 globals.PENDING = true;
 
-                const suites = Array.from(WatchMap.get(path).values());
+                const suites = Array.from(globals.watched_files_map.get(path).values());
 
                 await runTests(suites.flatMap(suite => suite.rigs), Array.from(suites), globals, true);
 
@@ -35,9 +32,7 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
         });
 
         globals.watchers.push(watcher);
-    }
-
-    catch (e) {
+    } catch (e) {
         fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
     }
 }
@@ -53,14 +48,18 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
 async function loadImports(filepath: string, suite: TestSuite, globals: Globals) {
 
 
-    if (!WatchMap.has(filepath)) {
+    if (!globals.watched_files_map.get(filepath)) {
 
-        createRelativeFileWatcher(filepath, globals);
+        globals.watched_files_map.set(filepath, new Map());
+
+        if (globals.WATCH) createRelativeFileWatcher(filepath, globals);
 
         const org_url = new URL(filepath);
 
         if (org_url.ext == "js") {
+
             try {
+
                 const
                     string = await fsp.readFile(org_url.path, { encoding: "utf8" }),
                     ast = parser(string);
@@ -73,17 +72,16 @@ async function loadImports(filepath: string, suite: TestSuite, globals: Globals)
 
                         const { path } = URL.resolveRelative(url, org_url);
 
-                        loadImports(path, suite, globals);
+                        await loadImports(path, suite, globals);
                     }
                 }
-
             } catch (e) {
-                console.log(e);
+                return fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
             }
         }
-    }
 
-    WatchMap.get(filepath).set(suite.origin, suite);
+        globals.watched_files_map.get(filepath).set(suite.origin, suite);
+    }
 }
 
 /**
@@ -93,28 +91,17 @@ export async function handleWatchOfRelativeDependencies(suite: TestSuite, global
 
     const { rigs: tests, origin } = suite, active_paths: Set<string> = new Set();
 
-    tests
-        .flatMap(test => test.import_module_sources)
-        .filter(src => src.IS_RELATIVE)
-        .forEach(src => {
 
-            const path = src.source;
+    for (const imprt of tests.flatMap(test => test.import_module_sources).filter(src => src.IS_RELATIVE)) {
 
-            loadImports(path, suite, globals);
+        const path = imprt.source;
 
-            active_paths.add(path);
+        await loadImports(path, suite, globals);
 
-            //if (!WatchMap.has(path))
-            //    createRelativeFileWatcher(path, globals);
-        });
-
-    //Remove suite from existing maps
-    //[...WatchMap.values()].map(wm => {
-    //    if (wm.has(origin))
-    //        wm.delete(origin);
-    //});
+        active_paths.add(path);
+    }
 
     //And suite to the newly identifier watched file handlers
     for (const path of active_paths.values())
-        WatchMap.get(path).set(origin, suite);
+        globals.watched_files_map.get(path).set(origin, suite);
 }

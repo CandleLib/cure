@@ -11,17 +11,17 @@ import { TestSuite } from "../types/test_suite.js";
 
 export async function loadSuite(suite: TestSuite, globals: Globals) {
 
-    const { reporter, WATCH } = globals;
+    const { WATCH } = globals;
 
     suite.rigs.length = 0;
 
     suite.error = null;
 
-    await loadTests(suite.origin, suite, reporter);
+    await loadTests(suite.origin, suite, globals);
+
+    handleWatchOfRelativeDependencies(suite, globals);
 
     if (WATCH) {
-
-        handleWatchOfRelativeDependencies(suite, globals);
 
         try {
             const watcher = fs.watch(suite.origin + "", async function (a) {
@@ -34,7 +34,7 @@ export async function loadSuite(suite: TestSuite, globals: Globals) {
 
                     suite.error = null;
 
-                    await loadTests(suite.origin, suite, reporter);
+                    await loadTests(suite.origin, suite, globals);
 
                     handleWatchOfRelativeDependencies(suite, globals);
 
@@ -47,9 +47,8 @@ export async function loadSuite(suite: TestSuite, globals: Globals) {
             });
 
             globals.watchers.push(watcher);
-        }
-        catch (e) {
-            fatalExit(e, reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
+        } catch (e) {
+            globals.exit("\nCannot continue in watch mode when a watched file cannot be found\n", e);
         }
     }
 }
