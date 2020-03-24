@@ -10,6 +10,9 @@ import CompilerBindings from "./compile/assertion_site/assertion_compilers.js";
 import { BasicReporter } from "./reporting/basic_reporter.js";
 import { NullReporter } from "./reporting/null_reporter.js";
 
+/**
+ * Preload Default AssertionSite Compilers
+ */
 CompilerBindings.map(loadBindingCompiler);
 
 export {
