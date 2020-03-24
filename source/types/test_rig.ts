@@ -1,5 +1,6 @@
 import { Lexer } from "@candlefw/wind";
 import { TestError } from "../test_running/test_error";
+import { TestMap } from "./test_map";
 
 /**
  * Maps a module name to a file path.
@@ -43,10 +44,7 @@ export interface ImportSource {
     IS_RELATIVE: boolean;
 };
 
-export interface TestMap {
-    name: string;
-    index: number;
-};
+
 
 /**
  * Contains a fully compiled test script that can be run. 
@@ -58,6 +56,11 @@ export interface TestRig {
      * Name of the test. Includes suite name and redundant name info.
      */
     name: string;
+
+    /**
+     * File path of the source test file.
+     */
+    origin: string;
 
     /**
      * The test compiled into JavaScript script string. 
@@ -87,7 +90,7 @@ export interface TestRig {
     /**
     * An error object if an exception was thrown during test compilation.
     */
-    error?: Error | TestError;
+    error?: TestError;
 
     /**
      * Position Lexer for mapping errors back to the source file.

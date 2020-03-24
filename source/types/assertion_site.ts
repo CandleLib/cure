@@ -1,12 +1,13 @@
 import { MinTreeNode } from "@candlefw/js";
 import { Scope } from "./scope";
 import { DependGraphNode } from "./depend_graph_node";
+import { TestMap } from "./test_map";
 
 export interface AssertionSite {
-    type: "THREADED" | "SEQUENCED",
+    type: "THREADED",
 
     /**
-     * Index of the assertion site within the source file. Top Down. 
+     * Index of the assertion site within the source file, number from top to bottom.
      */
     index?: number,
 
@@ -20,10 +21,29 @@ export interface AssertionSite {
 
     names: Set<string>,
 
-    AWAIT: boolean;
-
     statements?: Array<AssertionSite | DependGraphNode>;
+
+    imports?: Set<string>;
+
+    exports?: Set<string>;
+
+    AWAIT: boolean;
     SOLO: boolean;
     RUN: boolean;
     INSPECT: boolean;
 };
+
+export interface AssertionSiteSequence {
+    type: "SEQUENCED";
+    index: number,
+    start: number,
+    ast: MinTreeNode,
+    name_data: { name: string, suite_names: string[]; },
+    scope,
+    tests: TestMap[],
+    names: Set<string>,
+    AWAIT: boolean;
+    SOLO: boolean;
+    RUN: boolean;
+    INSPECT: boolean;
+}

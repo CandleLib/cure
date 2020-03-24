@@ -6,7 +6,14 @@ import { ImportSource } from "./test_rig.js";
  */
 export interface TestHarness {
 
+    inspect_count: number;
+
     imports: ImportSource[];
+
+    /**
+     * File path of the source test file.
+     */
+    origin: string;
 
     /**
      * Array of Error objects that were generated during the test run.
@@ -38,6 +45,12 @@ export interface TestHarness {
      */
     caught_exception: Error | TestError;
     last_error: Error | TestError;
+
+    /**
+     * In a sequenced run of tests, gives the index of the last
+     * encountered AssertionSite.
+     */
+    test_index: number;
 
     /**
      * Converts a value into a reportable string.
@@ -97,4 +110,13 @@ export interface TestHarness {
      * Add error to test harness.
      */
     setException: (e) => void;
+
+    /**
+     * Throws an Error object whose message is the details of 
+     * the arguments serialized into a color formatted string.
+     * 
+     * @param {any[]} vals - Spread of all arguments passed 
+     * to the function.
+     */
+    inspect: (...vals: any[]) => void;
 }

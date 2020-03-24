@@ -9,8 +9,6 @@ import { TestRig } from "./test_rig.js";
 
 /**
  * Provides an interface to report on running and completed tests.
- * 
- * 
  */
 export interface Reporter {
 

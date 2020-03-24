@@ -26,6 +26,7 @@ export interface Pragma {
  * JS scope, such as a block statement or a function declaration.
  */
 export interface Scope {
+    type: "SCOPE";
     /**
      * The root MinTreeNode
      */
@@ -33,10 +34,10 @@ export interface Scope {
     offset: number;
     parent?: Scope;
     imp: ImportDependNode[];
-    dec: DependGraphNode[];
-    stmts: DependGraphNode[];
-    root: MinTreeNode;
-    nodes: MinTreeNode[];
+    //dec: DependGraphNode[];
+    stmts: (DependGraphNode | Scope)[];
+    //root: MinTreeNode;
+    // nodes: MinTreeNode[];
     pragmas: Pragma[],
     USE_ALL: boolean;
 };

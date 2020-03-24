@@ -1,6 +1,7 @@
 import { MinTreeNode } from "@candlefw/js";
 import { Lexer } from "@candlefw/wind";
 import { ImportDependNode } from "./import_depend_node";
+import { TestMap } from "./test_map";
 
 export interface RawTestRig {
     type: "SEQUENCE" | "DISCRETE",
@@ -34,11 +35,7 @@ export interface RawTestRig {
      * In a SEQUENCE TestRig, test_maps map individual assertion 
      * sites to virtual test outcomes.
      */
-    test_maps?: Array<{
-        name: string,
-        index: number,
-        error?: Error;
-    }>;
+    test_maps?: TestMap[];
     SOLO: boolean;
     RUN: boolean;
     INSPECT: boolean;

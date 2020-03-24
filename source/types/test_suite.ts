@@ -24,5 +24,5 @@ export interface TestSuite {
     /**
      * An error object if an exception was thrown during TestRig compilation.
      */
-    error?: Error | TestError;
+    error?: TestError;
 };
