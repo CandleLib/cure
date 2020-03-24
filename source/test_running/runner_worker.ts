@@ -69,7 +69,7 @@ async function RunTest(msg) {
         let error = null;
 
         try {
-            error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", accessible_files, map));
+            error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", accessible_files, map);
         } catch (ee) {
             error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
         }
