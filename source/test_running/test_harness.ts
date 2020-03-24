@@ -76,7 +76,7 @@ const
                     if (value instanceof Error)
                         return `[${value.name}]{ message: "${value.message}" }`;
 
-                    return util.inspect(value, false, 3, true);
+                    return rst + util.inspect(value, false, 3, true);
 
                 default:
 

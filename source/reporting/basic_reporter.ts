@@ -1,13 +1,54 @@
 import { Reporter } from "../types/reporter.js";
 import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "../types/test_result.js";
-import { rst } from "../utilities/colors.js";
+import { rst, pass, fail, symA, valD, valA, valB, valC, symB, symC, objA, objB, objC, objD, msgC, symD } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
 import { TestSuite } from "../types/test_suite.js";
 import { TestRig } from "../types/test_rig.js";
 import { TestError } from "../test_running/test_error.js";
 import { inspect } from "util";
+import { parser, renderWithFormatting, MinTreeNodeType, MinTreeNodeClass } from "@candlefw/js";
+import { format_rules } from "../utilities/format_rules.js";
 
+
+function syntaxHighLight(str: string, type: MinTreeNodeType): string {
+    if ("==>><<<+-||&&!/*".includes(str))
+        return symC + str + rst;
+
+    if ("(){}[]".includes(str))
+        return symD + str + rst;
+
+    switch (type) {
+        case MinTreeNodeType.NewInstanceExpression:
+        case MinTreeNodeType.NewExpression:
+        case MinTreeNodeType.VariableDeclaration:
+        case MinTreeNodeType.LexicalDeclaration:
+        case MinTreeNodeType.IfStatement:
+        case MinTreeNodeType.ForInStatement:
+        case MinTreeNodeType.WhileStatement:
+        case MinTreeNodeType.DoStatement:
+        case MinTreeNodeType.TryStatement:
+        case MinTreeNodeType.ForOfStatement:
+        case MinTreeNodeType.ForOfStatement:
+            return valB + str + rst;
+        case MinTreeNodeType.IdentifierProperty:
+            return objD + str + rst;
+        case MinTreeNodeType.IdentifierBinding:
+        case MinTreeNodeType.IdentifierReference:
+            return objC + str + rst;
+        case MinTreeNodeType.TemplateHead:
+        case MinTreeNodeType.TemplateMiddle:
+        case MinTreeNodeType.TemplateTail:
+        case MinTreeNodeType.Template:
+        case MinTreeNodeType.StringLiteral:
+            return valA + str.replace(/\x1b\[[^m]+m/g, "") + rst;
+    }
+
+    if (type & MinTreeNodeClass.LITERAL)
+        return symA + str + rst;
+
+    return str;
+}
 /**
  * Creates a printable inspection message.
  * @param result 
@@ -25,11 +66,9 @@ async function createInspectionMessage(result: TestResult, test: TestRig, suite:
 
         errors.push(await error.toAsyncBlameString());
     }
-
-
     const
-        { msgD, pass, symD, valB, symC, symA } = reporter.colors,
-        str_col = symC,
+        { msgD, pass, symD, valB, symC, symA, valA } = reporter.colors,
+        str_col = valA,
         num_col = symA,
         str =
             `${rst}
@@ -45,11 +84,9 @@ Dependencies:
 -------------------------------------------------------------------------------
 Test Rig Source Code:
 
-    ${test.source.trim().split("\n").join("\n    ")}
+    ${renderWithFormatting(parser(test.source), format_rules, syntaxHighLight).trim().split("\n").join("\n    ")}
 
--------------------------------------------------------------------------------
-${rst}
-`;
+${rst}-------------------------------------------------------------------------------`;
 
     return str.trim();
 }
@@ -253,13 +290,13 @@ export class BasicReporter implements Reporter {
                 if (suite.error) {
                     failed++;
                     errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${
-                        fail + suite.error.message.split("\n").join("\n    ")}\n${rst}`, "");
+                        fail + (await suite.error.toAsyncBlameString()).split("\n").join("\n    ")}\n${rst}`, "");
                 }
             }
         } catch (e) {
             failed++;
             errors.push(`${rst}Reporter failed:\n\n    ${
-                fail + e.stack.split("\n").join("\n   ")}\n${rst}`, "");
+                fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
         }
 
         strings.push(`${total} test${total !== 1 ? "s" : ""} run. ${total > 0 ? (failed > 0

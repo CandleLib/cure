@@ -27,15 +27,15 @@ export const
     /**
      * General color to highlight an object name such as a member expression or variable.
      */
-    objC = xtF(xtColor(col_x11.Plum4)),
+    objC = xtF(xtColor(col_x11.MediumPurple2)),
     /**
      * General color to highlight an object name such as a member expression or variable.
      */
-    objD = xtF(xtColor(col_x11.Firebrick4)),
+    objD = xtF(xtColor(col_x11.CornflowerBlue)),
     /**
      * General color to highlight an literal value, such 0, true, null, undefined
      */
-    valA = xtF(xtColor(col_x11.CadetBlue2)),
+    valA = xtF(xtColor(col_x11.LightGreen)),
     /**
      * General color to highlight an literal value, such 0, true, null, undefined
      */
@@ -47,7 +47,7 @@ export const
     /**
      * General color to highlight an literal value, such 0, true, null, undefined
      */
-    valD = xtF(xtColor(col_x11.MediumSlateBlue)),
+    valD = xtF(xtColor(col_x11.SlateGray2)),
     /**
      * Neutral color to highlight a message such a as tip.
      */
@@ -67,16 +67,16 @@ export const
     /**
      * Highlight color to highlight a non test symbol.
      */
-    symA = xtF(xtColor(col_x11.Gold)),
+    symA = xtF(xtColor(col_x11.Gold), xtBold),
     /**
      * Highlight color to highlight a non test symbol.
      */
-    symB = xtF(xtColor(col_x11.Gold3)),
+    symB = xtF(xtColor(col_x11.Gold3), xtBold),
     /**
      * Highlight color to highlight a non test symbol.
      */
-    symC = xtF(xtColor(col_x11.Tan2)),
+    symC = xtF(xtColor(col_x11.OrangeRed2), xtBold),
     /**
      * Highlight color to highlight a non test symbol.
      */
-    symD = xtF(xtColor(col_x11.Tan4));
+    symD = xtF(xtColor(col_x11.LightSkyBlue2), xtBold);
