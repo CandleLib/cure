@@ -17,16 +17,28 @@ export function sanitize<T>(ast: T): T {
      */
 
     for (const node of traverse(<$T>ast, "nodes")
-        .then(filter("type", MinTreeNodeType.ExpressionStatement))
+        .then(filter("type", $.ExpressionStatement))
         .then(make_replaceable())
         .then(extract(receiver))
         .then(skip_root())
     ) {
 
-        if (node.nodes[0].type == $.Parenthesized &&
-            node.nodes[0].nodes[0].type == $.Parenthesized) {
-            node.replace(null);
-        }
+        if (
+
+            (
+                node.nodes[0].type == $.Parenthesized
+                &&
+                node.nodes[0].nodes[0].type == $.Parenthesized
+            )
+            ||
+            (
+                node.nodes[0].type == $.CallExpression
+                &&
+                node.nodes[0].nodes[1].nodes[0].type == $.Parenthesized
+            )
+
+        ) node.replace(null);
+
     }
 
     return receiver.ast;
