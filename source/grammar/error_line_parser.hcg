@@ -3,9 +3,9 @@
 
 <> start → d
 
-<> d → data
+<> d → data 								↦r { $sym1.flat() }
 
-<> data → at_module \( location(+,) \)		↦r { {locations : $sym3.flat() } }
+<> data → at_module \( location(+,) \)		↦r { $sym3 }
 
 <> at_module → τat module_name ( \[ τas id \] )?
 
@@ -14,15 +14,15 @@
 	│ module_name θid
 	│ \< τanonymous \>
 
-<> location → θid data						↦r { $sym2.locations }
+<> location → θid data						↦r { $sym2 }
 	│ url \: θnum \: θnum 					↦r { { type:"URL", url:$sym1.url, protocol:$sym1.protocol, line:parseInt($sym3), col:parseInt($sym5) } }		
-	│ \< τanonymous \> \: θnum \: θnum 		↦r { { type:"ANON", line:parseInt($sym5), col:parseInt($sym7) } }	
+	│ \< τanonymous \> \: θnum \: θnum 		↦r { { type:"ANONYMOUS", line:parseInt($sym5), col:parseInt($sym7) } }	
 
-<> url → θid 					↦r { { url:$sym1, protocol:"" } }
-	│ url θid					↦r { $sym1.url += $sym2, $sym1 }
-	│ url \/					↦r { $sym1.url += $sym2, $sym1 }
-	│ url \.					↦r { $sym1.url += $sym2, $sym1 }
-	│ url \: \/ \/ 				↦r { { protocol: $sym1.url, url:""} }
+<> url → θid 								↦r { { url:$sym1, protocol:"" } }
+	│ url θid								↦r { $sym1.url += $sym2, $sym1 }
+	│ url \/								↦r { $sym1.url += $sym2, $sym1 }
+	│ url \.								↦r { $sym1.url += $sym2, $sym1 }
+	│ url \: \/ \/ 							↦r { { protocol: $sym1.url, url:""} }
 
 <> id → θid 
 	│ \_ 

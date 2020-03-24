@@ -1,19 +1,41 @@
-import URL from "@candlefw/url";
-import { lrParse } from "@candlefw/hydrocarbon";
-import { Lexer } from "@candlefw/wind";
-import { ImportSource } from "../types/test_rig";
-import data from "../utilities/error_line_parser.js";
 
+import { lrParse, ParserData } from "@candlefw/hydrocarbon";
+import { Lexer } from "@candlefw/wind";
 import {
     getSourceLineColumn,
-    decodeJSONSourceMap
+    decodeJSONSourceMap,
 } from "@candlefw/conflagrate";
 
-export class TestError {
+import data from "../utilities/error_line_parser.js";
+import { inspect, harness } from "./test_harness.js";
+import URL from "@candlefw/url";
 
-    name: string;
 
-    IS_TEST_ERROR: boolean;
+type StackTraceLocation = {
+    type: "URL";
+    col: number;
+    line: number;
+    protocol: string;
+    url: string;
+} | {
+    type: "ANONYMOUS";
+    col: number;
+    line: number;
+};
+
+
+/**
+ * This object is used to report all errors that are caught within cfw.test, including
+ * errors encountered within the various prep stages of the test framework.
+ */
+class TestError {
+
+    /**
+     * Name of the TestError object. 
+     * 
+     * Always set to `TestError`.
+     */
+    readonly name: string;
 
     match_source: string;
 
@@ -31,17 +53,40 @@ export class TestError {
 
     index: number;
 
-    constructor(message, line, column, match_source, replace_source, sources: ImportSource[] = [], map = null) {
+    /**
+     * True if the TestError object was created within a worker process.
+     * 
+     * This is necessary to detect if the prototype chain needs to be 
+     * re-implemented after the TestError data has been passed back to 
+     * the main thread.
+     */
+    WORKER: boolean;
+
+    /**
+     * Creates a TestError object.
+     * 
+     * This object is used to report all errors that are caught within cfw.test, including
+     * errors encountered within the test framework itself.
+     * 
+     * @param {string | Error} message Error message or an error object.
+     * @param line Line number of source file where error occurred.
+     * @param column Column number of source file where error occurred.
+     * @param match_source String to find in Error message. Used with replace_string to add highlighting to error message.
+     * @param replace_source Used to add highlighting to error message.
+     * @param accessible_files File paths that cfw.test is allowed to inspect for error reporting.
+     * @param map @type {SourceMap} of the compiled @type {TestRig} source
+     */
+    constructor(message, origin = harness.origin, line = 0, column = 0, match_source = "", replace_source = "", accessible_files: Set<string> = null, map: string = null, WORKER = true) {
 
         this.name = "TestError";
-        this.origin = "";
-        this.IS_TEST_ERROR = true;
-        this.line = line;
-        this.column = column;
+        this.origin = origin;
+        this.line = line + 1;
+        this.column = column + 1;
         this.match_source = match_source;
         this.replace_source = replace_source;
         this.original_error_stack = "";
         this.index = -1;
+        this.WORKER = WORKER;
 
         if (message instanceof Error) {
 
@@ -52,14 +97,7 @@ export class TestError {
             this.message = error.message;
 
             this.original_error_stack = error.stack;
-
-            let out;
-
-            try {
-                out = lrParse(new Lexer(error_frame), data, {});
-            } catch (e) {
-                console.log(e);
-            }
+            let out = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), data, {});
 
             if (!out)
                 return; //throw EvalError("Could not parse stack line");
@@ -67,40 +105,28 @@ export class TestError {
             if (out.error)
                 return; //throw out.error;
 
-            const
-                loc = out.value.locations.pop();
+            const loc = out.value.pop();
 
             if (loc.type == "URL") {
 
-                let RELATIVE_MATCH = false;
+                if (accessible_files.has(loc.url)) {
 
-                for (const source of sources) {
+                    this.origin = loc.url;
 
-                    if (source.IS_RELATIVE) {
+                    this.line = loc.line;
 
-                        if (source.module_source == loc.url) {
+                    this.column = loc.col;
 
-                            RELATIVE_MATCH = true;
-
-                            this.origin = (new URL(data[0])).path;
-
-                            this.line = loc.line;
-
-                            this.column = loc.column;
-
-                            break;
-                        }
-                    }
-                }
-
-                if (!RELATIVE_MATCH) {
+                } else {
 
                     this.message = error.stack;
+
+                    this.message += JSON.stringify(out);
 
                     this.origin = "";
                 }
 
-            } else {
+            } else { // "ANONYMOUS"
 
                 const { line: source_line, column: source_column }
                     = getSourceLineColumn(loc.line, loc.col, decodeJSONSourceMap(map));
@@ -110,12 +136,51 @@ export class TestError {
                 this.column = source_column;
 
                 this.message = error.message;
-
-                this.origin = "";
             }
 
         } else {
             this.message = message;
         }
     }
+
+    /**
+     * Creates a Wind Lexer that points to failure line/column in the source file.
+     * Will read sourcemap data and follow mappings back to original file.
+     */
+    async blameSource(): Promise<Lexer> {
+
+        let
+            origin = this.origin,
+            line = this.line - 1,
+            col = this.column - 1,
+            data = (await (new URL(origin)).fetchText());
+
+        //Check for source map.
+        for (const [, loc] of data.matchAll(/sourceMappingURL=(.+)/g)) {
+            const
+                source_map_url = URL.resolveRelative(`./${loc}`, origin),
+                source_map = decodeJSONSourceMap(await source_map_url.fetchText()),
+                { line: l, column: c, source: source_path } = getSourceLineColumn(line + 1, col + 1, source_map),
+                source_url = URL.resolveRelative(source_path, source_map_url),
+                source = await source_url.fetchText();
+            origin = source_url.path;
+            data = source;
+            col = c;
+            line = l;
+        }
+
+        const lex = new Lexer(data);
+
+        lex.CHARACTERS_ONLY = true;
+
+        while (!lex.END) {
+            if (lex.line == line && lex.char >= col) break;
+            lex.next();
+        }
+
+        return lex;
+    }
 }
+
+
+export { TestError };
