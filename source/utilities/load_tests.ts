@@ -1,7 +1,7 @@
 import path from "path";
 
 import URL from "@candlefw/url";
-import { parser, render as $r, MinTreeNodeDefinition } from "@candlefw/js";
+import { parser, render as $r, MinTreeNodeDefinition, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
 
 import { TestRig } from "../types/test_rig.js";
@@ -71,10 +71,11 @@ export async function loadTests(url_string: string, suite: TestSuite, globals: G
                 } catch (e) {
                     error = new TestError(e, url_string);
                 }
+
                 args.push("$harness", "AssertionError",
                     ...import_arg_names);
 
-                source = $r(ast, mappings, 0, null, format_rules);
+                source = renderWithFormattingAndSourceMap(ast, format_rules, null, mappings, 0, null);
             }
 
             const sm = createSourceMap(mappings, "", "", [url_string], [], []);

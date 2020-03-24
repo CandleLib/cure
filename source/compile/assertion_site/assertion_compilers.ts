@@ -1,4 +1,4 @@
-import { render as $r, MinTreeNodeType, MinTreeNodeClass } from "@candlefw/js";
+import { renderCompressed as $r, MinTreeNodeType, MinTreeNodeClass } from "@candlefw/js";
 
 import { AssertionSiteCompiler } from "../../types/assertion_site_compiler.js";
 
