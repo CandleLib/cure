@@ -1,13 +1,11 @@
-import spark from "@candlefw/spark";
-import URL from "@candlefw/url";
-import { Lexer } from "@candlefw/wind";
 import { Reporter } from "../types/reporter.js";
 import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "../types/test_result.js";
-import { rst, objB } from "../utilities/colors.js";
+import { rst } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
 import { TestSuite } from "../types/test_suite.js";
 import { TestRig } from "../types/test_rig.js";
+import { TestError } from "../test_running/test_error.js";
 import { inspect } from "util";
 
 function getNameData(name: string) {
@@ -19,9 +17,10 @@ function getNameData(name: string) {
 
     return { suites, name: name_string };
 }
-
 type SuiteData = { tests: Map<string, { name: string, complete: boolean, failed: boolean; duration: number; }>, suites: Map<string, SuiteData>; };
-
+/**
+ * Basic Report is the template reporter that implements all primary features of a reporter.
+ */
 export class BasicReporter implements Reporter {
 
     colors: Reporter["colors"];
@@ -46,7 +45,7 @@ export class BasicReporter implements Reporter {
 
 
                 if (test.complete) {
-                    const dur = ` - ${((test.duration * (test.duration < 1 ? 1000 : 1)) | 0)}${test.duration < 1 ? "μs" : "ms"}`;
+                    const dur = ` - ${Math.round((test.duration * (test.duration < 1 ? 1000 : 1)))}${test.duration < 1 ? "μs" : "ms"}`;
 
                     if (test.failed) {
 
@@ -67,9 +66,7 @@ export class BasicReporter implements Reporter {
         return strings.join("\n");
     }
 
-    async start(pending_tests: TestRig[], suites: TestSuite[], terminal: CLITextDraw | Console) {
-
-
+    async start(pending_tests: TestRig[], suites: TestSuite[], terminal: CLITextDraw) {
 
         pending_tests = pending_tests.slice()
             .sort((a, b) => a.index < b.index ? -1 : 1)
@@ -103,12 +100,12 @@ export class BasicReporter implements Reporter {
 
             }
         } catch (e) {
-            console.log(e);
+            //console.log(e);
         }
 
     }
 
-    async update(results: Array<TestResult>, suites: TestSuite[], terminal: CLITextDraw | Console, COMPLETE = false) {
+    async update(results: Array<TestResult>, suites: TestSuite[], terminal: CLITextDraw, COMPLETE = false) {
 
         terminal.clear();
 
@@ -141,7 +138,7 @@ export class BasicReporter implements Reporter {
         return out;
     }
 
-    async complete(results: TestResult[], suites: TestSuite[], terminal: CLITextDraw | Console): Promise<boolean> {
+    async complete(results: TestResult[], suites: TestSuite[], terminal: CLITextDraw): Promise<boolean> {
 
         const
             strings = [await this.update(results, suites, terminal, true)],
@@ -167,26 +164,18 @@ export class BasicReporter implements Reporter {
 
                     FAILED = true;
 
-                    const error = test_errors.slice(-1)[0];
+                    let error = test_errors.slice(-1)[0];
 
-                    if (error.IS_TEST_ERROR) {
+                    if (error.WORKER)
+                        error = Object.assign(new TestError(""), error);
 
-                        const
-                            origin = error.origin || suites[test.suite_index].origin,
-                            data = (await (new URL(origin))
-                                .fetchText()),
-                            lex = new Lexer(data);
+                    if (error.origin) {
 
-                        lex.CHARACTERS_ONLY = true;
-
-                        while (!lex.END) {
-                            if (lex.line == error.line && lex.char >= error.column) break;
-                            lex.next();
-                        }
+                        const lex = await error.blameSource();
 
                         errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
                             fail
-                            + lex.errorMessage(error.message, origin, 120)
+                            + lex.errorMessage(error.message, error.origin, 120)
                                 .replace(error.match_source, error.replace_source)
                                 .split("\n")
                                 .join("\n    ")
@@ -221,8 +210,8 @@ export class BasicReporter implements Reporter {
         }
 
         strings.push(`${total} test${total !== 1 ? "s" : ""} run. ${total > 0 ? (failed > 0
-            ? fail + `${failed} failed test${(failed !== 1 ? "s" : "") + rst} :: ${pass + (total - failed)} successful test${total - failed !== 1 ? "s" : ""}`
-            : pass + "All tests succeeded") : ""} ${rst}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
+            ? fail + `${failed} failed test${(failed !== 1 ? "s" : "") + rst} :: ${pass + (total - failed)} passed test${total - failed !== 1 ? "s" : ""}`
+            : pass + "All tests passed") : ""} ${rst}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
 
         terminal.log(strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst);
 
