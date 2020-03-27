@@ -23,8 +23,8 @@
 	"license": "MIT",
 	"dependencies": {
 		"@candlefw/conflagrate": "^0.0.5-alpha",
-		"@candlefw/hydrocarbon": "^0.3.4",
-		"@candlefw/js": "0.1.6",
+		"@candlefw/hydrocarbon": "^0.3.4-dev-1",
+		"@candlefw/js": "0.1.6-dev-1",
 		"@candlefw/spark": "0.1.0",
 		"@candlefw/url": "^0.1.1",
 		"@candlefw/wax": "0.0.2",
