@@ -1,6 +1,6 @@
 import { MinTreeNode } from "@candlefw/js";
 import { DependGraphNode } from "./depend_graph_node";
-import { ImportDependNode } from "./import_depend_node";
+import { ImportModule } from "./import_module";
 
 /**
  * A pragma condition to include before or after the test statements.
@@ -33,7 +33,7 @@ export interface Scope {
     ast: MinTreeNode;
     offset: number;
     parent?: Scope;
-    imp: ImportDependNode[];
+    imp: ImportModule[];
     //dec: DependGraphNode[];
     stmts: (DependGraphNode | Scope)[];
     //root: MinTreeNode;

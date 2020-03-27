@@ -17,15 +17,15 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
 
         const watcher = fs.watch(path, async function () {
 
-            if (!globals.PENDING) {
+            if (!globals.flags.PENDING) {
 
-                globals.PENDING = true;
+                globals.flags.PENDING = true;
 
                 const suites = Array.from(globals.watched_files_map.get(path).values());
 
                 await runTests(suites.flatMap(suite => suite.rigs), Array.from(suites), globals, true);
 
-                globals.PENDING = false;
+                globals.flags.PENDING = false;
 
                 console.log("Waiting for changes...");
             }
@@ -52,7 +52,7 @@ async function loadImports(filepath: string, suite: TestSuite, globals: Globals)
 
         globals.watched_files_map.set(filepath, new Map());
 
-        if (globals.WATCH) createRelativeFileWatcher(filepath, globals);
+        if (globals.flags.WATCH) createRelativeFileWatcher(filepath, globals);
 
         const org_url = new URL(filepath);
 
@@ -64,9 +64,9 @@ async function loadImports(filepath: string, suite: TestSuite, globals: Globals)
                     string = await fsp.readFile(org_url.path, { encoding: "utf8" }),
                     ast = parser(string);
 
-                for (const { node: imp } of traverse(ast, "nodes").then(filter("type", MinTreeNodeType.FromClause))) {
+                for (const { node } of traverse(ast, "nodes").filter("type", MinTreeNodeType.FromClause)) {
 
-                    const url = new URL(<string>ext(imp).url.value);
+                    const url = new URL(<string>ext(node).url.value);
 
                     if (url.IS_RELATIVE) {
 

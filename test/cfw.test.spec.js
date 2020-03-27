@@ -4,6 +4,7 @@
 import { createTestFrame, NullReporter } from "../build/library/main.js";
 
 "The function createTestFrame should not throw";
+
 ((createTestFrame()));
 
 SEQUENCE: {

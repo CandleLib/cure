@@ -161,10 +161,10 @@ const
 
                 return {
                     message: `${fail}Expected ${bkgr}[${objA + expression.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral($harness.regA)}${bkgr}]${fail} to throw an exception${fail}`,
-                    highlight: objA + unary.pos.slice() + fail,
-                    match: node.pos.slice(),
+                    highlight: objA + node.nodes[0].nodes[0].pos.slice().trim() + fail,
+                    match: node.nodes[0].nodes[0].pos.slice().trim(),
                     column: node.nodes[0].pos.column,
-                    line: 0
+                    line: node.nodes[0].pos.line
                 };
             },
         },

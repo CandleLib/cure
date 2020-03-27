@@ -6,6 +6,7 @@ import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { TestResult } from "./test_result.js";
 import { TestSuite } from "./test_suite.js";
 import { TestRig } from "./test_rig.js";
+import { Globals } from "./globals.js";
 
 /**
  * Provides an interface to report on running and completed tests.
@@ -13,11 +14,26 @@ import { TestRig } from "./test_rig.js";
 export interface Reporter {
 
     /**
-     * Called during suite building.
+     * Called when test files paths have been received and suites are about to be built.
      * 
      * @param {string} message - A message indicating the current status of suite building.
      */
-    buildUpdate?: (message: string[], suites: TestSuite[], terminal: CLITextDraw | Console) => void;
+    buildStart?: (message: string[], globals: Globals, terminal: CLITextDraw | Console) => void;
+
+    /**
+     * Called when tests are being built. 
+     * 
+     * @param {string} message - A message indicating the current status of suite building.
+     */
+    buildUpdate?: (message: string[], globals: Globals, terminal: CLITextDraw | Console) => void;
+
+    /**
+     * Called once suites have been build/updated;
+     * 
+     * @param {string} message - A message indicating the current status of suite building.
+     */
+    buildComplete?: (message: string[], globals: Globals, terminal: CLITextDraw | Console) => void;
+
 
     /**
      * Called before tests a run.
@@ -27,7 +43,7 @@ export interface Reporter {
      * @param {CLITextDraw | Console} terminal - An output terminal to write test messages to.
      * 
      */
-    start: (pending_tests: TestRig[], suites: TestSuite[], terminal: CLITextDraw | Console) => void;
+    start: (pending_tests: TestRig[], globals: Globals, terminal: CLITextDraw | Console) => void;
 
     /**
      * Called periodically if the TestFrame is in watch mode.
@@ -37,7 +53,7 @@ export interface Reporter {
      * @param {CLITextDraw | Console} terminal - An output terminal to write test messages to.
      * 
      */
-    update: (results: TestResult[], suites: TestSuite[], terminal: CLITextDraw | Console) => void;
+    update: (results: TestResult[], globals: Globals, terminal: CLITextDraw | Console) => void;
 
     /**
      * Called when all tests have completed their runs. 
@@ -50,7 +66,7 @@ export interface Reporter {
      *
      * @async
      */
-    complete: (results: TestResult[], suites: TestSuite[], terminal: CLITextDraw | Console) => Promise<boolean>;
+    complete: (results: TestResult[], globals: Globals, terminal: CLITextDraw | Console) => Promise<boolean>;
 
     /**
      * An object of terminal color strings to override the default coloring scheme.

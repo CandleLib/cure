@@ -3,9 +3,10 @@ import util from "util";
 import { TestError } from "./test_error.js";
 import { TestHarness } from "../types/test_harness";
 import { rst } from "../utilities/colors.js";
-
+import { performance } from "perf_hooks";
 
 const
+    MAX_ERROR_LIMIT = 10,
     inspect = (...args) => {
         const
             first = args[0],
@@ -13,13 +14,13 @@ const
 
         let limit = 8;
 
-        if (!isNaN(first)) {
+        if (!isNaN(first) && args.length > 1) {
             if (harness.inspect_count++ < first)
                 return;
 
             args = args.slice(1);
 
-            if (!isNaN(second)) {
+            if (!isNaN(second) && args.length > 1) {
 
                 limit = second;
 
@@ -27,16 +28,16 @@ const
             }
         }
 
-
-
-        const e = new Error(rst + args.map(val => util.inspect(val, false, limit, true)).join("\n"));
-
-        e.name = "cfw.test.harness.inspect intercept";
+        const e = new Error("cfw.test.harness.inspect intercept:\n    " + rst + args.map(val => util.inspect(val, false, limit, true)).join("    \n") + "\n");
 
         throw e;
     },
 
     harness = <TestHarness>{
+
+        accessible_files: null,
+
+        last_time: -1,
 
         inspect_count: 0,
 
@@ -59,6 +60,23 @@ const
         last_error: null,
 
         origin: "",
+
+        mark(index: number) {
+            harness.errors.push(new TestError(new Error("marked: " + index), "", 0, 0, "", ""));
+        },
+
+        /**
+         * Marks point in execution time.  
+         */
+        markTime() {
+            const now = performance.now();
+
+            if (harness.last_time > 0) {
+                harness.errors.push(new TestError(new Error("Time marked at: " + (now - harness.last_time)), "", 0, 0, "", ""));
+                harness.last_time = -1;
+            } else
+                harness.last_time = now;
+        },
 
         makeLiteral: (value: any): string => {
 
@@ -105,6 +123,7 @@ const
             return a == b;
         },
 
+
         externAssertion: (fn: Function): boolean => {
 
             try {
@@ -136,6 +155,9 @@ const
                 e.index = harness.test_index;
 
             harness.errors.push(e);
+
+            if (harness.errors.length > MAX_ERROR_LIMIT)
+                throw new Error("Maximum number of errors reached. Error count is. " + (MAX_ERROR_LIMIT + 1));
         },
 
         inspect

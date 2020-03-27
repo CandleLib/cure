@@ -36,14 +36,33 @@ export interface Globals {
     exit: (reason?: string, error?: Error) => void;
 
     /**
-     * `true` if test files and dependencies with relative 
-     * paths are to be watched.
+     * Set of flags to enable and disable features.
      */
-    WATCH: boolean;
+    flags: {
 
-    /**
-     * `true` if a test is running.
-     */
-    PENDING: boolean;
+        /**
+         * `true` if test import dependencies with relative 
+         * paths are to be watched.
+         * 
+         * @readonly
+         * @default false
+         */
+        WATCH: boolean;
+
+        /**
+         * `true` if any test rig is currently running.
+         */
+        PENDING: boolean;
+
+        /**
+         * Wait for loading, parsing and linking of all relative imported files before testing.
+         * May slow down initial loading of tests.
+         * 
+         * @readonly
+         * @default false
+         */
+        PRELOAD_IMPORTS: boolean;
+
+    };
 
 };

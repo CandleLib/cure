@@ -3,15 +3,11 @@
  * @module compile
  */
 
-import { render as $r, MinTreeNode, exp, stmt } from "@candlefw/js";
-
-import { CompileResults } from "../types/compiler_result.js";
-import { ImportDependNode } from "../types/import_depend_node.js";
+import { MinTreeNode } from "@candlefw/js";
+import { ImportModule } from "../types/import_module.js";
 import { RawTestRig } from "../types/raw_test.js";
-import { compileStatements } from "./compile_statements.js";
-import { compileTestRig } from "./compile_test_rig.js";
+import { compileStatementsNew } from "./compile_statements.js";
 import { Reporter } from "../main.js";
-import { compileSequencedTestRig } from "./sequence/compile_sequenced_test_rig.js";
 import { inspect } from "../test_running/test_harness.js";
 
 
@@ -20,45 +16,43 @@ import { inspect } from "../test_running/test_harness.js";
  * 
  * @param {MinTreeNode} ast 
  * 
- * @param {Reporter} reporter - Users reporter.color to add assertion messaging syntax highlights.
+ * @param {Reporter} reporter - Users reporter.color to add asrenderWithFormattingAndSourceMapsertion messaging syntax highlights.
  */
-export async function compileTest(ast: MinTreeNode, reporter: Reporter, origin: string) {
+export async function compileTest(ast: MinTreeNode, reporter: Reporter, origin: string):
+    Promise<{ raw_tests: RawTestRig[], imports: ImportModule[]; }> {
 
     const
-        imports: Array<ImportDependNode> = [],
+        imports: Array<ImportModule> = [],
         tests: Array<RawTestRig> = [];
 
-    let i = 0, test = null;
+    let i = 0, test = null, rigs = [];
 
-    const { assertion_sites, scope } = compileStatements(ast, origin, reporter);
+    const raw_rigs = <Array<{ rig: RawTestRig, import_names: Set<string>; }>><unknown>compileStatementsNew(ast, reporter, imports);
 
-    /*********************************************************
-     * Assertion test sites.
-     *********************************************************/
+    let index = 0;
 
+    for (const { rig, import_names } of raw_rigs) {
 
-    for (const site of assertion_sites) {
-
-        site.index = i;
-
-        switch (site.type) {
-
-            case "SEQUENCED":
-                test = compileSequencedTestRig(site, scope.imp);
-                i = site.index + test.test_maps.length;
-                break;
-
-            default:
-                test = compileTestRig(site, scope.imp, reporter, origin);
-                i = site.index + 1;
-                break;
+        if (rig.type == "DISCRETE")
+            rig.index = index++;
+        else {
+            rig.index = index;
+            index += rig.test_maps.length;
         }
 
+        for (const imp of imports) {
 
+            for (const id of imp.import_names)
 
-        if (test)
-            tests.push(test);
+                if (import_names.has(id.import_name)) {
+
+                    rig.imports.push({ module: imp, name: id });
+
+                }
+        }
+
+        rigs.push(rig);
     }
 
-    return <CompileResults>{ raw_tests: tests, imports };
+    return { raw_tests: rigs, imports };
 }

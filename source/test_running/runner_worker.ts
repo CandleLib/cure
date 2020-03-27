@@ -5,7 +5,9 @@ import { TestRig } from "../types/test_rig.js";
 import { TestResult } from "../types/test_result.js";
 
 import { TestError } from "./test_error.js";
-import { harness } from "./test_harness.js";
+import { harness, inspect } from "./test_harness.js";
+import { pass, rst, fail } from "../utilities/colors.js";
+
 
 const
     ImportedModules: Map<string, any> = new Map(),
@@ -15,15 +17,9 @@ let accessible_files: Set<string> = new Set();
 
 async function RunTest(msg) {
 
-    if (msg.accessible_files) {
-        for (const full_file_path of msg.accessible_files)
-            accessible_files.add(full_file_path);
-        return;
-    }
-
     const
         { test }: { test: TestRig; } = msg,
-        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map, origin } = test,
+        { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source, map } = test,
         result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
 
     try {
@@ -33,7 +29,9 @@ async function RunTest(msg) {
 
         harness.test_index = -1;
 
-        harness.origin = origin;
+        harness.origin = "";
+
+        harness.accessible_files = accessible_files;
 
 
         for (const { source } of sources) {
@@ -49,6 +47,9 @@ async function RunTest(msg) {
             test_args = [harness, TestError, ...spec.map(e => {
 
                 const module = ImportedModules.get(e.module_specifier);
+
+                if (!module[e.module_name])
+                    throw new TestError(`Could not find object [${e.module_name}] export of \n${pass} ${e.module_specifier} ${fail}\n`, "", e.pos.line + 1, e.pos.column + 1, e.module_name, pass + e.module_name + fail);
 
                 return module[e.module_name];
             })];
@@ -68,13 +69,20 @@ async function RunTest(msg) {
     } catch (e) {
         let error = null;
 
-        try {
-            error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", accessible_files, map);
-        } catch (ee) {
-            error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
+        if (e instanceof TestError) {
+
+            error = e;
+        } else {
+            try {
+                error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", map);
+            } catch (ee) {
+                error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
+            }
         }
 
         error.index = harness.test_index;
+
+        result.errors = harness.errors;
 
         result.errors.push(error);
 

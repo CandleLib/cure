@@ -1,7 +1,7 @@
 import path from "path";
 
 import URL from "@candlefw/url";
-import { parser, render as $r, MinTreeNodeDefinition, renderWithFormattingAndSourceMap } from "@candlefw/js";
+import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
 
 import { TestRig } from "../types/test_rig.js";
@@ -10,22 +10,21 @@ import { TestSuite } from "../types/test_suite.js";
 import { Globals } from "../types/globals.js";
 import { format_rules } from "./format_rules.js";
 import { TestError } from "../test_running/test_error.js";
+import { ImportModule } from "../types/import_module.js";
 
 /**
- * Creates TestRigs from a test file.
+ * Create TestRigs from a test filepath and add to suite.
  * 
  * @param {string} url_string - A path to the test file.
- * @param {TestSuite} suite - A TestSuite that the TestRigs will be attached to.
+ * @param {TestSuite} suite - A TestSuite that the TestRigs will be added to.
  */
-export async function loadTests(url_string: string, suite: TestSuite, globals: Globals): Promise<void> {
+export async function loadTests(text_data: string, suite: TestSuite, globals: Globals): Promise<void> {
 
     try {
 
         const
-            url = new URL(path.resolve(process.cwd(), url_string)),
-            text = await url.fetchText(),
-            ast = parser(text),
-            { raw_tests } = await compileTest(ast, globals.reporter, url_string);
+            ast = parser(text_data),
+            { raw_tests } = await compileTest(ast, globals.reporter, "");
 
         let source = "";
 
@@ -42,34 +41,36 @@ export async function loadTests(url_string: string, suite: TestSuite, globals: G
 
             if (!error) {
                 try {
+                    const ImportMap: Map<ImportModule, string> = new Map();
                     // Load imports into args
-                    for (const import_obj of imports) {
+                    for (const { module: import_module, name: { import_name, module_name, pos } } of imports) {
 
-                        const
-                            { import_names: imports, module_source, IS_RELATIVE }
-                                = import_obj,
+                        let source = "";
+
+                        if (!ImportMap.has(import_module)) {
+                            const { import_names: imports, module_source, IS_RELATIVE } = import_module;
+
                             source = IS_RELATIVE
-                                ? URL.resolveRelative(module_source, url) + ""
+                                ? URL.resolveRelative(module_source, path.resolve(process.cwd(), suite.origin)) + ""
                                 : module_source + "";
 
-                        import_module_sources.push({ source, IS_RELATIVE });
+                            ImportMap.set(import_module, source);
 
-                        //Prime watched files.
-                        //if (!globals.watched_files_map.has(source))
-                        //    globals.watched_files_map.set(source, null);
-
-                        for (const import_spec of imports) {
-
-                            import_arg_names.push(import_spec.import_name);
-
-                            import_arg_specifiers.push({
-                                module_specifier: source,
-                                module_name: import_spec.module_name
-                            });
+                            import_module_sources.push({ source, IS_RELATIVE });
+                        } else {
+                            source = ImportMap.get(import_module);
                         }
+
+                        import_arg_names.push(import_name);
+
+                        import_arg_specifiers.push({
+                            module_specifier: source,
+                            module_name: module_name,
+                            pos
+                        });
                     }
                 } catch (e) {
-                    error = new TestError(e, url_string);
+                    error = new TestError(e, "");
                 }
 
                 args.push("$harness", "AssertionError",
@@ -78,7 +79,7 @@ export async function loadTests(url_string: string, suite: TestSuite, globals: G
                 source = renderWithFormattingAndSourceMap(ast, format_rules, null, mappings, 0, null);
             }
 
-            const sm = createSourceMap(mappings, "", "", [url_string], [], []);
+            const sm = createSourceMap(mappings, "", "", [], [], []);
 
             suite.rigs.push(<TestRig>{
                 type,
@@ -89,7 +90,6 @@ export async function loadTests(url_string: string, suite: TestSuite, globals: G
                 import_module_sources,
                 import_arg_specifiers,
                 map: createSourceMapJSON(sm),
-                origin: url_string,
                 test_function_object_args: args,
                 error,
                 pos,
@@ -100,9 +100,9 @@ export async function loadTests(url_string: string, suite: TestSuite, globals: G
                 INSPECT
             });
         }
-        // inspect(0, 1, 2);
+
     } catch (e) {
         suite.rigs.length = 0;
-        suite.error = new TestError(e, suite.origin, 0, 0, "", "");
+        suite.error = new TestError(e + " " + text_data, suite.origin, 0, 0, "", "");
     }
 }

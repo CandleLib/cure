@@ -1,8 +1,14 @@
 import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp, parser } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
-
-import { selectBindingCompiler } from "./assertion_compiler_manager.js";
+import CompilerBindings from "./assertion_compilers.js";
+import { selectBindingCompiler, loadBindingCompiler } from "./assertion_compiler_manager.js";
 import { Reporter } from "../../main.js";
+
+/**
+ * Preload Default AssertionSite Compilers
+ */
+CompilerBindings.map(loadBindingCompiler);
+
 
 /**
  * Compiles an Assertion Site. 
@@ -11,7 +17,7 @@ import { Reporter } from "../../main.js";
  * @param reporter - A Reporter for color data.
  * @param origin File path of the source test file.
  */
-export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter, origin: string = "")
+export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
     : { ast: MinTreeNode, optional_name: string; } {
 
 
@@ -26,11 +32,11 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter, orig
 
                 error_data = [
                     `\`${message}\``,
-                    `"${origin}"`,
-                    line || expr.pos.line,
-                    column || expr.pos.char,
+                    `""`,
+                    line + 1 || expr.pos.line + 1,
+                    column + 1 || expr.pos.char + 1,
                     `\`${match.replace(/"/g, "\"")}\``,
-                    `\"${highlight.replace(/"/g, "\\\"")}\"`
+                    `\`${highlight.replace(/"/g, "\\\"")}\``
                 ];
             const
                 thr =
@@ -41,21 +47,20 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter, orig
                 receiver = { ast: null };
 
 
-            for (const { node } of traverse(thr, "nodes")
+            for (const { node, meta } of traverse(thr, "nodes")
 
-                .then(extract(receiver))
+                //.extract(receiver)
 
-                .then(replace(node => (node.pos = expr.pos, node)))
+                //.replace(node => (node.pos = expr.pos, node))
 
-                .then(bit_filter("type", MinTreeNodeClass.IDENTIFIER))
+                //.bitFilter("type", MinTreeNodeClass.IDENTIFIER)
 
-                .then(make_replaceable())) {
-
-                if (node.value == "t")
-                    node.replace(expr);
+                //.makeReplaceable()
+            ) {
+                node.pos = expr.pos;
             }
 
-            return { ast: receiver.ast || stmt(";"), optional_name: match };
+            return { ast: thr || stmt(";"), optional_name: match };
         }
     }
 

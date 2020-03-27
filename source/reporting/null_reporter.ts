@@ -6,11 +6,11 @@ import { Reporter } from "source/types/reporter";
  * @module Reporter
  */
 export class NullReporter implements Reporter {
-    async start(pending_tests, suites, console) {
+    async start(pending_tests, globals, console) {
     }
-    async update(results, suites, console) {
+    async update(results, globals, console) {
     }
-    async complete(results, suites, console) {
+    async complete(results, globals, console) {
         return true;
     }
 }

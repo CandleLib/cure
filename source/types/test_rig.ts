@@ -16,6 +16,11 @@ export interface ModuleSpecifier {
      * URL or name of a module.
      */
     module_name: string;
+
+    /**
+     * Position of the export name in the source
+     */
+    pos: Lexer;
 };
 
 /**
@@ -56,11 +61,6 @@ export interface TestRig {
      * Name of the test. Includes suite name and redundant name info.
      */
     name: string;
-
-    /**
-     * File path of the source test file.
-     */
-    origin: string;
 
     /**
      * The test compiled into JavaScript script string. 

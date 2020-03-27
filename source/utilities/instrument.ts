@@ -4,8 +4,9 @@ import path from "path";
 import URL from "@candlefw/url";
 
 import { sym_version } from "./sym_version.js";
-import { parser, MinTreeNodeType, ext, MinTreeNodeClass, stmt, render } from "@candlefw/js";
+import { parser, MinTreeNodeType, ext, MinTreeNodeClass, stmt, renderWithFormatting } from "@candlefw/js";
 import { traverse, filter, bit_filter, skip_root } from "@candlefw/conflagrate";
+import { format_rules } from "./format_rules.js";
 
 const fsp = fs.promises;
 
@@ -68,7 +69,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
     let n = [];
 
     for (const { node } of traverse(ast, "nodes")
-        .then(filter("type", MinTreeNodeType.ExportDeclaration))
+        .filter("type", MinTreeNodeType.ExportDeclaration)
     ) {
         if (node.nodes[0])
             for (const { node: name } of traverse(node.nodes[0], "nodes", 1)) {
@@ -121,7 +122,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
         new_ast.nodes.unshift(stmt(`import {${imp_str.join(",")}} from ".${source_file_path}"`));
     }
 
-    return render(new_ast);
+    return renderWithFormatting(new_ast, format_rules);
 }
 interface Package {
     main: string;

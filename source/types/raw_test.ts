@@ -1,7 +1,8 @@
 import { MinTreeNode } from "@candlefw/js";
 import { Lexer } from "@candlefw/wind";
-import { ImportDependNode } from "./import_depend_node";
+import { ImportModule } from "./import_module";
 import { TestMap } from "./test_map";
+import { ImportName } from "./import_name";
 
 export interface RawTestRig {
     type: "SEQUENCE" | "DISCRETE",
@@ -22,7 +23,7 @@ export interface RawTestRig {
 
     error?: Error;
 
-    imports: ImportDependNode[];
+    imports: { module: ImportModule, name: ImportName; }[];
 
     pos: Lexer;
 
@@ -31,11 +32,13 @@ export interface RawTestRig {
      */
     IS_ASYNC: boolean;
 
+
     /**
      * In a SEQUENCE TestRig, test_maps map individual assertion 
-     * sites to virtual test outcomes.
+     * sites that produce virtual test outcomes.
      */
     test_maps?: TestMap[];
+
     SOLO: boolean;
     RUN: boolean;
     INSPECT: boolean;

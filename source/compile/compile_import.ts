@@ -2,15 +2,15 @@ import { ext, MinTreeNodeType } from "@candlefw/js";
 import { traverse, make_skippable, filter } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_extended_node";
-import { ImportDependNode } from "../types/import_depend_node";
+import { ImportModule } from "../types/import_module";
 
-export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNode[]) {
+export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]) {
 
     const module_specifier = <string>ext(node, true).from.url.value;
 
     let url = new URL(module_specifier);
 
-    const obj = <ImportDependNode>{
+    const obj = <ImportModule>{
         imports: new Set,
         exports: new Set,
         import_names: [],
@@ -18,27 +18,27 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNo
         IS_RELATIVE: url.IS_RELATIVE
     };
 
-    for (const { node: id } of traverse(node, "nodes")
-        .then(filter("type",
+    for (const { node: id, meta } of traverse(node, "nodes")
+        .filter("type",
             MinTreeNodeType.Specifier,
             MinTreeNodeType.IdentifierModule,
             MinTreeNodeType.IdentifierDefault
-        ))
-        .then(make_skippable())
+        )
+        .makeSkippable()
     ) {
         if (id.type == MinTreeNodeType.Specifier) {
             const { original, transformed } = ext(id);
-            id.skip();
+            meta.skip();
 
-            obj.import_names.push({ import_name: <string>transformed.value, module_name: <string>original.value });
+            obj.import_names.push({ import_name: <string>transformed.value, module_name: <string>original.value, pos: original.pos });
         }
         else if (id.type == MinTreeNodeType.IdentifierDefault) {
 
-            obj.import_names.push({ import_name: <string>id.value, module_name: "default" });
+            obj.import_names.push({ import_name: <string>id.value, module_name: "default", pos: id.pos });
         }
         else {
 
-            obj.import_names.push({ import_name: <string>id.value, module_name: <string>id.value });
+            obj.import_names.push({ import_name: <string>id.value, module_name: <string>id.value, pos: id.pos });
         }
     }
 
@@ -46,3 +46,4 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportDependNo
 
     imports.push(obj);
 }
+

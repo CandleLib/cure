@@ -4,9 +4,26 @@ import URL from "@candlefw/url";
 import { TestRig } from "../types/test_rig.js";
 import { TestResult } from "../types/test_result";
 import { Globals } from "../types/globals.js";
+import { TestError } from "./test_error.js";
+import { worker } from "cluster";
+
 
 
 let nonce = 0;
+
+interface WorkerHandler {
+    test: TestRig;
+
+    DISCARD: boolean;
+
+    READY: boolean;
+
+    target: Worker;
+
+    start: number;
+
+    end: number;
+}
 
 export class RunnerBoss {
 
@@ -14,7 +31,7 @@ export class RunnerBoss {
 
     finished: Array<any>;
 
-    workers: Array<any>;
+    workers: WorkerHandler[];
 
     module_url: string;
 
@@ -34,7 +51,7 @@ export class RunnerBoss {
 
         this.finished = finished;
 
-        this.workers = (new Array(max_workers))
+        this.workers = <WorkerHandler[]>(new Array(max_workers))
             .fill(0)
             .map(() => ({ DISCARD: false, READY: false, target: null }));
     }
@@ -66,15 +83,26 @@ export class RunnerBoss {
     }
 
     /**
+     * REMOVE  - No longer need to access this data in worker.
      * Sends a set list of local files to the worker process.
      * 
      * @param wkr A runner_worker reference,
      * @param globals The globals object @type {Globals} 
+     * 
+     * ```js
+     initiateTestRun(wkr, globals: Globals) {
+         wkr.target.postMessage({ accessible_files: [...globals.watched_files_map.keys()] });
+        }
+        ```
+    */
+    /**
+     * Start a test run series. Yields arrays of @type {TestResult}. Returns when all tests
+     * have completed or timed out.
+     * 
+     * @param tests - Pending test rigs. 
+     * @param RELOAD_DEPENDS - If `true`, reinitialize all workers.
+     * @param globals - The Globals object.
      */
-    initiateTestRun(wkr, globals: Globals) {
-        wkr.target.postMessage({ accessible_files: [...globals.watched_files_map.keys()] });
-    }
-
     * run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false, globals: Globals): Generator<TestResult[]> {
 
         let id = 0, completed = 0;
@@ -92,7 +120,7 @@ export class RunnerBoss {
                 wkr.start = 0;
             }
 
-            this.initiateTestRun(wkr, globals);
+            //* REMOVE - No longer need to access this data in worker. */ this.initiateTestRun(wkr, globals);
         }
 
         const
@@ -130,6 +158,7 @@ export class RunnerBoss {
                 }
 
                 if (!wkr.READY) {
+
                     const dur = performance.now() - wkr.start;
 
                     if (dur > 2000) {
@@ -143,7 +172,7 @@ export class RunnerBoss {
                             end: wkr.start + dur,
                             duration: dur,
                             //@ts-ignore
-                            errors: [new Error("Test timed out at " + dur + " milliseconds")],
+                            errors: [new TestError("Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1)],
                             test: wkr.test,
                             TIMED_OUT: true,
                             PASSED: false

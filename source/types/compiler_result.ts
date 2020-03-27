@@ -1,9 +1,9 @@
 import { RawTestRig } from "./raw_test";
-import { ImportDependNode } from "./import_depend_node";
+import { ImportModule } from "./import_module";
 
 export interface CompileResults {
 
-    imports: ImportDependNode[];
+    imports: ImportModule[];
 
     raw_tests: RawTestRig[];
 

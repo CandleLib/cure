@@ -23,7 +23,7 @@ type StackTraceLocation = {
     line: number;
 };
 
-
+const blank: Set<string> = new Set();
 /**
  * This object is used to report all errors that are caught within cfw.test, including
  * errors encountered within the various prep stages of the test framework.
@@ -63,11 +63,6 @@ class TestError {
     WORKER: boolean;
 
     /**
-     * Flag that determines if the original source file can be blamed.
-     */
-    BLAMABLE: boolean;
-
-    /**
      * Creates a TestError object.
      * 
      * This object is used to report all errors that are caught within cfw.test, including
@@ -81,26 +76,32 @@ class TestError {
      * @param accessible_files File paths that cfw.test is allowed to inspect for error reporting.
      * @param map @type {SourceMap} of the compiled @type {TestRig} source
      */
-    constructor(message, origin = harness.origin, line = 0, column = 0, match_source = "", replace_source = "", accessible_files: Set<string> = null, map: string = null, WORKER = true) {
+    constructor(message, origin = harness.origin, line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
 
         this.name = "TestError";
         this.origin = origin;
-        this.line = line + 1;
-        this.column = column + 1;
+        this.line = line - 1;
+        this.column = column - 1;
         this.match_source = match_source;
         this.replace_source = replace_source;
         this.original_error_stack = "";
         this.index = -1;
         this.WORKER = WORKER;
-        this.BLAMABLE = true;
 
         if (message instanceof Error) {
 
             const
                 error: Error = message,
-                error_frame = error.stack.split("\n")[1];
 
-            this.message = error.message;
+                /**
+                 * if the error originate from test_harness.ts, through harness.inspect or some other 
+                 * method, read the second stack trace source line, since the first source line will 
+                 * be the directory of test_harness.js.
+                 * 
+                 */
+                error_frame = error.stack.includes("test_harness.js") ? error.stack.split("\n")[2] : error.stack.split("\n")[1];
+
+            this.message = error.message || error.name;
 
             this.original_error_stack = error.stack;
             let out = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), data, {});
@@ -115,25 +116,13 @@ class TestError {
 
             if (loc.type == "URL") {
 
-                if (accessible_files.has(loc.url)) {
+                this.origin = loc.url;
 
-                    this.origin = loc.url;
+                this.line = loc.line;
 
-                    this.line = loc.line;
+                this.column = loc.col;
 
-                    this.column = loc.col;
-
-
-                } else {
-
-                    this.BLAMABLE = false;
-
-                    this.message = error.stack;
-
-                    this.message += JSON.stringify(out);
-
-                    this.origin = "";
-                }
+                //*DEBUG*/  this.message += " " + JSON.stringify(out); //*/
 
             } else { // "ANONYMOUS"
 
@@ -143,9 +132,6 @@ class TestError {
                 this.line = source_line;
 
                 this.column = source_column;
-
-                this.message = error.message;
-
             }
 
         } else {
@@ -157,49 +143,64 @@ class TestError {
      * Creates a Wind Lexer that points to failure line/column in the source file.
      * Will read sourcemap data and follow mappings back to original file.
      */
-    async blameSource(): Promise<Lexer> {
+    async blameSource(accessible_files: Set<string> = blank, origin_url: string = "")
+        : Promise<{ lex: Lexer, origin: string; }> {
 
-        if (!this.BLAMABLE) return null;
+        let origin = accessible_files.has(this.origin) ? this.origin : origin_url;
 
-        let
-            origin = this.origin,
-            line = this.line - 1,
-            col = this.column - 1,
-            data = (await (new URL(origin)).fetchText());
+        if (origin) {
 
-        //Check for source map.
-        for (const [, loc] of data.matchAll(/sourceMappingURL=(.+)/g)) {
-            const
-                source_map_url = URL.resolveRelative(`./${loc}`, origin),
-                source_map = decodeJSONSourceMap(await source_map_url.fetchText()),
-                { line: l, column: c, source: source_path } = getSourceLineColumn(line + 1, col + 1, source_map),
-                source_url = URL.resolveRelative(source_path, source_map_url),
-                source = await source_url.fetchText();
-            origin = source_url.path;
-            data = source;
-            col = c;
-            line = l;
+
+            let { line, column } = this,
+                data = (await (new URL(origin)).fetchText());
+
+            //Check for source map.
+            ///* 
+            while (data.includes("//#")) {
+                for (const [, loc] of data.matchAll(/sourceMappingURL=(.+)/g)) {
+
+                    const
+                        source_map_url = URL.resolveRelative(`./${loc}`, origin),
+
+                        source_map = await source_map_url.fetchText(),
+
+                        { line: l, column: c, source: source_path }
+                            = getPosFromSourceMapJSON(line, column, source_map),
+
+                        source_url = URL.resolveRelative(source_path, source_map_url),
+
+                        source = await source_url.fetchText();
+
+                    origin = this.origin = source_url.path;
+                    data = source;
+                    column = c;
+                    line = l;
+                }
+            }
+            //*/;
+
+            return { lex: getLexerFromLineColumnString(line, column, data), origin };
         }
 
-        const lex = new Lexer(data);
-
-        lex.CHARACTERS_ONLY = true;
-
-        while (!lex.END) {
-            if (lex.line == line && lex.char >= col) break;
-            lex.next();
-        }
-
-        return lex;
+        return { lex: null, origin };
     }
 
-    async toAsyncBlameString() {
-        const lex = this.blameSource();
+    async toAsyncBlameString(accessible_files: Set<string> = blank, origin_url: string = "")
+        : Promise<string> {
+
+
+        const { lex, origin } = await this.blameSource(accessible_files, origin_url);
 
         if (lex) {
-            return `${(await lex).errorMessage(this.message)}`;
+            return `${
+                lex.errorMessage(this.message, origin) + (
+                    this.original_error_stack
+                        ? "\n Original Error: " + this.original_error_stack
+                        : ""
+                )}`;
         } else
             return this.message;
+
     }
 
     toString() {
@@ -207,5 +208,23 @@ class TestError {
     }
 }
 
+
+export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
+    const source_map = decodeJSONSourceMap(sourcemap_json_string);
+    return getSourceLineColumn(line, column, source_map);
+}
+
+export function getLexerFromLineColumnString(line, column, string): Lexer {
+    const lex = new Lexer(string);
+
+    lex.CHARACTERS_ONLY = true;
+
+    while (!lex.END) {
+        if (lex.line == line && lex.char >= column) break;
+        lex.next();
+    }
+
+    return lex;
+}
 
 export { TestError };

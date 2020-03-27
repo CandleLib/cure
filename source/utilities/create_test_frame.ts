@@ -26,15 +26,18 @@ function endWatchedTests(globals: Globals, resolution: (arg: Outcome) => void) {
             globals.outcome.rigs = [];
 
             for (const suite of globals.suites.values()) {
+
                 if (suite.error)
                     globals.outcome.errors.push(suite.error);
+
                 for (const test_rig of suite.rigs)
                     globals.outcome.rigs.push(test_rig);
             }
 
             resolution(globals.outcome);
-        }
-        else
+
+        } else
+
             resolution(globals.outcome);
     }
 }
@@ -45,9 +48,11 @@ function InitializeReporterColors(reporter: Reporter): Reporter {
 }
 
 const DefaultOptions: TestFrameOptions = {
+    PRELOAD_IMPORTS: false,
     WATCH: false,
-    number_of_workers: 2,
-    assertion_compilers: []
+    number_of_workers: 1,
+    assertion_compilers: [],
+    //test_globs: [path.resolve(process.cwd(), "test/**/*")],
 };
 
 /**
@@ -57,41 +62,59 @@ const DefaultOptions: TestFrameOptions = {
  * @param {string[]} test_suite_url_strings - An array of file paths to retrieve test files from.
  */
 export function createTestFrame(
-    {
-        WATCH = false,
-        number_of_workers = 2,
-        assertion_compilers = []
-    }: TestFrameOptions,
+    config_options: TestFrameOptions,
     ...test_suite_url_strings: string[]
 ): TestFrame {
 
-    let resolution = null;
+    const {
+        PRELOAD_IMPORTS = false,
+        WATCH = false,
+        number_of_workers = 2,
+        assertion_compilers = []
+    } = <TestFrameOptions>Object.assign({}, DefaultOptions, config_options);
 
-    let globals: Globals = {
-        PENDING: false,
-        suites: null,
-        reporter: InitializeReporterColors(new BasicReporter()),
-        runner: null,
-        watchers: [],
-        watched_files_map: new Map(),
-        outcome: { FAILED: true, results: [], errors: [] },
-        WATCH,
-        exit: (reason = "Exiting for an unknown reason", error) => {
+    let
+        resolution = null,
+        globals: Globals = {
 
-            const { fail } = globals.reporter.colors;
+            flags: {
 
-            console.log("\n" + fail + reason + colors.rst + "\n");
+                PRELOAD_IMPORTS,
 
-            if (error) {
-                console.error(error);
-                globals.outcome.errors.push(new TestError(error));
+                PENDING: false,
+
+                WATCH,
+            },
+
+            suites: null,
+
+            reporter: InitializeReporterColors(new BasicReporter()),
+
+            runner: null,
+
+            watchers: [],
+
+            watched_files_map: new Map(),
+
+            outcome: { FAILED: true, results: [], errors: [] },
+
+            exit: (reason = "Exiting for an unknown reason", error) => {
+
+                const { fail } = globals.reporter.colors;
+
+                console.log("\n" + fail + reason + colors.rst + "\n");
+
+                if (error) {
+                    console.error(error);
+                    globals.outcome.errors.push(new TestError(error));
+                }
+
+                endWatchedTests(globals, resolution);
             }
-
-            endWatchedTests(globals, resolution);
-        }
-    };
+        };
 
     return {
+
         setReporter: (reporter: Reporter) => {
             globals.reporter = InitializeReporterColors(reporter);
         },
@@ -104,6 +127,7 @@ export function createTestFrame(
 
         start: (): Promise<Outcome> => new Promise(async (res) => {
 
+
             await URL.polyfill();
 
             if (resolution)
@@ -112,14 +136,14 @@ export function createTestFrame(
             resolution = res;
 
             globals.suites = new Map(test_suite_url_strings.map((url_string, index) => [
-                url_string, { origin: url_string, rigs: [], index }
+                url_string, { origin: url_string, rigs: [], index, data: "" }
             ]));
 
             globals.runner = new RunnerBoss(Math.max(number_of_workers, 1));
 
             globals.watchers.length = 0;
 
-            const { suites, runner } = globals;
+            const { suites } = globals;
 
             try {
 
@@ -128,23 +152,29 @@ export function createTestFrame(
 
                 const st = Array.from(suites.values());
 
-                globals.PENDING = true;
+                globals.flags.PENDING = true;
 
                 await runTests(st.flatMap(suite => suite.rigs), st, globals);
 
             } catch (e) {
-                globals.outcome.errors.push(new TestError(e, module.filename));
+                globals.outcome.errors.push(new TestError(e, "", 0, 0, "", "", undefined));
             }
 
-            globals.PENDING = false;
+            globals.flags.PENDING = false;
 
             if (WATCH) {
+
                 console.log("Waiting for changes...");
+
                 process.on("exit", () => {
+
                     console.log("EXITING");
+
                     endWatchedTests(globals, resolution);
                 });
+
             } else {
+
                 endWatchedTests(globals, resolution);
             }
         })

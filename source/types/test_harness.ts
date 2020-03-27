@@ -5,6 +5,16 @@ import { ImportSource } from "./test_rig.js";
  * Provides methods and properties that are used during test execution.
  */
 export interface TestHarness {
+    /**
+     * Timestamp 
+     */
+    last_time: number;
+
+    /**
+     * Set of files that are allowed to be opened by cfw.test for 
+     * inspection.
+     */
+    accessible_files: Set<string>;
 
     inspect_count: number;
 

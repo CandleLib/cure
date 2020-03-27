@@ -7,13 +7,12 @@ import { Globals } from "source/types/globals.js";
 import { TestRig } from "source/types/test_rig.js";
 import { TestSuite } from "source/types/test_suite";
 import { TestResult } from "../types/test_result.js";
-import { inspect } from "./test_harness.js";
 import { TestMap } from "../types/test_map.js";
 
 
 function TestRigFromTestMap(test_map: TestMap, test_rig: TestRig): TestRig {
-    const { index, map, origin, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args } = test_rig;
-    let o = Object.assign({ map, origin, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args }, test_map);
+    const { index, map, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args } = test_rig;
+    let o = Object.assign({ map, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args }, test_map);
     o.index = index + o.index;
     return o;
 }
@@ -76,7 +75,7 @@ export async function runTests(tests: TestRig[], suites: TestSuite[], globals: G
             } else
                 return test;
         }
-        ), suites, reporter);
+        ), globals);
 
         outcome.results.length = 0;
 
@@ -88,11 +87,12 @@ export async function runTests(tests: TestRig[], suites: TestSuite[], globals: G
                     outcome.results.push(...(res).flatMap(mapResults));
 
                     if (t-- < 1) {
-                        updateRun(outcome.results, suites, reporter);
+                        updateRun(outcome.results, globals);
                         t = update_timout;
                     }
 
                 }
+
                 await spark.sleep(0);
             } catch (e) {
                 return globals.exit("Failed to load test frame", e);
@@ -101,7 +101,7 @@ export async function runTests(tests: TestRig[], suites: TestSuite[], globals: G
 
         outcome.results = outcome.results.sort((a, b) => a.test.index < b.test.index ? -1 : 1);
 
-        FAILED = await completedRun(outcome.results, suites, reporter);
+        FAILED = await completedRun(outcome.results, globals);
 
     } catch (e) {
         FAILED = true;

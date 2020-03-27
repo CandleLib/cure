@@ -25,4 +25,9 @@ export interface TestSuite {
      * An error object if an exception was thrown during TestRig compilation.
      */
     error?: TestError;
+
+    /**
+     * The character data of the source test file.
+     */
+    data: string;
 };

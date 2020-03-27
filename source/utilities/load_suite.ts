@@ -1,40 +1,48 @@
 import fs from "fs";
 
-import { rst } from "./colors.js";
+import URL from "@candlefw/url";
+import path from "path";
 
-import { runTests } from "../test_running/run_tests.js";
-import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
-import { fatalExit } from "./fatal_exit.js";
-import { loadTests } from "./load_tests.js";
 import { Globals } from "../types/globals.js";
 import { TestSuite } from "../types/test_suite.js";
 
+import { runTests } from "../test_running/run_tests.js";
+import { loadTests } from "./load_tests.js";
+import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
+
 export async function loadSuite(suite: TestSuite, globals: Globals) {
 
-    const { WATCH } = globals;
+    const { flags: { WATCH, PRELOAD_IMPORTS } } = globals,
+        url = new URL(path.resolve(process.cwd(), suite.origin)),
+        text = await url.fetchText();
+
+    suite.data = text;
 
     suite.rigs.length = 0;
 
     suite.error = null;
 
-    await loadTests(suite.origin, suite, globals);
+    await loadTests(text, suite, globals);
 
-    handleWatchOfRelativeDependencies(suite, globals);
+    if (PRELOAD_IMPORTS || WATCH)
+        await handleWatchOfRelativeDependencies(suite, globals);
 
     if (WATCH) {
 
         try {
             const watcher = fs.watch(suite.origin + "", async function (a) {
 
-                if (!globals.PENDING) {
+                if (!globals.flags.PENDING) {
 
-                    globals.PENDING = true;
+                    globals.flags.PENDING = true;
 
                     suite.rigs.length = 0;
 
                     suite.error = null;
 
-                    await loadTests(suite.origin, suite, globals);
+                    suite.data = await url.fetchText();
+
+                    await loadTests(suite.data, suite, globals);
 
                     handleWatchOfRelativeDependencies(suite, globals);
 
@@ -42,7 +50,7 @@ export async function loadSuite(suite: TestSuite, globals: Globals) {
 
                     console.log("Waiting for changes...");
 
-                    globals.PENDING = false;
+                    globals.flags.PENDING = false;
                 }
             });
 
