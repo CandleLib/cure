@@ -127,7 +127,6 @@ export function createTestFrame(
 
         start: (): Promise<Outcome> => new Promise(async (res) => {
 
-
             await URL.polyfill();
 
             if (resolution)
@@ -144,6 +143,7 @@ export function createTestFrame(
             globals.watchers.length = 0;
 
             const { suites } = globals;
+
 
             try {
 

@@ -33,7 +33,7 @@ function createRelativeFileWatcher(path: string, globals: Globals) {
 
         globals.watchers.push(watcher);
     } catch (e) {
-        fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
+        fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n d" + path + " " + rst, globals);
     }
 }
 
@@ -76,7 +76,7 @@ async function loadImports(filepath: string, suite: TestSuite, globals: Globals)
                     }
                 }
             } catch (e) {
-                return fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + rst, globals);
+                return fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + filepath + rst, globals);
             }
         }
 

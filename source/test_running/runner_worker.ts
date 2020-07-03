@@ -33,6 +33,8 @@ async function RunTest(msg) {
 
         harness.accessible_files = accessible_files;
 
+        console.log = harness.inspect;
+
 
         for (const { source } of sources) {
 

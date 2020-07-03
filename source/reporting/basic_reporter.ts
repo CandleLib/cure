@@ -7,12 +7,13 @@ import { TestSuite } from "../types/test_suite.js";
 import { TestRig } from "../types/test_rig.js";
 import { TestError, getLexerFromLineColumnString } from "../test_running/test_error.js";
 import { inspect } from "util";
-import { parser, renderWithFormatting, MinTreeNodeType, MinTreeNodeClass } from "@candlefw/js";
+import { parser, renderWithFormatting, MinTreeNodeType, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
 import { format_rules } from "../utilities/format_rules.js";
 import { Globals } from "../types/globals.js";
 
 
-function syntaxHighlight(str: string, type: MinTreeNodeType): string {
+function syntaxHighlight(str: string, prop_name, node: MinTreeNode): string {
+    const { type } = node;
 
     if ("==>><<<+-||&&!/*".includes(str))
         return symC + str + rst;
@@ -259,7 +260,7 @@ export class BasicReporter implements Reporter {
         let
             FAILED = false,
 
-            total = results.length,
+            total = Add conflagrate libraryresults.length,
 
             failed = 0;
 

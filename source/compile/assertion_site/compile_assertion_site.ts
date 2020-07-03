@@ -38,6 +38,7 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
                     `\`${match.replace(/"/g, "\"")}\``,
                     `\`${highlight.replace(/"/g, "\\\"")}\``
                 ];
+
             const
                 thr =
                     message ?

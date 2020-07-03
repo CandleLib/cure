@@ -122,11 +122,20 @@ export interface TestHarness {
     setException: (e) => void;
 
     /**
+     * Appends inspection error to the test errors array
+     * for review
+     * 
+     * @param {any[]} vals - Spread of all arguments passed 
+     * to the function.
+     */
+    inspect: (...vals: any[]) => void;
+
+    /**
      * Throws an Error object whose message is the details of 
      * the arguments serialized into a color formatted string.
      * 
      * @param {any[]} vals - Spread of all arguments passed 
      * to the function.
      */
-    inspect: (...vals: any[]) => void;
+    inspectAndThrow: (...vals: any[]) => void;
 }

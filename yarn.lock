@@ -10,7 +10,7 @@
     "@candlefw/url" "^0.1.0"
     "@candlefw/wind" latest
 
-"@candlefw/hydrocarbon@^0.3.4", "@candlefw/hydrocarbon@^0.3.4-dev-1":
+"@candlefw/hydrocarbon@^0.3.4-dev-1":
   version "0.3.4-dev-1"
   resolved "https://registry.yarnpkg.com/@candlefw/hydrocarbon/-/hydrocarbon-0.3.4-dev-1.tgz#8d765c5bfaeba93ab8b8f8712cda6106f1f0a6dc"
   integrity sha512-I0yBH5IXW6meIPiNUbL1WKJuX+CH2pGpHJTFsEA7WqVSIrYtJkHutxtv1FUevuhvtW/uytm38kw1uQEtQhuwPQ==
@@ -22,7 +22,7 @@
     commander "^5.0.0"
     terser "^4.6.3"
 
-"@candlefw/js@0.1.6", "@candlefw/js@^0.1.6-dev-1":
+"@candlefw/js@0.1.6-dev-1", "@candlefw/js@^0.1.6-dev-1":
   version "0.1.6-dev-1"
   resolved "https://registry.yarnpkg.com/@candlefw/js/-/js-0.1.6-dev-1.tgz#540ca9c037b18421a1d73a3b2eef6e0a7b91b419"
   integrity sha512-uYb3JRTaJr26Adh2dCz+qnzoYacOt6QqN5v55SAiTFyC+qS1rhQRG7TWZsOfesDK+whv1cZvN1RxDYi//Jx81A==

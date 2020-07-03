@@ -7,20 +7,28 @@ import { performance } from "perf_hooks";
 
 const
     MAX_ERROR_LIMIT = 10,
-    inspect = (...args) => {
+    /**
+     * If the first argument is a number "first", then this function will only produce an error if
+     * it has been called "first" times. Useful in loops when one whats to observe results after "first"th iterations. 
+     * If the number is 0, then it is treated as if the second argument was the first, third was the second, and so on.
+     * 
+     * If the first argument is a number AND the second arg is a number "second", then the depth to which properties of 
+     * objects are inspected is limited to a depth of "second".
+     */
+    createInspectionError = (...args): Error => {
         const
             first = args[0],
             second = args[1];
 
         let limit = 8;
 
-        if (!isNaN(first) && args.length > 1) {
+        if (typeof first == "number" && args.length > 1) {
             if (harness.inspect_count++ < first)
                 return;
 
             args = args.slice(1);
 
-            if (!isNaN(second) && args.length > 1) {
+            if (typeof second == "number" && args.length > 1) {
 
                 limit = second;
 
@@ -29,8 +37,8 @@ const
         }
 
         const e = new Error("cfw.test.harness.inspect intercept:\n    " + rst + args.map(val => util.inspect(val, false, limit, true)).join("    \n") + "\n");
-
-        throw e;
+        e.stack = e.stack.split("\n").slice(2).join("\n");
+        return e;
     },
 
     harness = <TestHarness>{
@@ -160,7 +168,18 @@ const
                 throw new Error("Maximum number of errors reached. Error count is. " + (MAX_ERROR_LIMIT + 1));
         },
 
-        inspect
+        inspect: (...args) => {
+            const e = createInspectionError(...args);
+            harness.errors.push(new TestError(e));
+        },
+
+        inspectAndThrow: (...args) => {
+
+            const e = createInspectionError(...args);
+
+            throw e;
+        }
+
     };
 
 ////@ts-ignore Make harness available to all modules.
@@ -173,5 +192,6 @@ if (typeof global !== "undefined") {
     } else Object.assign(global.cfw, { harness });
 }
 
+const iat = harness.inspectAndThrow;
 
-export { harness, inspect };
+export { harness, iat as inspect };

@@ -1,4 +1,4 @@
-import { MinTreeNode } from "@candlefw/js";
+import { MinTreeNode, MinTreeNodeType } from "@candlefw/js";
 
 import { AssertionSiteCompiler } from "../../types/assertion_site_compiler.js";
 
@@ -32,8 +32,9 @@ export function* selectBindingCompiler(node: MinTreeNode): Generator<AssertionSi
     const type = node.type;
 
     for (const c of BindingCompilers) {
-        if (((c.signature & (type & 0xFFFFFF))) && ((!(c.signature & 0xFF000000)) || c.signature == type))
+        if (((c.signature & (type & 0x7FFFFF))) && ((!(c.signature & 0xFF100000)) || c.signature == type)) {
             yield c;
+        }
     }
     //return BindingCompilers
     //return BindingCompilers.filter(c => );
