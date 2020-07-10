@@ -260,7 +260,7 @@ export class BasicReporter implements Reporter {
         let
             FAILED = false,
 
-            total = Add conflagrate libraryresults.length,
+            total = results.length,
 
             failed = 0;
 
