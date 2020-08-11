@@ -1,4 +1,4 @@
-import { ext, MinTreeNodeType } from "@candlefw/js";
+import { ext, JSNodeType } from "@candlefw/js";
 import { traverse, make_skippable, filter } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_extended_node";
@@ -20,19 +20,19 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]
 
     for (const { node: id, meta } of traverse(node, "nodes")
         .filter("type",
-            MinTreeNodeType.Specifier,
-            MinTreeNodeType.IdentifierModule,
-            MinTreeNodeType.IdentifierDefault
+            JSNodeType.Specifier,
+            JSNodeType.IdentifierModule,
+            JSNodeType.IdentifierDefault
         )
         .makeSkippable()
     ) {
-        if (id.type == MinTreeNodeType.Specifier) {
+        if (id.type == JSNodeType.Specifier) {
             const { original, transformed } = ext(id);
             meta.skip();
 
             obj.import_names.push({ import_name: <string>transformed.value, module_name: <string>original.value, pos: original.pos });
         }
-        else if (id.type == MinTreeNodeType.IdentifierDefault) {
+        else if (id.type == JSNodeType.IdentifierDefault) {
 
             obj.import_names.push({ import_name: <string>id.value, module_name: "default", pos: id.pos });
         }

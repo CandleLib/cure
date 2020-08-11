@@ -1,4 +1,4 @@
-import { MinTreeNode, MinTreeNodeType } from "@candlefw/js";
+import { JSNode, JSNodeType } from "@candlefw/js";
 
 import { AssertionSiteCompiler } from "../../types/assertion_site_compiler.js";
 
@@ -27,7 +27,7 @@ export function loadBindingCompiler(obj: AssertionSiteCompiler) {
     return true;
 };
 
-export function* selectBindingCompiler(node: MinTreeNode): Generator<AssertionSiteCompiler> {
+export function* selectBindingCompiler(node: JSNode): Generator<AssertionSiteCompiler> {
 
     const type = node.type;
 

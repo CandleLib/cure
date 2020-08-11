@@ -1,37 +1,37 @@
-import { MinTreeNodeType } from "@candlefw/js";
+import { JSNodeType } from "@candlefw/js";
 import { buildFormatRules, FormatRule as $ } from "@candlefw/conflagrate";
 
 export const { format_rules } = buildFormatRules([{
-    type: MinTreeNodeType.LexicalDeclaration,
+    type: JSNodeType.LexicalDeclaration,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT * 2 | $.MIN_LIST_ELE_LIMIT * 15
 }, {
-    type: MinTreeNodeType.AssignmentExpression,
+    type: JSNodeType.AssignmentExpression,
     format_rule: $.OPTIONAL_SPACE
 }, {
-    type: MinTreeNodeType.BindingExpression,
+    type: JSNodeType.BindingExpression,
     format_rule: $.OPTIONAL_SPACE
 }, {
-    type: MinTreeNodeType.IfStatement,
+    type: JSNodeType.IfStatement,
     format_rule: $.OPTIONAL_SPACE
 }, {
-    type: MinTreeNodeType.Script,
+    type: JSNodeType.Script,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT * 2 | $.MIN_LIST_ELE_LIMIT
 }, {
-    type: MinTreeNodeType.BlockStatement,
+    type: JSNodeType.BlockStatement,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT * 2 | $.MIN_LIST_ELE_LIMIT * 5
 }, {
-    type: MinTreeNodeType.FunctionBody,
+    type: JSNodeType.FunctionBody,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT * 2 | $.MIN_LIST_ELE_LIMIT * 5
 }, {
-    type: MinTreeNodeType.ObjectLiteral,
+    type: JSNodeType.ObjectLiteral,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT * 2 | $.MIN_LIST_ELE_LIMIT * 5
 }, {
-    type: MinTreeNodeType.Arguments,
+    type: JSNodeType.Arguments,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT | $.MIN_LIST_ELE_LIMIT * 5
 }, {
-    type: MinTreeNodeType.FormalParameters,
+    type: JSNodeType.FormalParameters,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT | $.MIN_LIST_ELE_LIMIT * 5
 }, {
-    type: MinTreeNodeType.ExpressionList,
+    type: JSNodeType.ExpressionList,
     format_rule: $.INDENT | $.OPTIONAL_SPACE | $.LIST_SPLIT | $.MIN_LIST_ELE_LIMIT * 14
 }]);

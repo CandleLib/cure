@@ -1,4 +1,4 @@
-import { renderCompressed as $r, MinTreeNodeType, MinTreeNodeClass } from "@candlefw/js";
+import { renderCompressed as $r, JSNodeType, JSNodeClass } from "@candlefw/js";
 
 import { AssertionSiteCompiler } from "../../types/assertion_site_compiler.js";
 
@@ -18,10 +18,10 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeClass.BINARY_EXPRESSION,
+            signature: JSNodeClass.BINARY_EXPRESSION,
 
             test: node => {
-                return node.type == MinTreeNodeType.EqualityExpression || node.type == MinTreeNodeType.RelationalExpression;
+                return node.type == JSNodeType.EqualityExpression || node.type == JSNodeType.RelationalExpression;
             },
 
             build: node => {
@@ -56,11 +56,11 @@ const
                         "<": "to be less than"
                     },
 
-                    left_value = (left.type & MinTreeNodeClass.VARIABLE || left.type & MinTreeNodeClass.EXPRESSION)
+                    left_value = (left.type & JSNodeClass.VARIABLE || left.type & JSNodeClass.EXPRESSION)
                         ? `${bkgr}[${objA + $r(left).replace(/\`/g, "\"") + symA} ⇒ ${valA}\${$harness.makeLiteral($harness.regA)}${bkgr}]${fail}`
                         : `${bkgr}[${objA}\${$harness.makeLiteral($harness.regA)}${bkgr}]${fail}`,
 
-                    right_value = (right.type & MinTreeNodeClass.VARIABLE || right.type & MinTreeNodeClass.EXPRESSION)
+                    right_value = (right.type & JSNodeClass.VARIABLE || right.type & JSNodeClass.EXPRESSION)
                         ? `${bkgr}[${objB + $r(right).replace(/\`/g, "\"") + symA} ⇒ ${valB}\${$harness.makeLiteral($harness.regB)}${bkgr}]${fail}`
                         : `${bkgr}[${objB}\${$harness.makeLiteral($harness.regB)}${bkgr}]${fail}`;
 
@@ -79,7 +79,7 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeType.BooleanLiteral,
+            signature: JSNodeType.BooleanLiteral,
 
             test: node => {
                 return true;
@@ -111,7 +111,7 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeType.CallExpression,
+            signature: JSNodeType.CallExpression,
 
             test: node => {
                 return true;
@@ -141,10 +141,10 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeType.UnaryExpression,
+            signature: JSNodeType.UnaryExpression,
 
             test: node => {
-                return node.symbol == "!" && node.nodes[0].type == MinTreeNodeType.CallExpression;
+                return node.symbol == "!" && node.nodes[0].type == JSNodeType.CallExpression;
             },
 
             build: node => {
@@ -174,7 +174,7 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeType.Parenthesized,
+            signature: JSNodeType.Parenthesized,
 
             test: node => {
                 return true;
@@ -205,9 +205,9 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeClass.BINARY_EXPRESSION,
+            signature: JSNodeClass.BINARY_EXPRESSION,
 
-            test: node => node.type == MinTreeNodeType.InstanceOfExpression,
+            test: node => node.type == JSNodeType.InstanceOfExpression,
 
             build: node => {
                 return `!(${node.pos.slice()})`;
@@ -246,7 +246,7 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeClass.IDENTIFIER,
+            signature: JSNodeClass.IDENTIFIER,
 
             test: node => {
                 return true;
@@ -280,7 +280,7 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeType.MemberExpression,
+            signature: JSNodeType.MemberExpression,
 
             test: node => {
                 return true;
@@ -312,7 +312,7 @@ const
          */
         <AssertionSiteCompiler>{
 
-            signature: MinTreeNodeType.AssignmentExpression,
+            signature: JSNodeType.AssignmentExpression,
 
             test: node => {
                 return true;

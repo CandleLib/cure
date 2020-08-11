@@ -4,7 +4,7 @@ import path from "path";
 import URL from "@candlefw/url";
 
 import { sym_version } from "./sym_version.js";
-import { parser, MinTreeNodeType, ext, MinTreeNodeClass, stmt, renderWithFormatting } from "@candlefw/js";
+import { parser, JSNodeType, ext, JSNodeClass, stmt, renderWithFormatting } from "@candlefw/js";
 import { traverse, filter, bit_filter, skip_root } from "@candlefw/conflagrate";
 import { format_rules } from "./format_rules.js";
 
@@ -69,31 +69,31 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
     let n = [];
 
     for (const { node } of traverse(ast, "nodes")
-        .filter("type", MinTreeNodeType.ExportDeclaration)
+        .filter("type", JSNodeType.ExportDeclaration)
     ) {
         if (node.nodes[0])
             for (const { node: name } of traverse(node.nodes[0], "nodes", 1)) {
                 switch (name.type) {
-                    case MinTreeNodeType.FunctionDeclaration:
+                    case JSNodeType.FunctionDeclaration:
                         imports.push(ext(name.nodes[0]));
                         break;
-                    case MinTreeNodeType.Class:
+                    case JSNodeType.Class:
                         imports.push(ext(name.nodes[0]));
                         break;
-                    case MinTreeNodeType.VariableDeclaration:
-                    case MinTreeNodeType.LexicalDeclaration:
+                    case JSNodeType.VariableDeclaration:
+                    case JSNodeType.LexicalDeclaration:
                         for (const { node: id } of traverse(name, "nodes", 2)
                             .then(skip_root())) {
-                            if (id.type == MinTreeNodeType.BindingExpression)
+                            if (id.type == JSNodeType.BindingExpression)
                                 imports.push(ext(id.nodes[0]));
                             else
                                 imports.push(ext(id.nodes[0]));
                         }
                         break;
-                    case MinTreeNodeType.ExportClause:
+                    case JSNodeType.ExportClause:
                         for (const { node: id } of traverse(name, "nodes", 2)
                             .then(skip_root())) {
-                            if (id.type & MinTreeNodeClass.IDENTIFIER)
+                            if (id.type & JSNodeClass.IDENTIFIER)
                                 imports.push(ext(id));
                             else
                                 imports.push(ext(id.nodes[1]));

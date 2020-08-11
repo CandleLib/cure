@@ -1,10 +1,10 @@
-import { MinTreeNode } from "@candlefw/js";
+import { JSNode } from "@candlefw/js";
 
 export interface DependGraphNode {
 
     type: "DEPEND_GRAPH_NODE";
 
-    ast: MinTreeNode;
+    ast: JSNode;
 
     imports: Set<string>;
 

@@ -1,4 +1,4 @@
-import { MinTreeNode } from "@candlefw/js";
+import { JSNode } from "@candlefw/js";
 import { DependGraphNode } from "./depend_graph_node";
 import { ImportModule } from "./import_module";
 
@@ -16,9 +16,9 @@ export interface Pragma {
     type: "BE" | "AE",
 
     /**
-     * A list of MinTreeNode statements nodes to include before or after the test statements.  
+     * A list of JSNode statements nodes to include before or after the test statements.  
      */
-    nodes: MinTreeNode[];
+    nodes: JSNode[];
 };
 
 /**
@@ -28,16 +28,16 @@ export interface Pragma {
 export interface Scope {
     type: "SCOPE";
     /**
-     * The root MinTreeNode
+     * The root JSNode
      */
-    ast: MinTreeNode;
+    ast: JSNode;
     offset: number;
     parent?: Scope;
     imp: ImportModule[];
     //dec: DependGraphNode[];
     stmts: (DependGraphNode | Scope)[];
-    //root: MinTreeNode;
-    // nodes: MinTreeNode[];
+    //root: JSNode;
+    // nodes: JSNode[];
     pragmas: Pragma[],
     USE_ALL: boolean;
 };

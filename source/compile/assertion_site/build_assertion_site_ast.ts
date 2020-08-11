@@ -1,4 +1,4 @@
-import { MinTreeNode, MinTreeNodeType, ext } from "@candlefw/js";
+import { JSNode, JSNodeType, ext } from "@candlefw/js";
 import { jst } from "../compile_statements.js";
 import { inspect } from "../../test_running/test_harness.js";
 
@@ -76,7 +76,7 @@ export function buildAssertionSiteAst(current_scope, symbols) {
  * 
  * @param root - Root @type {MinTree} node with an assumed closure body.
  */
-export function getClosureBody(root: MinTreeNode) {
+export function getClosureBody(root: JSNode) {
 
     let body = null, original_body, receiver = { ast: null };
 
@@ -94,10 +94,10 @@ export function getClosureBody(root: MinTreeNode) {
      */
     for (const { node, meta: { skip, replace } } of jst(root, 2)
         .filter("type",
-            MinTreeNodeType.Script,
-            MinTreeNodeType.Module,
-            MinTreeNodeType.FunctionBody,
-            MinTreeNodeType.BlockStatement
+            JSNodeType.Script,
+            JSNodeType.Module,
+            JSNodeType.FunctionBody,
+            JSNodeType.BlockStatement
         ).makeReplaceable()
         .makeSkippable()
         .extract(receiver)

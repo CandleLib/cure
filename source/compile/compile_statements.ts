@@ -1,5 +1,5 @@
 import { traverse } from "@candlefw/conflagrate";
-import { MinTreeNode, MinTreeNodeClass, MinTreeNodeType as $, MinTreeNodeType, stmt, renderWithFormatting, ext } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeTypeLU as $, JSNodeType, stmt, renderWithFormatting, ext } from "@candlefw/js";
 
 import { AssertionSite, AssertionSiteSequence } from "../types/assertion_site.js";
 import { ImportModule } from "../types/import_module.js";
@@ -13,7 +13,7 @@ import { compileImport } from "./compile_import.js";
 import { format_rules } from "../utilities/format_rules.js";
 import { inspect } from "../test_running/test_harness.js";
 
-export const jst = (node: MinTreeNode, depth?: number) => traverse(node, "nodes", depth);
+export const jst = (node: JSNode, depth?: number) => traverse(node, "nodes", depth);
 
 interface Scope {
     AWAIT: boolean;
@@ -23,7 +23,7 @@ interface Scope {
     outputs: Set<string>,
     lex_decl: Set<string>,
     decl: Set<string>,
-    root: MinTreeNode,
+    root: JSNode,
     prev_symbol: Map<string, Scope>,
     links: Scope[],
     id: bigint,
@@ -58,10 +58,10 @@ function getRigName(suite_names: string[], optional_name: string = "undefined") 
     return name;
 }
 
-type SequenceData = { body: MinTreeNode[], test_maps: TestMap[]; };
+type SequenceData = { body: JSNode[], test_maps: TestMap[]; };
 
 function createSequenceData(): SequenceData {
-    return { body: <MinTreeNode[]>[], test_maps: <TestMap[]>[] };
+    return { body: <JSNode[]>[], test_maps: <TestMap[]>[] };
 }
 
 /**
@@ -69,7 +69,7 @@ function createSequenceData(): SequenceData {
  * source file.
  */
 export function compileStatementsNew(
-    ast: MinTreeNode,
+    ast: JSNode,
     reporter: Reporter,
     imports: ImportModule[],
     scope: Scope = createCompileScope(ast, null),
@@ -83,7 +83,7 @@ export function compileStatementsNew(
 
     const { inputs, outputs, lex_decl, decl, prev_symbol } = scope, test_rigs = [];
 
-    if (ast.type & MinTreeNodeClass.IDENTIFIER) {
+    if (ast.type & JSNodeClass.IDENTIFIER) {
 
         compileIdentifier(ast, ast, lex_decl, decl, outputs, inputs);
     }
@@ -96,14 +96,14 @@ export function compileStatementsNew(
     ) {
         const { type } = node;
 
-        if (type == MinTreeNodeType.AwaitExpression)
+        if (type == JSNodeType.AwaitExpression)
             scope.AWAIT = true;
 
-        if (type & MinTreeNodeClass.IDENTIFIER) {
+        if (type & JSNodeClass.IDENTIFIER) {
 
             compileIdentifier(node, ast, lex_decl, decl, outputs, inputs);
 
-        } else if (depth < 2 && type & MinTreeNodeClass.STATEMENT) {
+        } else if (depth < 2 && type & JSNodeClass.STATEMENT) {
 
             let new_stmt: Scope = null, SOLO = false, SKIP = false, INSPECT = false, SKIP_NODE = false;
 
@@ -389,7 +389,7 @@ export function compileStatementsNew(
     return test_rigs;
 }
 
-function compileIdentifier(node: MinTreeNode, ast: MinTreeNode, lex_decl: Set<string>, decl: Set<string>, outputs: Set<string>, inputs: Set<string>) {
+function compileIdentifier(node: JSNode, ast: JSNode, lex_decl: Set<string>, decl: Set<string>, outputs: Set<string>, inputs: Set<string>) {
 
     const var_name = <string>node.value;
 
@@ -426,7 +426,7 @@ function compileIdentifier(node: MinTreeNode, ast: MinTreeNode, lex_decl: Set<st
 
 function compileClosureStatement(
     new_stmt: any,
-    node: MinTreeNode,
+    node: JSNode,
     scope: Scope,
     reporter: Reporter,
     imports: ImportModule[],

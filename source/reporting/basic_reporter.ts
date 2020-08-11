@@ -7,12 +7,12 @@ import { TestSuite } from "../types/test_suite.js";
 import { TestRig } from "../types/test_rig.js";
 import { TestError, getLexerFromLineColumnString } from "../test_running/test_error.js";
 import { inspect } from "util";
-import { parser, renderWithFormatting, MinTreeNodeType, MinTreeNodeClass, MinTreeNode } from "@candlefw/js";
+import { parser, renderWithFormatting, JSNodeType, JSNodeClass, JSNode } from "@candlefw/js";
 import { format_rules } from "../utilities/format_rules.js";
 import { Globals } from "../types/globals.js";
 
 
-function syntaxHighlight(str: string, prop_name, node: MinTreeNode): string {
+function syntaxHighlight(str: string, prop_name, node: JSNode): string {
     const { type } = node;
 
     if ("==>><<<+-||&&!/*".includes(str))
@@ -22,32 +22,32 @@ function syntaxHighlight(str: string, prop_name, node: MinTreeNode): string {
         return symD + str + rst;
 
     switch (type) {
-        case MinTreeNodeType.NewInstanceExpression:
-        case MinTreeNodeType.NewExpression:
-        case MinTreeNodeType.VariableDeclaration:
-        case MinTreeNodeType.LexicalDeclaration:
-        case MinTreeNodeType.IfStatement:
-        case MinTreeNodeType.ForInStatement:
-        case MinTreeNodeType.WhileStatement:
-        case MinTreeNodeType.DoStatement:
-        case MinTreeNodeType.TryStatement:
-        case MinTreeNodeType.ForOfStatement:
-        case MinTreeNodeType.ForOfStatement:
+        case JSNodeType.NewInstanceExpression:
+        case JSNodeType.NewExpression:
+        case JSNodeType.VariableDeclaration:
+        case JSNodeType.LexicalDeclaration:
+        case JSNodeType.IfStatement:
+        case JSNodeType.ForInStatement:
+        case JSNodeType.WhileStatement:
+        case JSNodeType.DoStatement:
+        case JSNodeType.TryStatement:
+        case JSNodeType.ForOfStatement:
+        case JSNodeType.ForOfStatement:
             return valB + str + rst;
-        case MinTreeNodeType.IdentifierProperty:
+        case JSNodeType.IdentifierProperty:
             return objD + str + rst;
-        case MinTreeNodeType.IdentifierBinding:
-        case MinTreeNodeType.IdentifierReference:
+        case JSNodeType.IdentifierBinding:
+        case JSNodeType.IdentifierReference:
             return objC + str + rst;
-        case MinTreeNodeType.TemplateHead:
-        case MinTreeNodeType.TemplateMiddle:
-        case MinTreeNodeType.TemplateTail:
-        case MinTreeNodeType.Template:
-        case MinTreeNodeType.StringLiteral:
+        case JSNodeType.TemplateHead:
+        case JSNodeType.TemplateMiddle:
+        case JSNodeType.TemplateTail:
+        case JSNodeType.Template:
+        case JSNodeType.StringLiteral:
             return valA + str.replace(/\x1b\[[^m]+m/g, "") + rst;
     }
 
-    if (type & MinTreeNodeClass.LITERAL)
+    if (type & JSNodeClass.LITERAL)
         return symA + str + rst;
 
     return str;

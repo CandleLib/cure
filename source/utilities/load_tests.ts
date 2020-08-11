@@ -103,6 +103,6 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
 
     } catch (e) {
         suite.rigs.length = 0;
-        suite.error = new TestError(e + " " + text_data, suite.origin, 0, 0, "", "");
+        suite.error = new TestError(e, suite.origin, 0, 0, "", "");
     }
 }

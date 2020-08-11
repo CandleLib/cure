@@ -6,7 +6,7 @@ import { TestSuite } from "../types/test_suite";
 import { fatalExit } from "./fatal_exit.js";
 import { Globals } from "source/types/globals.js";
 import URL from "@candlefw/url";
-import { parser, MinTreeNodeType, ext } from "@candlefw/js";
+import { parser, JSNodeType, ext } from "@candlefw/js";
 import { traverse, filter } from "@candlefw/conflagrate";
 
 const fsp = fs.promises;
@@ -64,7 +64,7 @@ async function loadImports(filepath: string, suite: TestSuite, globals: Globals)
                     string = await fsp.readFile(org_url.path, { encoding: "utf8" }),
                     ast = parser(string);
 
-                for (const { node } of traverse(ast, "nodes").filter("type", MinTreeNodeType.FromClause)) {
+                for (const { node } of traverse(ast, "nodes").filter("type", JSNodeType.FromClause)) {
 
                     const url = new URL(<string>ext(node).url.value);
 

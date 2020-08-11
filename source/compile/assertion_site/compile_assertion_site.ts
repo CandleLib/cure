@@ -1,4 +1,4 @@
-import { MinTreeNodeClass, MinTreeNode, stmt, MinTreeNodeType, exp, parser } from "@candlefw/js";
+import { JSNodeClass, JSNode, stmt, JSNodeType, exp, parser, JSNodeTypeLU } from "@candlefw/js";
 import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
 import CompilerBindings from "./assertion_compilers.js";
 import { selectBindingCompiler, loadBindingCompiler } from "./assertion_compiler_manager.js";
@@ -17,8 +17,8 @@ CompilerBindings.map(loadBindingCompiler);
  * @param reporter - A Reporter for color data.
  * @param origin File path of the source test file.
  */
-export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
-    : { ast: MinTreeNode, optional_name: string; } {
+export function compileAssertionSite(expr: JSNode, reporter: Reporter)
+    : { ast: JSNode, optional_name: string; } {
 
 
     for (const binding_compiler of selectBindingCompiler(expr)) {
@@ -54,7 +54,7 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
 
                 //.replace(node => (node.pos = expr.pos, node))
 
-                //.bitFilter("type", MinTreeNodeClass.IDENTIFIER)
+                //.bitFilter("type", JSNodeClass.IDENTIFIER)
 
                 //.makeReplaceable()
             ) {
@@ -66,5 +66,5 @@ export function compileAssertionSite(expr: MinTreeNode, reporter: Reporter)
     }
 
     //Bypass the test
-    return { ast: expr, optional_name: `Could not find a AssertionSiteCompiler for MinTreeNode [${MinTreeNodeType[expr.type]}]`, };
+    return { ast: expr, optional_name: `Could not find a AssertionSiteCompiler for JSNode [${JSNodeTypeLU[expr.type]}]`, };
 }

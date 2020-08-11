@@ -3,7 +3,7 @@
  * @module compile
  */
 
-import { MinTreeNode } from "@candlefw/js";
+import { JSNode } from "@candlefw/js";
 import { ImportModule } from "../types/import_module.js";
 import { RawTestRig } from "../types/raw_test.js";
 import { compileStatementsNew } from "./compile_statements.js";
@@ -14,11 +14,11 @@ import { inspect } from "../test_running/test_harness.js";
 /**
  * Compiles TestRigs from ast objects.
  * 
- * @param {MinTreeNode} ast 
+ * @param {JSNode} ast 
  * 
  * @param {Reporter} reporter - Users reporter.color to add asrenderWithFormattingAndSourceMapsertion messaging syntax highlights.
  */
-export async function compileTest(ast: MinTreeNode, reporter: Reporter, origin: string):
+export async function compileTest(ast: JSNode, reporter: Reporter, origin: string):
     Promise<{ raw_tests: RawTestRig[], imports: ImportModule[]; }> {
 
     const

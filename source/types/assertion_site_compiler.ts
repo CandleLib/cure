@@ -1,4 +1,4 @@
-import { MinTreeNodeClass, MinTreeNodeType, MinTreeNode } from "@candlefw/js";
+import { JSNodeClass, JSNodeType, JSNode } from "@candlefw/js";
 import { Reporter } from "../main";
 
 /**
@@ -8,14 +8,14 @@ import { Reporter } from "../main";
 export interface AssertionSiteCompiler {
 
     /**
-     * The signature of the first MinTreeNode in the double parenthesis expression.
+     * The signature of the first JSNode in the double parenthesis expression.
      * 
-     * Can either be a MinTreeNodeType value or bitwise OR flag of MinTreeNodeClasses values.
+     * Can either be a JSNodeType value or bitwise OR flag of JSNodeClasses values.
      * 
      * Uses a bitwise AND test against the node's type to determine whether this
      * particular binding should advanced to the next stage.
      */
-    signature: MinTreeNodeType | MinTreeNodeClass,
+    signature: JSNodeType | JSNodeClass,
 
     /**
      * Test to see if the node AST is in a form that should be handled by this compiler.
@@ -23,7 +23,7 @@ export interface AssertionSiteCompiler {
      * If `true` is returned, this Binding compiler will be accepted as the handler for the
      * test.
      */
-    test: (node: MinTreeNode) => boolean,
+    test: (node: JSNode) => boolean,
 
     /**
      * Return a JavaScript expression string that evaluates to `true` or `false`.
@@ -39,14 +39,14 @@ export interface AssertionSiteCompiler {
      * code branch will run.
      * 
      * 
-     * @param {MinTreeNode} node The first AST node within the double parenthesis AssertionSite.
+     * @param {JSNode} node The first AST node within the double parenthesis AssertionSite.
      */
-    build: (node: MinTreeNode) => string;
+    build: (node: JSNode) => string;
 
     /**
      * Return an exception message that will be used as the report if the test fails.
      */
-    getExceptionMessage: (node: MinTreeNode, reporter: Reporter) => {
+    getExceptionMessage: (node: JSNode, reporter: Reporter) => {
 
         /**
          * Syntax highlighting to add to source trace. 

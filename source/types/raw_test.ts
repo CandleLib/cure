@@ -1,4 +1,4 @@
-import { MinTreeNode } from "@candlefw/js";
+import { JSNode } from "@candlefw/js";
 import { Lexer } from "@candlefw/wind";
 import { ImportModule } from "./import_module";
 import { TestMap } from "./test_map";
@@ -14,7 +14,7 @@ export interface RawTestRig {
 
     name: string;
 
-    ast: MinTreeNode;
+    ast: JSNode;
 
     /**
      * Weak hashing of the test structure.
