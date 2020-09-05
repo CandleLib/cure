@@ -1,6 +1,5 @@
-import { JSNode, JSNodeType, ext } from "@candlefw/js";
+import { JSNode, JSNodeType } from "@candlefw/js";
 import { jst } from "../compile_statements.js";
-import { inspect } from "../../test_running/test_harness.js";
 
 
 function fillInput(set_from, set_to) {

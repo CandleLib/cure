@@ -10,6 +10,7 @@ import { Reporter } from "../types/reporter.js";
 import * as colors from "./colors.js";
 import { TestFrameOptions } from "../types/test_frame_options";
 import { TestError } from "../test_running/test_error.js";
+import { getPackageJsonObject } from "@candlefw/wax";
 
 function endWatchedTests(globals: Globals, resolution: (arg: Outcome) => void) {
 
@@ -86,6 +87,12 @@ export function createTestFrame(
                 WATCH,
             },
 
+            package_name: "",
+
+            package_dir: "",
+
+            package_main: "",
+
             suites: null,
 
             reporter: InitializeReporterColors(new BasicReporter()),
@@ -129,6 +136,16 @@ export function createTestFrame(
 
             await URL.polyfill();
 
+            const { package: pkg, FOUND: PACKAGE_FOUND, package_dir }
+                = await getPackageJsonObject(process.cwd() + "/");
+
+
+            if (PACKAGE_FOUND) {
+                globals.package_name = pkg?.name ?? "";
+                globals.package_dir = new URL(package_dir);
+                globals.package_main = pkg?.main ?? "";
+            }
+
             if (resolution)
                 endWatchedTests(globals, resolution);
 
@@ -143,7 +160,6 @@ export function createTestFrame(
             globals.watchers.length = 0;
 
             const { suites } = globals;
-
 
             try {
 

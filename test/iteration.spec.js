@@ -10,27 +10,27 @@ let i = 0;
     "While Statements";
     while (i++ < count) {
         "Should Not Fail";
-        ((iterable[i] !== count));
+        assert(iterable[i] !== count);
     }
 
     while (i++ < count) {
         "Should Fail";
-        i((i));
+        assert(i);
     }
 
-    ((iterable[i] !== count - 1));
+    assert(iterable[i] !== count - 1);
 }
 {
     "For Statements";
 
     for (let i = 0; i < iterable.length; i++) {
         "Should Not Fail";
-        ((iterable[i] !== count));
+        assert(iterable[i] !== count);
     }
 
     for (let i = 0; i < iterable.length; i++) {
         "Should Fail";
-        ((iterable[i] !== count));
+        assert(iterable[i] !== count);
     }
 }
 
@@ -39,12 +39,12 @@ let i = 0;
 
     for (const val of iterable) {
         "Should Not Fail";
-        ((val !== count));
+        assert(val !== count);
     }
 
     for (const val of iterable) {
         "Should Fail";
-        ((val !== count));
+        assert(val !== count);
     }
 }
 

@@ -3,56 +3,19 @@ import path from "path";
 
 import URL from "@candlefw/url";
 
+import {
+    parser, JSNodeType,
+    ext, JSNodeClass,
+    stmt, renderWithFormatting
+} from "@candlefw/js";
+import { traverse, skip_root } from "@candlefw/conflagrate";
+
 import { sym_version } from "./sym_version.js";
-import { parser, JSNodeType, ext, JSNodeClass, stmt, renderWithFormatting } from "@candlefw/js";
-import { traverse, filter, bit_filter, skip_root } from "@candlefw/conflagrate";
 import { format_rules } from "./format_rules.js";
 
 const fsp = fs.promises;
 
 export const test = null;
-
-/**
- * Todo - Move to cfw.wax
- */
-/**
- * Locates the nearest package.json file. Searches up the directory structure until one is found.
- * If no package.json file can be found, then the return object property FOUND will be false.
- */
-export async function getPackageJSON(cwd: string = process.cwd()): Promise<{ package: Package, package_dir: string; FOUND: boolean; }> {
-    //hunt down package.json
-
-    const
-        url = new URL(cwd),
-        base_path = url.path.split("/").filter(s => s !== "..");
-
-    let i = base_path.length,
-        pkg = "{}",
-        cwd_ = "",
-        FOUND = false;
-
-    while (i-- >= 0) {
-        try {
-
-            cwd_ = base_path.slice(0, i + 1).join("/");
-
-            const
-                search_path = path.join(cwd_, "package.json"),
-                stats = fs.statSync(search_path);
-
-            if (stats) {
-                FOUND = true;
-                pkg = await fsp.readFile(search_path, { encoding: "utf8" });
-                break;
-            }
-
-        } catch (e) {
-            //Suppress errors - Don't really care if there is no file found. That can be handled by the consumer.
-        }
-    }
-
-    return { package: <Package>JSON.parse(pkg), package_dir: cwd_, FOUND };
-}
 
 export async function createSpecFile(pkg_name: string, source_file_path: string, pwd: string = process.cwd())
     : Promise<string> {
@@ -124,16 +87,6 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
 
     return renderWithFormatting(new_ast, format_rules);
 }
-interface Package {
-    main: string;
-    type: "module" | "commonjs";
-    name: string;
-    scripts: {
-        test?: string;
-    };
-    devDependencies: object;
-}
-
 export function processPackageData(pkg: Package, FORCE: boolean = false) {
 
 

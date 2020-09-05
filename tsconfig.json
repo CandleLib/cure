@@ -1,7 +1,7 @@
 {
     "compileOnSave": true,
     "include": [
-        "./source/**/*.ts"
+        "./source/typescript/**/*.ts"
     ],
     "compilerOptions": {
         "types": [
@@ -17,7 +17,7 @@
             "DOM"
         ],
         "removeComments": true,
-        "rootDir": "./source/",
+        "rootDir": "./source/typescript/",
         "module": "ESNext",
         "outDir": "./build/library",
         "declarationDir": "./build/types",

@@ -4,13 +4,14 @@ import URL from "@candlefw/url";
 import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON } from "@candlefw/conflagrate";
 
-import { TestRig } from "../types/test_rig.js";
+import { TestRig, ModuleSpecifier, ImportSource } from "../types/test_rig.js";
 import { compileTest } from "../compile/compile.js";
 import { TestSuite } from "../types/test_suite.js";
 import { Globals } from "../types/globals.js";
 import { format_rules } from "./format_rules.js";
 import { TestError } from "../test_running/test_error.js";
 import { ImportModule } from "../types/import_module.js";
+import { Lexer } from "@candlefw/wind";
 
 /**
  * Create TestRigs from a test filepath and add to suite.
@@ -21,9 +22,13 @@ import { ImportModule } from "../types/import_module.js";
 export async function loadTests(text_data: string, suite: TestSuite, globals: Globals): Promise<void> {
 
     try {
+        const lex = new Lexer(text_data);
+
+        lex.source = suite.origin;
+
+        const { ast } = parser(lex);
 
         const
-            ast = parser(text_data),
             { raw_tests } = await compileTest(ast, globals.reporter, "");
 
         let source = "";
@@ -34,8 +39,8 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
                 mappings = <Array<number[]>>[],
                 import_arg_names = [],
                 args = [],
-                import_module_sources = [],
-                import_arg_specifiers = [];
+                import_module_sources: ImportSource[] = [],
+                import_arg_specifiers: ModuleSpecifier[] = [];
 
             let error = e;
 
@@ -56,7 +61,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
 
                             ImportMap.set(import_module, source);
 
-                            import_module_sources.push({ source, IS_RELATIVE });
+                            import_module_sources.push(<ImportSource>{ module_specifier: source, source, IS_RELATIVE, });
                         } else {
                             source = ImportMap.get(import_module);
                         }
@@ -97,7 +102,8 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
                 IS_ASYNC,
                 SOLO,
                 RUN,
-                INSPECT
+                INSPECT,
+                cwd: new URL(suite.origin).dir
             });
         }
 

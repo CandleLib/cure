@@ -1,5 +1,5 @@
 import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeClass, JSNodeTypeLU as $, JSNodeType, stmt, renderWithFormatting, ext } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeTypeLU as $, JSNodeType, stmt, renderWithFormatting, ext, renderCompressed, JSNodeTypeLU } from "@candlefw/js";
 
 import { AssertionSite, AssertionSiteSequence } from "../types/assertion_site.js";
 import { ImportModule } from "../types/import_module.js";
@@ -64,6 +64,40 @@ function createSequenceData(): SequenceData {
     return { body: <JSNode[]>[], test_maps: <TestMap[]>[] };
 }
 
+
+export function compileStatementsNewer(
+    ast: JSNode,
+    reporter: Reporter,
+    imports: ImportModule[],
+    scope: Scope = createCompileScope(ast, null),
+    suite_names: string[] = [],
+    sequence_data: SequenceData = null
+) {
+    const test_rigs = [];
+
+    const new_stmt = createCompileScope(ast, scope);
+
+    compileClosureStatement(new_stmt, ast, scope, reporter, imports, suite_names, test_rigs, false, false, false);
+
+    return test_rigs;
+}
+
+/**[API]
+ * Generates test rigs from all code (ATM - anyways)
+ * within a file and assertion sites from call expression
+ * statements that have one of these signatures:
+ * - `assert( expression );`
+ * - `ass( expression );`
+ * - `a( expression );`
+ * 
+ * Inspection and Solo can be configured by
+ * using `inspect` and `solo` ( or `i` and `s`) 
+ * as one or two of the arguments to the assertion
+ * call statement. It does not matter which arg position. 
+ * 
+ * Will throw if there is more than one argument to an assertion call
+ * that is not one of `inspect`, `solo`, `i`, or `s`.
+ */
 /**
  * Generates a graph accessible symbols from any givin line within a 
  * source file.
@@ -84,7 +118,6 @@ export function compileStatementsNew(
     const { inputs, outputs, lex_decl, decl, prev_symbol } = scope, test_rigs = [];
 
     if (ast.type & JSNodeClass.IDENTIFIER) {
-
         compileIdentifier(ast, ast, lex_decl, decl, outputs, inputs);
     }
 
@@ -96,8 +129,11 @@ export function compileStatementsNew(
     ) {
         const { type } = node;
 
-        if (type == JSNodeType.AwaitExpression)
+        if (type == $.AwaitExpression) {
+
             scope.AWAIT = true;
+
+        }
 
         if (type & JSNodeClass.IDENTIFIER) {
 
@@ -231,6 +267,8 @@ export function compileStatementsNew(
                     compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
                     break;
 
+
+
                 case $.ExpressionStatement: {
 
                     const [expression] = node.nodes;
@@ -247,37 +285,35 @@ export function compileStatementsNew(
                         SKIP_NODE = true;
 
                     } else if (
-                        expression.type == $.Parenthesized
+                        expression.type == $.CallExpression
                         &&
-                        expression.nodes[0].type == $.Parenthesized
+                        expression.nodes[0].type == $.IdentifierReference
+                        &&
+                        ("assert").includes(<string>expression.nodes[0].value)
+                        &&
+                        expression.nodes[0].value[0] == "a"
                     ) {
 
                         SKIP_NODE = true;
 
-                        assertion_expr = expression.nodes[0].nodes[0];
+                        for (const { node, meta: { index } } of jst(expression.nodes[1], 2).skipRoot()) {
 
-                    } else if (expression.type == $.CallExpression) {
-
-                        const
-                            name = (expression.nodes[0].value + "").toLocaleLowerCase(),
-                            [, args] = expression.nodes;
-
-                        if (args.nodes.length == 1) {
-
-                            const [is_paren] = args.nodes;
-
-                            if (is_paren && is_paren.type == $.Parenthesized) {
-                                SKIP_NODE = true;
-                                SOLO = ["solo", "only", "s", "o"].includes(name);
-                                INSPECT = ["inspect", "i"].includes(name);
-                                SKIP = ["skip", "sk"].includes(name);
-                                if (SOLO || INSPECT || SKIP)
-                                    assertion_expr = is_paren.nodes[0];
+                            if (node.type == $.IdentifierReference) {
+                                if ((node.value == "s" && assertion_expr) || node.value == "solo") {
+                                    SOLO = true; continue;
+                                } else if ((node.value == "i" && assertion_expr) || node.value == "inspect") {
+                                    INSPECT = true; continue;
+                                } else if ((node.value == "m" && assertion_expr) || node.value == "mono") {
+                                    SOLO = true; continue;
+                                }
                             }
-                        }
-                    }
 
-                    if (assertion_expr) {
+                            if (assertion_expr) throw node.pos.throw(`candidate assertion expression [${
+                                renderCompressed(assertion_expr)
+                                }] already passed to this function.`);
+
+                            assertion_expr = node;
+                        }
 
                         let AWAIT = false;
 
@@ -293,10 +329,12 @@ export function compileStatementsNew(
                                 $.Identifier)
                         ) if (type == $.AwaitExpression) AWAIT = true; else assert_site_inputs.add(<string>value);
 
-                        const { ast, optional_name } = compileAssertionSite(assertion_expr, reporter),
-                            name = getRigName(suite_names, optional_name);
+                        if (!assertion_expr)
+                            throw expression.pos.throw(`Could not find an expression for assertion site${expression.pos.slice()}`);
 
-                        //suite_names.pop();
+                        const { ast, optional_name } = compileAssertionSite(assertion_expr, reporter),
+
+                            name = getRigName(suite_names, optional_name);
 
                         suite_names.push("#");
 
@@ -305,7 +343,7 @@ export function compileStatementsNew(
                          */
                         if (sequence_data) {
                             const index = sequence_data.test_maps.length;
-                            sequence_data.body.push(stmt(`$harness.test_index = ${index};`), ast);
+                            sequence_data.body.push(stmt(`$harness.test_index = ${index}; `), ast);
                             sequence_data.test_maps.push(<TestMap>{ INSPECT, SOLO, RUN: !SKIP, name, index, pos: node.pos });
 
                             for (const var_name of assert_site_inputs.values()) {
@@ -321,7 +359,6 @@ export function compileStatementsNew(
 
                             body.nodes.push(ast);
 
-
                             test_rigs.push({
                                 rig: <RawTestRig>{
                                     type: "DISCRETE",
@@ -331,8 +368,8 @@ export function compileStatementsNew(
                                     error: null,
                                     imports: [],
                                     pos: node.pos,
-                                    IS_ASYNC: OUTER_AWAIT || AWAIT,
-                                    SOLO, RUN: !SKIP, INSPECT
+                                    IS_ASYNC: OUTER_AWAIT || AWAIT || scope.AWAIT,
+                                    SOLO, RUN: !SKIP, INSPECT: true
                                 },
                                 import_names: inputs,
                             });
@@ -478,4 +515,3 @@ function compileClosureStatement(
 
     return new_stmt;
 }
-

@@ -6,7 +6,14 @@ import { ImportModule } from "../types/import_module";
 
 export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]) {
 
-    const module_specifier = <string>ext(node, true).from.url.value;
+
+
+
+    const module_specifier = node.nodes[1]?.nodes[0]?.value;
+
+    if (!module_specifier) return;
+
+    //  process.exit();
 
     let url = new URL(module_specifier);
 
@@ -27,10 +34,14 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]
         .makeSkippable()
     ) {
         if (id.type == JSNodeType.Specifier) {
-            const { original, transformed } = ext(id);
+            const [original, transformed] = id.nodes;
+
             meta.skip();
 
-            obj.import_names.push({ import_name: <string>transformed.value, module_name: <string>original.value, pos: original.pos });
+            if (transformed)
+                obj.import_names.push({ import_name: <string>transformed.value, module_name: <string>original.value, pos: original.pos });
+            else
+                obj.import_names.push({ import_name: <string>original.value, module_name: <string>original.value, pos: original.pos });
         }
         else if (id.type == JSNodeType.IdentifierDefault) {
 
@@ -45,5 +56,6 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]
     obj.import_names.forEach(n => obj.exports.add(n.import_name));
 
     imports.push(obj);
+
 }
 

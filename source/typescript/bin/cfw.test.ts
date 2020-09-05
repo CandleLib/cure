@@ -2,25 +2,45 @@
 
 import { getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
 
-import { createTestFrame, NullReporter } from "../build/library/main.js";
-import { instrument } from "../build/library/utilities/instrument.js";
-import { sym_version } from "../build/library/utilities/sym_version.js";
-
+import { createTestFrame, NullReporter } from "../main.js";
+import { instrument } from "../utilities/instrument.js";
+import { sym_version } from "../utilities/sym_version.js";
+import URL from "@candlefw/url";
+import fs from "fs";
+import node_path from "path";
+const fsp = fs.promises;
 
 const
+
     warning = xtF(xtColor(col_x11.Red), xtBold),
+
     reset = xtF(xtReset),
-    args = getProcessArgs(),
-    files = args.__array__.filter(a => a.hyphens == 0).map(a => a.name),
-    number_of_workers = args.threads ? parseInt(args.threads.value) : 1,
+
+    args = getProcessArgs({
+        input: true,
+        i: "input",
+        watch: false,
+        w: "watch",
+        help: false,
+        h: "help",
+        output: false,
+        o: "output",
+        threads: true,
+        t: "threads",
+        value: "",
+        "?": false
+    }),
+
+    files = args.input ? [<string>args.input.val] : [""],
+    number_of_workers = args.threads ? parseInt(<string>args.threads.val) : 1,
     WATCH = !!(args.w),
-    HELP = !!(args.help || args.h || args["?"]) || files.length == 0,
+    HELP = !!(args.help || args["?"]) || files.length == 0,
     OUTPUT = !!(args.o),
     FORCE = !!(args.f),
     INSTRUMENT = (
         args.__array__[0]
         &&
-        args.__array__[0].name.toLowerCase() == "instrument"
+        args.__array__[0][0].toLowerCase() == "instrument"
     ),
     TL = `Delightfully Brilliant Testing.`,
     INSTRUMENT_HELP_MASSAGE = `
@@ -35,7 +55,7 @@ Builds test file from package.json data
 
     [Options]
 
-        Show help message: -h | -?  
+        Show help message: --help | -h | ?  
         
             Display this help message and exit. 
             Overrides other options.
@@ -63,7 +83,7 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
 [Options]: 
 
 
-    Show help message: -h | -?  
+    Show help message: --help | -h | ?  
         
         Display this help message and exit. 
         Overrides other options.
@@ -84,14 +104,14 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
         in the suite file that has been changed. Also watches 
         files of resources imported from relative URIs.
         
-        i.e.: 
+        e.g.: 
             import { imports } from "./my_imports"
             import { other_imports } from "../other_imports"
             
         DOES NOT watch files that are imported from node_modules
         or absolute directories:
         
-        i.e.:
+        e.g.:
             import fs from "fs"
             import { module } from "/my_module"
             import { other_module } from "npm_module"
@@ -135,12 +155,17 @@ async function start() {
             frame.setReporter(new NullReporter());
 
             frame.start().then(d => {
-
-                console.log(JSON.stringify(d));
-
                 process.exit(d.FAILED ? 255 : 0);
             });
         } else {
+
+            //if files is an * operator, load all files that have spec.js in their name
+            if (files[0].includes("...")) {
+                const url = URL.resolveRelative(files[0].replace("...", ""), process.cwd() + "/");
+
+                files.length = 0;
+                files.push(...(await getSpecFileNames(url)));
+            }
 
             const frame = createTestFrame({ WATCH, number_of_workers }, ...files);
 
@@ -154,6 +179,43 @@ async function start() {
         }
     }
 }
+
+export async function getSpecFileNames(url) {
+
+    //recursively load data from all subfolders
+
+    const pending = [{
+        dir_type: "directory",
+        path: url.toString()
+    }],
+        strings = [];
+
+
+    for (let i = 0; i < pending.length; i++) {
+        const { dir_type, path } = pending[i];
+
+        if (dir_type == "directory") {
+
+            for (const candidate of await fsp.readdir(path, { withFileTypes: true })) {
+
+                const new_path = node_path.join(path, "/", candidate.name);
+
+                if (candidate.isDirectory())
+                    pending.push({ dir_type: "directory", path: new_path });
+
+                else if (candidate.isFile())
+                    pending.push({ dir_type: "file", path: new_path });
+            }
+
+        } else {
+            if (path.includes("spec.js"))
+                strings.push(path);
+        }
+    }
+
+    return strings;
+}
+
 
 start();
 

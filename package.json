@@ -1,12 +1,12 @@
 {
 	"name": "@candlefw/test",
-	"version": "0.1.0-alpha",
+	"version": "0.3.0",
 	"description": "CandleFW Testing System",
 	"type": "module",
 	"types": "./build/types/main.d.ts",
 	"main": "./build/library/main.js",
 	"bin": {
-		"cfw.test": "./bin/cfw.test.js"
+		"cfw.test": "./build/library/bin/cfw.test.js"
 	},
 	"scripts": {
 		"prepublishOnly": "yarn build && yarn test",

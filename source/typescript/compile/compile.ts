@@ -6,7 +6,7 @@
 import { JSNode } from "@candlefw/js";
 import { ImportModule } from "../types/import_module.js";
 import { RawTestRig } from "../types/raw_test.js";
-import { compileStatementsNew } from "./compile_statements.js";
+import { compileStatementsNew, compileStatementsNewer } from "./compile_statements.js";
 import { Reporter } from "../main.js";
 import { inspect } from "../test_running/test_harness.js";
 
@@ -20,14 +20,13 @@ import { inspect } from "../test_running/test_harness.js";
  */
 export async function compileTest(ast: JSNode, reporter: Reporter, origin: string):
     Promise<{ raw_tests: RawTestRig[], imports: ImportModule[]; }> {
-
     const
         imports: Array<ImportModule> = [],
         tests: Array<RawTestRig> = [];
 
     let i = 0, test = null, rigs = [];
 
-    const raw_rigs = <Array<{ rig: RawTestRig, import_names: Set<string>; }>><unknown>compileStatementsNew(ast, reporter, imports);
+    const raw_rigs = <Array<{ rig: RawTestRig, import_names: Set<string>; }>><unknown>compileStatementsNewer(ast, reporter, imports);
 
     let index = 0;
 

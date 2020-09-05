@@ -1,10 +1,8 @@
 "String"; "#";
 
 import { parser } from "@candlefw/js";
-import { compileStatements, generateSymbolGraph, getStatementsForSymbol } from "../build/library/compile/compile_statements.js";
-import { compileTest, compileTestNew } from "../build/library/compile/compile.js";
+import { compileTest, compileTest as compileTestNew } from "../build/library/compile/compile.js";
 import { NullReporter, BasicReporter, harness } from "../build/library/main.js";
-import { fail, pass } from "../build/library/utilities/colors.js";
 
 const ast = parser(`
     import d from "dat";
@@ -59,7 +57,7 @@ const reporter = new BasicReporter;
 
 reporter.colors = { fail: "", pass: "" };
 "SDFs";
-((await compileTestNew(ast, reporter) == null));
+assert(await compileTestNew(ast, reporter) == null);
 "SDFsAA";
 "SDFsAA";
-((await compileTest(ast, reporter) == null));
+assert(await compileTest(ast, reporter) == null);

@@ -7,7 +7,7 @@ import {
 } from "@candlefw/conflagrate";
 
 import data from "../utilities/error_line_parser.js";
-import { inspect, harness } from "./test_harness.js";
+import { harness } from "./test_harness.js";
 import URL from "@candlefw/url";
 
 
@@ -104,7 +104,7 @@ class TestError {
             this.message = error.message || error.name;
 
             this.original_error_stack = error.stack;
-            let out = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), data, {});
+            let out = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), data);
 
             if (!out)
                 return; //throw EvalError("Could not parse stack line");

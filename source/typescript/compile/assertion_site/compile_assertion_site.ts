@@ -42,8 +42,8 @@ export function compileAssertionSite(expr: JSNode, reporter: Reporter)
             const
                 thr =
                     message ?
-                        parser(`if(${js_string}) $harness.setException(new AssertionError(${error_data}));`)
-                        : parser(`if(${js_string});`),
+                        parser(`if(${js_string}) $harness.setException(new AssertionError(${error_data}));`).ast
+                        : parser(`if(${js_string});`).ast,
 
                 receiver = { ast: null };
 

@@ -1,4 +1,4 @@
-import { JSNode, JSNodeType } from "@candlefw/js";
+import { JSNode } from "@candlefw/js";
 
 import { AssertionSiteCompiler } from "../../types/assertion_site_compiler.js";
 

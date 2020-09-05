@@ -7,6 +7,9 @@ import { TestResult } from "../types/test_result.js";
 import { TestError } from "./test_error.js";
 import { harness, inspect } from "./test_harness.js";
 import { pass, rst, fail } from "../utilities/colors.js";
+import URL from "@candlefw/url";
+
+
 
 
 const
@@ -23,6 +26,9 @@ async function RunTest(msg) {
         result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
 
     try {
+
+        const addendum = (sources.filter(s => s.module_specifier == "@candlefw/url").length > 0) ? `await URL.server("${test.cwd}");` : "";
+
         harness.imports = sources;
 
         harness.errors = [];
@@ -35,8 +41,8 @@ async function RunTest(msg) {
 
         console.log = harness.inspect;
 
+        for (const { module_specifier: source } of sources) {
 
-        for (const { source } of sources) {
 
             if (!ImportedModules.has(source)) {
 
@@ -44,7 +50,7 @@ async function RunTest(msg) {
             }
         }
 
-        const testFunction = (test.IS_ASYNC ? AsyncFunction : Function)(...[...args, source]),
+        const testFunction = ((true || test.IS_ASYNC) ? AsyncFunction : Function)(...[...args, addendum + source]),
 
             test_args = [harness, TestError, ...spec.map(e => {
 
@@ -55,7 +61,6 @@ async function RunTest(msg) {
 
                 return module[e.module_name];
             })];
-
 
         result.start = performance.now();
 
@@ -69,6 +74,7 @@ async function RunTest(msg) {
             result.PASSED = false;
 
     } catch (e) {
+
         let error = null;
 
         if (e instanceof TestError) {

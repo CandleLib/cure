@@ -5,6 +5,7 @@ import { TestResult } from "./test_result.js";
 import { Reporter } from "./reporter.js";
 import { TestRig } from "./test_rig.js";
 import { TestError } from "../test_running/test_error.js";
+import URL from "@candlefw/url";
 
 export interface Outcome {
     errors?: TestError[],
@@ -64,5 +65,20 @@ export interface Globals {
         PRELOAD_IMPORTS: boolean;
 
     };
+
+    /**
+     * Name of the package test running within. 
+     */
+    package_name?: string,
+
+    /**
+     * File path of the root directory for the package being tested.
+     */
+    package_dir?: URL,
+
+    /**
+     * Main entry point for the package being tested.
+     */
+    package_main?: string,
 
 };

@@ -101,7 +101,7 @@ ${getLexerFromLineColumnString(line, column, suite.data).errorMessage("Source Lo
 
 Test Rig Source Code:
 
-    ${renderWithFormatting(parser(test.source), format_rules, syntaxHighlight).trim().split("\n").join("\n    ")}
+    ${renderWithFormatting(parser(test.source).ast, format_rules, syntaxHighlight).trim().split("\n").join("\n    ")}
 
 ${rst}-------------------------------------------------------------------------------`;
 
@@ -334,9 +334,9 @@ export class BasicReporter implements Reporter {
                 fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
         }
 
-        strings.push(`${total} test${total !== 1 ? "s" : ""} run. ${total > 0 ? (failed > 0
-            ? fail + `${failed} failed test${(failed !== 1 ? "s" : "") + rst} :: ${pass + (total - failed)} passed test${total - failed !== 1 ? "s" : ""}`
-            : pass + "All tests passed") : ""} ${rst}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
+        strings.push(`${total} test${total !== 1 ? "s" : ""} ran. ${total > 0 ? (failed > 0
+            ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (total - failed)} test${total - failed !== 1 ? "s" : ""} passed`
+            : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
 
         terminal.log(strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst);
 

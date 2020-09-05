@@ -39,9 +39,9 @@ export interface ImportSource {
     import_names: string[];
 
     /**
-     * URL of the module
+     * original import url of the module
      */
-    module_source: string;
+    module_specifier: string;
 
     /**
      * `true` if the module_source is a relative path.
@@ -155,5 +155,11 @@ export interface TestRig {
      * This affects other tests in the same manner as `SOLO`.
      */
     INSPECT: boolean;
+
+    /**
+     * The current directory of the test file. Tests are
+     * run from within their own directories. 
+     */
+    cwd: string;
 };
 
