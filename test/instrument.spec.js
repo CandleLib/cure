@@ -1,9 +1,11 @@
 "Instrumentation Spec";
 
-import { getPackageJSON, instrument, processPackageData, createSpecFile } from "../build/library/utilities/instrument.js";
+import { instrument, processPackageData, createSpecFile } from "../build/library/utilities/instrument.js";
+import { getPackageJsonObject as getPackageJSON } from "@candlefw/wax";
 import { sym_version } from "../build/library/utilities/sym_version.js";
 import fs from "fs";
 import path from "path";
+import URL from "@candlefw/url";
 
 {
     "Gets package.json";
@@ -93,11 +95,15 @@ SEQUENCE: {
 
     assert(await fsp.readFile(path.join(dir, "package.json")));
 
-    const data = JSON.parse(await fsp.readFile(path.join(dir, "package.json")));
+    const { FOUND, package: data } = await getPackageJSON(URL.resolveRelative(dir, process.cwd() + "/"));
 
-    assert(data.devDependencies["@candlefw/test"] == sym_version);
+    const { package: main_data } = await getPackageJSON(process.cwd() + "/");
 
-    assert(data.scripts.test == "cfw.test ./test/candlefw.test.spec.js");
+    assert(FOUND == true);
+
+    assert(data.devDependencies["@candlefw/test"] == main_data.version);
+
+    assert(data?.scripts.test == "cfw.test ./test/candlefw.test.spec.js");
 
     assert(await fsp.rmdir(dir, { recursive: true }));
 }
