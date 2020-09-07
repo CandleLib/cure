@@ -75,7 +75,7 @@ class TestError {
      * @param accessible_files File paths that cfw.test is allowed to inspect for error reporting.
      * @param map @type {SourceMap} of the compiled @type {TestRig} source
      */
-    constructor(message, origin, line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
+    constructor(message, origin = "", line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
 
         this.name = "TestError";
         this.origin = origin;

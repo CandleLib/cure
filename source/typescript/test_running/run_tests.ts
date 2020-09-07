@@ -14,7 +14,7 @@ function TestRigFromTestMap(test_map: TestMap, test_rig: TestRig): TestRig {
     const { index, map, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args } = test_rig;
     let o = Object.assign({ map, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args }, test_map);
     o.index = index + o.index;
-    return o;
+    return <TestRig>o;
 }
 
 function mapResults(rst: TestResult) {

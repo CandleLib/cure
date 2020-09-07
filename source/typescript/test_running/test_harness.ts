@@ -2,7 +2,7 @@
 import { TestError } from "./test_error.js";
 import { TestHarness } from "../types/test_harness";
 
-const harnessConstructor = (equal, util, performance, rst, te: typeof TypeError, BROWSER = false) => {
+const harnessConstructor = (equal, util, performance, rst, te: typeof TestError, BROWSER = false) => {
 
     const
         MAX_ERROR_LIMIT = 10,
@@ -69,6 +69,7 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TypeError,
             origin: "",
 
             mark(index: number) {
+                //@ts-ignore
                 harness.errors.push(new te(new Error("marked: " + index), "", 0, 0, "", ""));
             },
 
@@ -79,6 +80,7 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TypeError,
                 const now = performance.now();
 
                 if (harness.last_time > 0) {
+                    //@ts-ignore
                     harness.errors.push(new te(new Error("Time marked at: " + (now - harness.last_time)), "", 0, 0, "", ""));
                     harness.last_time = -1;
                 } else

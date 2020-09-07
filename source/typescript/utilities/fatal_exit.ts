@@ -1,4 +1,4 @@
-import { Globals } from "source/types/globals.js";
+import { Globals } from "../types/globals.js";
 
 /**
  * Kills the TestFrame, returning an error as to why the frame was ended.

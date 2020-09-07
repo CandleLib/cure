@@ -1,4 +1,4 @@
-import { Reporter } from "source/types/reporter";
+import { Reporter } from "../types/reporter";
 
 /**
  * Does nothing other than resolves `await NullReporter.complete()` with `true`.
