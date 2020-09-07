@@ -1,0 +1,75 @@
+<!DOCTYPE html>
+<html>
+    <head>
+    </head>
+    <body>
+        <h1>CandleFW.TEST</h1>
+        loading...
+    </body>
+    
+    <script async type=module>
+        //  const d = window.open("./0/", "Test 1");
+        import {cfw} from "/@candlefw/cfw";
+        import URL from "/@candlefw/url";
+        import wick from "/@candlefw/wick";
+        import spark from "/@candlefw/spark";
+      //  import glow from "/@candlefw/glow";
+        
+
+        let ACTIVE = true;
+
+        async function start(){
+            
+           await wick.setPresets({
+               options:{
+                    //GENERATE_SOURCE_MAPS:true,
+                    REMOVE_DEBUGGER_STATEMENTS:false
+
+               },
+                api: {
+
+                    URL,
+
+                    async complete_test(result, test_id){    
+
+                        console.log(result)
+                        
+                        const {completed} = (await (new URL("/test_rigs/resolve/")).submitJSON({
+                            result,
+                            test_id
+                        }))
+
+                        if(completed)
+                            ACTIVE = false;
+                    },
+                },
+                models: {
+                    meta:{tests : wick.objects.Observable([])}
+                }
+            })
+
+            const test_runner_comp_data = await wick("/components/testing/test_runner.wick");
+
+            document.body.appendChild((new test_runner_comp_data.class_with_integrated_css).ele);
+
+            const globals = (await (new URL("/globals/acquire/")).fetchJSON());
+
+            let falloff = 50;
+        
+            while(ACTIVE){
+
+                const {NO_TESTS, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
+
+                if(!NO_TESTS){
+                    wick.rt.presets.models.meta.tests.push(Object.assign(test, {test_id}))
+                    await spark.sleep(10);
+                }else {
+                    await spark.sleep(falloff += (falloff * 0.5));
+                }
+            }
+        }
+
+        start();
+
+    </script>
+</html>

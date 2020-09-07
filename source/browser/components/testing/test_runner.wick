@@ -1,0 +1,8 @@
+import { tests } from "@model:meta";
+import test from "./test.wick"
+
+export default <div> 
+    <container data=${ tests }>
+        <test/>
+    </container>
+</div>

@@ -33,7 +33,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
 
         let source = "";
 
-        for (const { error: e, ast, imports, name, pos, index, type, test_maps, IS_ASYNC, SOLO, RUN, INSPECT } of raw_tests) {
+        for (const { error: e, ast, imports, name, pos, index, type, test_maps, IS_ASYNC, SOLO, RUN, INSPECT, BROWSER } of raw_tests) {
 
             const
                 mappings = <Array<number[]>>[],
@@ -103,6 +103,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
                 SOLO,
                 RUN,
                 INSPECT,
+                BROWSER: BROWSER || false,
                 cwd: new URL(suite.origin).dir
             });
         }

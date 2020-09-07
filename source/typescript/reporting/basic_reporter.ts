@@ -82,6 +82,8 @@ Start Time: ${num_col + result.start + rst}
 End Time: ${num_col + result.end + rst}
 Timed Out: ${num_col + result.TIMED_OUT + rst}
 
+Test Type: ${num_col + test.type + rst}
+Browser: ${num_col + !!test.BROWSER + rst}
 Passed: ${num_col + result.PASSED + rst}
 Asynchronous Test: ${num_col + test.IS_ASYNC + rst}
 

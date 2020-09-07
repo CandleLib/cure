@@ -1,0 +1,36 @@
+import test, { type, name, test_id } from "@model";
+import { run_test, URL, complete_test } from "@api";
+
+var pass = undefined, total_time = undefined;
+
+var frame = "@iframe";
+
+let model = this.model;
+
+async function frameLoad(){
+
+    const { contentWindow } = frame;
+
+    const result = await contentWindow.runTest(this.model);
+
+    result.test = this.model;
+    
+    pass = result.PASSED;
+    
+    total_time = Math.round(result.duration * 10000000);
+    
+    complete_test(result, test_id);
+
+    contentWindow.close();
+}
+
+frame.onload = ()=>frameLoad();
+
+export default <div>
+    id: ${test_id}
+    type: ${ type.toLowerCase() } 
+    source: <code>${ name } </code>
+    passed: <code>${ pass } </code>
+    time: <code>${ total_time + "ms" } </code>
+    <iframe style="display: none;" src="/components/iframe.html"></iframe>
+</div>

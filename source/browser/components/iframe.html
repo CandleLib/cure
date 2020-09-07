@@ -1,0 +1,76 @@
+<!DOCTYPE html>
+<html>
+    <head></head>
+    <body>
+        <script type=module>
+            import { constructTestFunction } from "/construct_test_function/acquire/";
+            import { harnessConstructor } from "/test_harness/acquire/";
+
+            const TestError = Error;
+
+            //Load test runners 
+            async function loadImport(source) {
+                return await import(source[0] == "/" ? source : "/" + source );
+            }
+            
+            async function run_test(test){
+
+                const 
+                    log = console.log,
+                    ImportedModules = new Map(),
+                    harness = harnessConstructor((a,b)=>a===b, {
+                        inspect: JSON.stringify,
+                    }, performance, "", Error, true);
+
+                const result= { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
+
+                try {
+                    await (await constructTestFunction(
+                        test, 
+                        harness, 
+                        ImportedModules, 
+                        TestError, 
+                        loadImport ) )();
+                } catch (e) {
+
+                    log(e)
+
+                    let error = null;
+
+                    if (e instanceof TestError) {
+                        error = e;
+                    } else {
+                        try {
+                            error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", test.map);
+                        } catch (ee) {
+                            error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
+                        }
+                    }
+
+                    error.index = harness.test_index;
+                    result.errors = harness.errors;
+                    result.errors.push(error);
+                    result.end = performance.now();
+                    result.PASSED = false;
+                }
+
+                console.log = log;
+
+                harness.last_error = null;
+                result.start = performance.now();
+                result.end = performance.now();
+                result.errors = harness.errors;
+
+                if (result.errors.length > 0)
+                    result.PASSED = false;
+
+                result.duration = result.end - result.start;
+
+                return result;
+            }
+
+            window.runTest = run_test;
+
+        </script>
+    </body>
+</html>

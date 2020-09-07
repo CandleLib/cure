@@ -6,7 +6,7 @@ import { TestRig } from "../types/test_rig.js";
 import { TestResult } from "../types/test_result";
 import { Globals } from "../types/globals.js";
 import { TestError } from "./test_error.js";
-import { worker } from "cluster";
+import { prepareTestServer } from "./browser_runner.js";
 
 let nonce = 0;
 
@@ -34,7 +34,11 @@ export class RunnerBoss {
 
     module_url: string;
 
+    browser_module_url: string;
+
     id: number;
+
+
 
     constructor(max_workers: number = 1) {
 
@@ -56,6 +60,25 @@ export class RunnerBoss {
     }
 
     createWorker(wkr, module_url = this.module_url) {
+
+        const
+            finished = this.finished,
+            worker = new Worker(module_url);
+
+        worker.on("error", e => {
+            //globals.exit("Failed Worker", e);
+            console.error(e);
+        });
+
+        worker.on("message", result => {
+            finished.push(result);
+            wkr.READY = true;
+        });
+
+        return worker;
+    }
+
+    createBrowserWorker(wkr, module_url = this.module_url) {
 
         const
             finished = this.finished,
@@ -111,6 +134,7 @@ export class RunnerBoss {
 
         const
             server_tests = tests.filter(t => !t.BROWSER),
+            browser_tests = tests.filter(t => !!t.BROWSER),
             server_workers = this.workers;
 
         const
@@ -118,6 +142,9 @@ export class RunnerBoss {
             number_of_tests = tests.length;
 
         finished.length = 0;
+
+        if (browser_tests.length > 0)
+            prepareTestServer(globals, browser_tests, finished);
 
         while (completed < number_of_tests) {
 

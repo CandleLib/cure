@@ -161,5 +161,9 @@ export interface TestRig {
      * run from within their own directories. 
      */
     cwd: string;
+    /**
+     * Run the test in a browser context if true.
+     */
+    BROWSER: boolean;
 };
 

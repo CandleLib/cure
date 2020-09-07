@@ -42,6 +42,8 @@ export interface RawTestRig {
     SOLO: boolean;
     RUN: boolean;
     INSPECT: boolean;
+    BROWSER: boolean;
+
     /**
      * The expression that is to be tested
      */
