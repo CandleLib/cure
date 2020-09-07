@@ -25,14 +25,13 @@ import URL from "@candlefw/url";
 import { parser } from "@candlefw/js";
 import { BasicReporter } from "@candlefw/test";
 
-const source = await(URL.resolveRelative("./data/standard_test_spec.js")).fetchText(),
-    imports = [],
-    tests = [],
-    reporter = new BasicReporter;
-
+const reporter = new BasicReporter;
 InitializeReporterColors(reporter);
+//*
+const source = await(URL.resolveRelative("./data/standard_test_spec.js")).fetchText();
 
-const rigs = compileRawTestRigs(parser(source).ast, reporter, imports);
+
+const rigs = compileRawTestRigs(parser(source).ast, reporter, []);
 
 //console.log(0, 1, rigs);
 // compileStatementsNew expects a global object and  
@@ -61,3 +60,11 @@ assert(rigs[7].rig.name == "7 Basic failed inequality");
 assert(rigs[8].rig.name == "8 Failed strict equality");
 assert(rigs[9].rig.name == "9 Passing equality");
 assert(rigs[10].rig.name == "10 The NullReport update method should return true");
+
+//*/
+const source2 = await(URL.resolveRelative("./data/nested_dependencies_test_spec.js")).fetchText();
+const nested_rigs = compileRawTestRigs(parser(source2).ast, reporter, []);
+"Nested global dependencies are located";
+assert(nested_rigs[0].import_names.size == 8);
+"Nested global dependencies are present in the import_names property";
+assert([...nested_rigs[0].import_names.values()].sort() == ['A', 'A1', 'A2', 'B', 'D', 'R', 'ext_map', 'log']);

@@ -1,5 +1,5 @@
 import { JSNode, JSNodeType } from "@candlefw/js";
-import { jst } from "../compile_statements.js";
+import { jst } from "../compile_statements_old.js";
 
 
 function fillInput(set_from, set_to) {
@@ -8,8 +8,8 @@ function fillInput(set_from, set_to) {
 }
 
 export function buildAssertionSiteAst(current_scope, symbols) {
-    let AWAIT = current_scope.AWAIT || false;
 
+    let AWAIT = current_scope.AWAIT || false;
 
     const { scope: outer_scope, prev_symbol, root } = current_scope;
     //Collect all necessary previous statements

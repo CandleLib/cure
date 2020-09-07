@@ -42,4 +42,8 @@ export interface RawTestRig {
     SOLO: boolean;
     RUN: boolean;
     INSPECT: boolean;
+    /**
+     * The expression that is to be tested
+     */
+    expression: JSNode;
 };

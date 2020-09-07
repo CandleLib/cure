@@ -1,6 +1,6 @@
 {
 	"name": "@candlefw/test",
-	"version": "0.3.0",
+	"version": "0.3.1",
 	"description": "CandleFW Testing System",
 	"type": "module",
 	"types": "./build/types/main.d.ts",
@@ -22,19 +22,20 @@
 	"author": "Anthony Weathersby <anthonycweathersby@gmail.com>",
 	"license": "MIT",
 	"dependencies": {
-		"@candlefw/conflagrate": "^0.0.5-alpha",
-		"@candlefw/hydrocarbon": "^0.3.4-dev-1",
-		"@candlefw/js": "0.1.6-dev-1",
-		"@candlefw/spark": "0.1.0",
-		"@candlefw/url": "^0.1.1",
-		"@candlefw/wax": "0.0.2",
-		"@candlefw/wind": "^0.4.1-dev",
+		"@candlefw/conflagrate": "latest",
+		"@candlefw/hydrocarbon": "latest",
+		"@candlefw/js": "latest",
+		"@candlefw/spark": "latest",
+		"@candlefw/url": "latest",
+		"@candlefw/wax": "latest",
+		"@candlefw/wind": "latest",
+		"@candlefw/wick": "latest",
+		"@candlefw/lantern": "latest",
 		"deep-equal": "^2.0.1"
 	},
 	"devDependencies": {
 		"@types/node": "^13.9.1",
 		"chai": "^4.2.0",
-		"typedoc": "^0.17.1",
 		"typescript": "^3.8.3"
 	},
 	"engines": {

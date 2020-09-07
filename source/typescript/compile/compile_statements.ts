@@ -1,97 +1,69 @@
 import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeClass, JSNodeTypeLU as $, JSNodeType, stmt, renderWithFormatting, ext, renderCompressed, JSNodeTypeLU } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeType, tools, renderCompressed, stmt as parse_statement } from "@candlefw/js";
 
-import { AssertionSite, AssertionSiteSequence } from "../types/assertion_site.js";
 import { ImportModule } from "../types/import_module.js";
 import { RawTestRig } from "../types/raw_test.js";
-import { TestMap } from "../types/test_map.js";
 
 import { Reporter } from "../main.js";
-import { compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
-import { buildAssertionSiteAst, getClosureBody } from "./assertion_site/build_assertion_site_ast.js";
+import { Scope, createCompileScope, SequenceData } from "./compile_statements_old.js";
 import { compileImport } from "./compile_import.js";
-import { format_rules } from "../utilities/format_rules.js";
-import { inspect } from "../test_running/test_harness.js";
+import { buildAssertionSiteNode } from "./build_assertion_site_rig.js";
+
 
 export const jst = (node: JSNode, depth?: number) => traverse(node, "nodes", depth);
 
-interface Scope {
+export type RawRigs = Array<{ rig: RawTestRig, import_names: Set<string>; }>;
+
+const { getIdentifierName: id } = tools;
+
+export interface StatementProp {
+    /**
+     * Any AST node that has the STATEMENT 
+     * class flag.
+     */
+    stmt: JSNode,
+
+
+    /**
+     * Any variable reference within
+     * the statement that does not 
+     * have a matching declaration
+     * within the statement closure
+     */
+    declared_variables: Set<string>;
+
+    /**
+     * Any declaration within the statement
+     * closure that is not lexically scoped
+     * within the same closure. Mainly var 
+     * declarations in block statements
+     */
+    required_references: Set<string>;
+
+    /**
+     * If true then the stmt should
+     * be used regardless of the references
+     */
+    FORCE_USE: boolean;
+
+    /**
+     * If true then an await expression is present 
+     * within the stmt
+     */
     AWAIT: boolean;
-    scope: Scope,
-    type: string,
-    inputs: Set<string>,
-    outputs: Set<string>,
-    lex_decl: Set<string>,
-    decl: Set<string>,
-    root: JSNode,
-    prev_symbol: Map<string, Scope>,
-    links: Scope[],
-    id: bigint,
-    linked_flags: bigint;
+
+    raw_rigs: RawTestRig[];
 }
 
-export function createCompileScope(node, scope): Scope {
-    return <Scope>{
-        AWAIT: false,
-        scope,
-        type: $[node.type],
-        id: 1n,
-        inputs: <Set<string>>new Set,
-        outputs: <Set<string>>new Set,
-        lex_decl: <Set<string>>new Set,
-        decl: <Set<string>>new Set,
-        root: node,
-        prev_symbol: new Map,
-        links: [],
-        linked_flags: 0n
-    };
-}
-
-function getRigName(suite_names: string[], optional_name: string = "undefined") {
-
-    const
-        local_name = suite_names.pop(),
-        name = suite_names.slice().filter(s => s !== "#").join("-->")
-            + ((suite_names.length > 0) ? "-->" : "")
-            + (local_name != "#" && local_name || optional_name);
-
-    return name;
-}
-
-type SequenceData = { body: JSNode[], test_maps: TestMap[]; };
-
-function createSequenceData(): SequenceData {
-    return { body: <JSNode[]>[], test_maps: <TestMap[]>[] };
-}
-
-
-export function compileStatementsNewer(
-    ast: JSNode,
-    reporter: Reporter,
-    imports: ImportModule[],
-    scope: Scope = createCompileScope(ast, null),
-    suite_names: string[] = [],
-    sequence_data: SequenceData = null
-) {
-    const test_rigs = [];
-
-    const new_stmt = createCompileScope(ast, scope);
-
-    compileClosureStatement(new_stmt, ast, scope, reporter, imports, suite_names, test_rigs, false, false, false);
-
-    return test_rigs;
-}
 
 /**[API]
- * Generates test rigs from all code (ATM - anyways)
- * within a file and assertion sites from call expression
- * statements that have one of these signatures:
- * - `assert( expression );`
- * - `ass( expression );`
- * - `a( expression );`
+ * Generates test rigs from all code within a file and 
+ * assertion sites from call expression  statements that
+ * have this signature:
+ * - `assert( expression [, inspect [, solo [, skip [, <string_name>] ]  ] ] ] );`
  * 
  * Inspection and Solo can be configured by
- * using `inspect` and `solo` ( or `i` and `s`) 
+ * using `inspect`, `solo`, `skip`, and/or a string (for the test name)
  * as one or two of the arguments to the assertion
  * call statement. It does not matter which arg position. 
  * 
@@ -102,416 +74,426 @@ export function compileStatementsNewer(
  * Generates a graph accessible symbols from any givin line within a 
  * source file.
  */
-export function compileStatementsNew(
+//Only top level assertion sites can be made discrete. Any nested assertion site
+//will an active captive of any TL assertion site that has dependencies on statements
+//that call the site. 
+export function compileRawTestRigs(
     ast: JSNode,
     reporter: Reporter,
     imports: ImportModule[],
     scope: Scope = createCompileScope(ast, null),
     suite_names: string[] = [],
-    sequence_data: SequenceData = null
-): Array<AssertionSite | AssertionSiteSequence> {
+    sequence_data: SequenceData = null,
+): RawRigs {
+    const
+        tests: { rig: RawTestRig, data: StatementProp, offset: number; }[] = [],
+        statements: StatementProp[] = [],
 
-    if (!ast) return [];
+        //Only function declarations are hoisted.
+        declarations: StatementProp[] = [];
 
-    let current_stmt = null, index = 1n;
+    let active_name = "", SOLO = false, SKIP = false;
 
-    const { inputs, outputs, lex_decl, decl, prev_symbol } = scope, test_rigs = [];
+    main: for (let { node, meta: { skip } } of jst(ast, 2)
+        .skipRoot()
+        .makeSkippable()
+        .bitFilter("type", JSNodeClass.STATEMENT)
+    ) {
+        switch (node.type) {
 
-    if (ast.type & JSNodeClass.IDENTIFIER) {
-        compileIdentifier(ast, ast, lex_decl, decl, outputs, inputs);
+            case JSNodeType.ImportDeclaration: { compileImport(node, imports); skip(); } break;
+
+            case JSNodeType.LabeledStatement: {
+
+                const
+                    prop = processStatement(node, reporter),
+                    [label] = node.nodes;
+
+                switch ((<string>label.value).toLowerCase()) {
+                    case "sequence":
+                        const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
+                            rig: {
+                                type: "SEQUENCE",
+                                index: 0,
+                                name: "",
+                                ast: prop.stmt,
+                                RUN: true,
+                                SOLO: false,
+                                INSPECT: false,
+                                IS_ASYNC: true,
+                                test_maps: prop.raw_rigs.map(({ INSPECT, SOLO, RUN, name, index, pos, ast }, i) => (
+                                    ast.nodes[0] = parse_statement(`$harness.test_index = ${i}; `),
+                                    { INSPECT, SOLO, RUN: true, name, index: i, pos })
+                                ),
+                                imports: [],
+                            },
+                            data: prop,
+                            offset: statements.length
+                        };
+
+                        tests.push(pending);
+                        break;
+                    default:
+                        statements.push(prop);
+                }
+
+            } break;
+
+            case JSNodeType.ExpressionStatement: {
+
+                //Pure call expression are all ways assumed to have side effects that must be included
+                const [expr] = node.nodes;
+
+                if (isExprStmtAssertionSite(node)) {
+
+                    // Forcefully remove assert name to prevent it being used
+                    // as a reference lookup
+                    expr.nodes[0].value = "";
+
+                    const pending = {
+                        rig: buildAssertionSiteNode(node.nodes[0], reporter),
+                        data: processStatement(node.nodes[0], reporter),
+                        offset: statements.length
+                    };
+
+                    pending.rig.name = pending.rig.name
+                        || active_name
+                        || renderCompressed(pending.rig.expression);
+
+                    tests.push(pending);
+
+                    active_name = "";
+
+                } else if (expr.type == JSNodeType.StringLiteral) {
+
+                    active_name = <string>expr.value;
+
+                } else if (expr.type == JSNodeType.CallExpression) {
+
+                    const prop = processStatement(node, reporter);
+
+                    prop.FORCE_USE = true;
+
+                    statements.push(prop);
+
+                } else {
+
+                    const prop = processStatement(node, reporter);
+
+                    statements.push(prop);
+                }
+            } break;
+
+            case JSNodeType.BlockStatement:
+                break;
+
+            case JSNodeType.FunctionDeclaration: {
+                //Hoist this declaration
+                const prop = processStatement(node, reporter);
+                declarations.push(prop);
+            } break;
+
+            default: {
+
+                //Extract IdentifierReferences and IdentifierAssignments 
+                // and append to the statement scope.
+                const prop = processStatement(node, reporter);
+                statements.push(prop);
+            } break;
+        }
     }
 
+    const rigs = [];
 
-    main: for (let { node, meta: { skip, mutate, depth } } of jst(ast)
+    for (const { rig, offset, data } of tests) {
+        const { stmts, imports } = gatherStatementsAndDeclarations(data, offset, statements, declarations);
+
+        if (rig.type == "DISCRETE") {
+            rig.ast = <JSNode>{
+                type: JSNodeType.Script,
+                nodes: [
+                    ...stmts,
+                    rig.ast
+                ],
+                pos: ast.pos
+            };
+        } else {
+            rig.ast = <JSNode>{
+                type: JSNodeType.Script,
+                nodes: [
+                    ...stmts,
+                    rig.ast
+                ],
+                pos: ast.pos
+            };
+        }
+
+
+        rigs.push({ rig, import_names: imports });
+    }
+
+    return rigs;
+}
+
+function gatherStatementsAndDeclarations(
+    refs: StatementProp,
+    offset: number,
+    statements: StatementProp[] = [],
+    //Only function declarations are hoisted.
+    declarations: StatementProp[] = []
+) {
+
+    const
+        active_refs = new Set(refs.required_references.values()),
+        declared_refs: Set<string> = new Set(),
+        stmts: JSNode[] = [];
+
+    for (let i = offset - 1; i > -1; i--) {
+
+        const stmt = statements[i];
+
+        let use = !!stmt.FORCE_USE;
+
+        if (!use)
+            for (const ref of active_refs.values()) {
+                if (
+                    stmt.required_references.has(ref)
+                    || stmt.declared_variables.has(ref)
+                ) {
+                    use = true;
+                    break;
+                }
+            }
+
+        if (use) stmts.push(stmt.stmt);
+
+        for (const ref of stmt.required_references.values())
+            active_refs.add(ref);
+
+        for (const ref of stmt.declared_variables.values()) {
+            declared_refs.add(ref);
+            active_refs.delete(ref);
+        }
+
+    }
+
+    for (let i = declarations.length - 1; i > -1; i--) {
+
+        const declaration = declarations[i];
+
+        let use = false;
+
+        for (const ref of active_refs.values()) {
+            if (declaration.required_references.has(ref) || declaration.declared_variables.has(ref)) {
+                use = true;
+                break;
+            }
+        }
+
+        for (const ref of declaration.required_references.values())
+            active_refs.add(ref);
+
+        for (const ref of declaration.declared_variables.values())
+            declared_refs.add(ref);
+
+        if (use) stmts.push(declaration.stmt);
+    }
+
+    for (const ref of declared_refs.values())
+        active_refs.delete(ref);
+
+    return { stmts: stmts.reverse(), imports: active_refs };
+}
+
+function processStatement(
+    stmt: JSNode,
+    report: Reporter,
+    AT_ROOT = true,
+    lex_decl: ClosureSet | Set<string> = new Set,
+    local_decl: ClosureSet | Set<string> = new Set,
+    glbl_decl: ClosureSet | Set<string> = local_decl,
+    glbl_ref: Set<string> = new Set,
+): StatementProp {
+
+    let AWAIT = false,
+        raw_rigs = [],
+        active_name = "";
+
+    if (stmt.type == JSNodeType.FunctionDeclaration ||
+        stmt.type == JSNodeType.FunctionExpression) {
+        const
+            [id_node] = stmt.nodes,
+            value = id(id_node);
+        if (
+            !local_decl.has(value)
+            && !lex_decl.has(value)
+        ) { local_decl.add(value); }
+
+        local_decl = new ClosureSet(local_decl);
+
+        AT_ROOT = false;
+    }
+
+    for (const { node, meta } of traverse(stmt, "nodes")
         .skipRoot()
         .makeSkippable()
         .makeMutable()
     ) {
-        const { type } = node;
 
-        if (type == $.AwaitExpression) {
+        switch (node.type) {
 
-            scope.AWAIT = true;
+            case JSNodeType.ExpressionStatement: {
 
-        }
+                if (isExprStmtAssertionSite(node)) {
 
-        if (type & JSNodeClass.IDENTIFIER) {
+                    node.nodes[0].nodes[0].value = ""; // Forcefully delete assert name
 
-            compileIdentifier(node, ast, lex_decl, decl, outputs, inputs);
+                    const rig = buildAssertionSiteNode(node.nodes[0], report);
 
-        } else if (depth < 2 && type & JSNodeClass.STATEMENT) {
+                    rig.name = rig.name || active_name || renderCompressed(rig.expression);
 
-            let new_stmt: Scope = null, SOLO = false, SKIP = false, INSPECT = false, SKIP_NODE = false;
+                    raw_rigs.push(rig);
 
-            switch (type) {
+                    rig.ast = {
+                        type: JSNodeType.BlockStatement,
+                        nodes: [
+                            parse_statement(`$harness.test_index = ${raw_rigs.length}; `),
+                            rig.ast
+                        ],
+                        pos: node.pos
+                    };
 
-                case $.ExportDeclaration: { mutate(null); skip(); } continue;
+                    meta.mutate(rig.ast);
 
-                case $.ImportDeclaration: { compileImport(node, imports); mutate(null); skip(); } continue;
+                    meta.skip(80);
 
-                case $.LexicalDeclaration:
+                    active_name = "";
 
-                    //extract all declared nodes 
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    test_rigs.push(...compileStatementsNew(node, reporter, imports, new_stmt, suite_names));
-
-                    for (const lex of new_stmt.lex_decl.keys()) {
-                        new_stmt.outputs.add(lex);
-                        lex_decl.add(lex);
-                        outputs.delete(lex);
-                        inputs.delete(lex);
-                    }
-
-                    break;
-
-                case $.FunctionDeclaration:
-
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    new_stmt.outputs.add(<string>node.nodes[0].value);
-
-                    compileStatementsNew(node.nodes[1], reporter, imports, new_stmt);
-
-                    test_rigs.push(...compileStatementsNew(node.nodes[2], reporter, imports, new_stmt, suite_names.slice()));
-
-                    for (const lex of new_stmt.lex_decl.keys()) {
-                        new_stmt.outputs.delete(lex);
-                        new_stmt.inputs.delete(lex);
-                    }
-
-                    break;
-
-                case $.BlockStatement:
-                    //extract all declared nodes 
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    test_rigs.push(...compileStatementsNew(node, reporter, imports, new_stmt, suite_names.slice()));
-
-                    for (const lex of new_stmt.lex_decl.keys()) {
-                        new_stmt.outputs.delete(lex);
-                        new_stmt.inputs.delete(lex);
-                    }
-
-                    break;
-
-                case $.LabeledStatement: {
-
-                    const [label] = node.nodes;
-                    let IGNORE_STATEMENT = false;
-
-                    switch ((<string>label.value).toLowerCase()) {
-                        case "after_each": mutate(null); skip(); continue main;
-                        case "before_each": mutate(null); skip(); continue main;
-                        case "sequence": IGNORE_STATEMENT = true; break;
-                        case "only": IGNORE_STATEMENT = SOLO = true; break;
-                        case "skip": IGNORE_STATEMENT = SKIP = true;
-                    }
-
-                    new_stmt = createCompileScope(node, scope);
-
-                    new_stmt.id = 1n << index;
-
-                    compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
-
-                    if (IGNORE_STATEMENT) {
-                        skip();
-                        continue;
-                    }
-
-                } break;
-
-                case $.DoStatement:
-
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    compileStatementsNew(node.nodes[1], reporter, imports, new_stmt);
-                    compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
-                    break;
-
-                case $.WhileStatement:
-
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    compileStatementsNew(node.nodes[0], reporter, imports, new_stmt);
-                    compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
-                    break;
-
-                case $.ForStatement:
-
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    compileStatementsNew(node.nodes[0], reporter, imports, new_stmt);
-                    compileStatementsNew(node.nodes[1], reporter, imports, new_stmt);
-                    compileStatementsNew(node.nodes[2], reporter, imports, new_stmt);
-                    compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
-                    break;
-
-                case $.ForInStatement:
-                case $.ForOfStatement:
-
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-
-                    compileStatementsNew(node.nodes[0], reporter, imports, new_stmt);
-                    compileStatementsNew(node.nodes[1], reporter, imports, new_stmt);
-
-
-                    compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
-                    break;
-
-                case $.SwitchStatement:
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    compileStatementsNew(node.nodes[0], reporter, imports, new_stmt);
-                    compileClosureStatement(new_stmt, node, scope, reporter, imports, suite_names, test_rigs, SOLO, SKIP, INSPECT);
-                    break;
-
-
-
-                case $.ExpressionStatement: {
-
-                    const [expression] = node.nodes;
-
-                    let assertion_expr = null;
-
-                    if (expression.type == $.StringLiteral) {
-
-                        if (suite_names.slice(-1)[0] == "#")
-                            suite_names.pop();
-
-                        suite_names.push(...((<string>expression.value).split(">")));
-
-                        SKIP_NODE = true;
-
-                    } else if (
-                        expression.type == $.CallExpression
-                        &&
-                        expression.nodes[0].type == $.IdentifierReference
-                        &&
-                        ("assert").includes(<string>expression.nodes[0].value)
-                        &&
-                        expression.nodes[0].value[0] == "a"
-                    ) {
-
-                        SKIP_NODE = true;
-
-                        for (const { node, meta: { index } } of jst(expression.nodes[1], 2).skipRoot()) {
-
-                            if (node.type == $.IdentifierReference) {
-                                if ((node.value == "s" && assertion_expr) || node.value == "solo") {
-                                    SOLO = true; continue;
-                                } else if ((node.value == "i" && assertion_expr) || node.value == "inspect") {
-                                    INSPECT = true; continue;
-                                } else if ((node.value == "m" && assertion_expr) || node.value == "mono") {
-                                    SOLO = true; continue;
-                                }
-                            }
-
-                            if (assertion_expr) throw node.pos.throw(`candidate assertion expression [${
-                                renderCompressed(assertion_expr)
-                                }] already passed to this function.`);
-
-                            assertion_expr = node;
-                        }
-
-                        let AWAIT = false;
-
-                        const assert_site_inputs: Set<string> = new Set();
-
-                        for (const { node: { type, value } } of jst(assertion_expr)
-                            .filter("type",
-                                $.AwaitExpression,
-                                $.IdentifierReference,
-                                $.IdentifierName,
-                                $.IdentifierBinding,
-                                $.Identifier,
-                                $.Identifier)
-                        ) if (type == $.AwaitExpression) AWAIT = true; else assert_site_inputs.add(<string>value);
-
-                        if (!assertion_expr)
-                            throw expression.pos.throw(`Could not find an expression for assertion site${expression.pos.slice()}`);
-
-                        const { ast, optional_name } = compileAssertionSite(assertion_expr, reporter),
-
-                            name = getRigName(suite_names, optional_name);
-
-                        suite_names.push("#");
-
-                        /**
-                         * If Sequence rig is present then compile the node into the sequence body
-                         */
-                        if (sequence_data) {
-                            const index = sequence_data.test_maps.length;
-                            sequence_data.body.push(stmt(`$harness.test_index = ${index}; `), ast);
-                            sequence_data.test_maps.push(<TestMap>{ INSPECT, SOLO, RUN: !SKIP, name, index, pos: node.pos });
-
-                            for (const var_name of assert_site_inputs.values()) {
-                                if (!decl.has(var_name) && !lex_decl.has(var_name))
-                                    inputs.add(var_name);
-                            }
-
-                        } else {
-
-                            const
-                                { root, body, AWAIT: OUTER_AWAIT, inputs } =
-                                    buildAssertionSiteAst(scope, assert_site_inputs);
-
-                            body.nodes.push(ast);
-
-                            test_rigs.push({
-                                rig: <RawTestRig>{
-                                    type: "DISCRETE",
-                                    index: 0,
-                                    name,
-                                    ast: root,
-                                    error: null,
-                                    imports: [],
-                                    pos: node.pos,
-                                    IS_ASYNC: OUTER_AWAIT || AWAIT || scope.AWAIT,
-                                    SOLO, RUN: !SKIP, INSPECT: true
-                                },
-                                import_names: inputs,
-                            });
-                        }
-                    }
-
-                    if (SKIP_NODE) {
-                        mutate(null);
-                        skip();
-                        continue;
-                    }
+                } else if (node.nodes[0].type == JSNodeType.StringLiteral) {
+                    active_name = <string>node.nodes[0].value;
+                    meta.mutate(null);
                 }
 
-                default:
-                    //extract all declared nodes 
-                    new_stmt = createCompileScope(node, scope);
-                    new_stmt.id = 1n << index;
-                    test_rigs.push(...compileStatementsNew(node, reporter, imports, new_stmt, suite_names.slice()));
-                    break;
-            }
+            } break;
 
-            for (const var_name of new_stmt.outputs.values())
-                if (!lex_decl.has(var_name))
-                    outputs.add(var_name);
+            case JSNodeType.FormalParameters: continue;
 
-
-            for (const var_name of new_stmt.inputs.values())
-                if (!lex_decl.has(var_name) && !decl.has(var_name))
-                    inputs.add(var_name);
-
-            if (current_stmt && new_stmt)
-                for (const var_name of new_stmt.inputs.values()) {
-                    let stmt = prev_symbol.get(var_name);
-                    if (stmt && !(new_stmt.linked_flags & stmt.id)) {
-                        new_stmt.linked_flags |= stmt.id;
-                        new_stmt.links.push(stmt, ...stmt.links);
-                    }
+            case JSNodeType.LexicalDeclaration:
+                for (const { node: bdg } of traverse(node, "nodes", 2)
+                    .skipRoot()
+                    .filter("type", JSNodeType.IdentifierBinding)
+                ) {
+                    //console.log(id(bdg));
+                    lex_decl.add(id(bdg));
                 }
+                break;
+            case JSNodeType.FunctionDeclaration:
+            case JSNodeType.FunctionExpression: {
 
-            if (new_stmt)
-                for (const var_name of new_stmt.outputs.values())
-                    prev_symbol.set(var_name, new_stmt);
+                const { AWAIT: SHOULD_AWAIT, raw_rigs: r } = processStatement(
+                    node,
+                    report,
+                    false,
+                    new ClosureSet(lex_decl),
+                    local_decl,
+                    glbl_decl,
+                    glbl_ref
+                );
+                raw_rigs.push(...r);
+                meta.skip(4);
+                AWAIT = SHOULD_AWAIT || AWAIT;
+            } break;
+            case JSNodeType.ArrowFunction: {
 
-            index++;
+                const { AWAIT: SHOULD_AWAIT, raw_rigs: r } = processStatement(
+                    node,
+                    report,
+                    false,
+                    new ClosureSet(lex_decl),
+                    new ClosureSet(local_decl),
+                    glbl_decl,
+                    glbl_ref
+                );
+                raw_rigs.push(...r);
+                meta.skip(4);
+                AWAIT = SHOULD_AWAIT || AWAIT;
+            } break;
 
-            current_stmt = new_stmt;
+            case JSNodeType.BlockStatement: {
+                const { AWAIT: SHOULD_AWAIT, raw_rigs: r } = processStatement(node,
+                    report,
+                    AT_ROOT,
+                    new ClosureSet(lex_decl),
+                    local_decl,
+                    glbl_decl,
+                    glbl_ref
+                );
+                raw_rigs.push(...r);
+                AWAIT = SHOULD_AWAIT || AWAIT;
+            } break;
 
-            if (sequence_data) sequence_data.body.push(node);
+            case JSNodeType.AwaitExpression: {
+                AWAIT = true;
+            } break;
 
-            skip();
+            case JSNodeType.IdentifierBinding: {
+                const value = id(node);
+                if (!local_decl.has(value) && !lex_decl.has(value))
+                    (AT_ROOT ? glbl_decl : local_decl).add(value);
+            } break;
+
+            case JSNodeType.IdentifierReference: {
+                const value = id(node);
+
+                if (
+                    value &&
+                    !local_decl.has(value)
+                    && !lex_decl.has(value)
+                ) {
+                    glbl_ref.add(value);
+                }
+            } break;
+
+            default: break;
         }
     }
 
-    return test_rigs;
+
+    return {
+        stmt,
+        declared_variables: <Set<string>>glbl_decl,
+        required_references: glbl_ref,
+        FORCE_USE: false,
+        raw_rigs,
+        AWAIT
+    };
 }
 
-function compileIdentifier(node: JSNode, ast: JSNode, lex_decl: Set<string>, decl: Set<string>, outputs: Set<string>, inputs: Set<string>) {
+class ClosureSet {
+    outer_set: Set<string> | ClosureSet;
+    private inner_set: Set<string>;
+    constructor(outer_set: Set<string> | ClosureSet) {
+        this.outer_set = outer_set;
+        this.inner_set = new Set;
+    }
+    has(str) {
+        if (!this.inner_set.has(str)) return !!this.outer_set?.has(str);
+        return true;
 
-    const var_name = <string>node.value;
+    }
+    add(str) {
+        this.inner_set.add(str);
+        return this;
+    }
+}
 
-    switch (node.type) {
-
-        case $.IdentifierBinding:
-
-            if (
-                ast.type == $.LexicalDeclaration
-                || ast.type == $.LexicalBinding
-                || ast.type == $.FunctionBody
-                || ast.type == $.FormalParameters
-            ) {
-                lex_decl.add(var_name);
-            } else {
-
-                decl.add(var_name);
-                outputs.add(var_name);
+function isExprStmtAssertionSite(stmt: JSNode): boolean {
+    if (stmt.type == JSNodeType.ExpressionStatement) {
+        if (stmt.nodes[0].type == JSNodeType.CallExpression) {
+            if (id(stmt.nodes[0].nodes[0]) == "assert") {
+                return true;
             }
-
-            inputs.delete(var_name);
-            break;
-
-        case $.IdentifierName:
-        case $.IdentifierReference:
-
-            if (!lex_decl.has(var_name) && !decl.has(var_name))
-                inputs.add(var_name);
-
-            if (!lex_decl.has(var_name))
-                outputs.add(var_name);
+        }
     }
-}
-
-function compileClosureStatement(
-    new_stmt: any,
-    node: JSNode,
-    scope: Scope,
-    reporter: Reporter,
-    imports: ImportModule[],
-    suite_names: string[],
-    test_rigs: any[],
-    SOLO: boolean,
-    SKIP: boolean,
-    INSPECT: boolean
-) {
-
-    const
-
-        { node: enclosing_node, body: closure_body, original_body } = getClosureBody(node),
-
-        sequence_rig = createSequenceData();
-
-    compileStatementsNew(original_body, reporter, imports, new_stmt, suite_names.slice(), sequence_rig);
-
-    if (sequence_rig.test_maps.length > 0) {
-
-        closure_body.nodes = sequence_rig.body;
-
-        const { root, body, AWAIT: OUTER_AWAIT } = buildAssertionSiteAst(scope, new_stmt.inputs);
-
-        body.nodes.push(enclosing_node);
-
-        test_rigs.push({
-            rig: <RawTestRig>{
-                type: "SEQUENCE",
-                index: 0,
-                name: "",
-                ast: root,
-                error: null,
-                render: renderWithFormatting(root, format_rules),
-                imports: [],
-                test_maps: sequence_rig.test_maps,
-                pos: node.pos,
-                IS_ASYNC: OUTER_AWAIT || new_stmt.AWAIT,
-                SOLO, RUN: !SKIP, INSPECT
-            },
-            import_names: new_stmt.inputs,
-        });
-    }
-
-    for (const var_name of new_stmt.lex_decl.keys()) {
-        new_stmt.outputs.delete(var_name);
-        new_stmt.inputs.delete(var_name);
-    }
-
-    return new_stmt;
+    return false;
 }
