@@ -1,13 +1,12 @@
+import URL from "@candlefw/url";
+
 import { Worker } from "worker_threads";
 import { performance } from "perf_hooks";
-import URL from "@candlefw/url";
 import { TestRig } from "../types/test_rig.js";
 import { TestResult } from "../types/test_result";
 import { Globals } from "../types/globals.js";
 import { TestError } from "./test_error.js";
 import { worker } from "cluster";
-
-
 
 let nonce = 0;
 
@@ -103,28 +102,19 @@ export class RunnerBoss {
      * @param RELOAD_DEPENDS - If `true`, reinitialize all workers.
      * @param globals - The Globals object.
      */
-    * run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false, globals: Globals): Generator<TestResult[]> {
+    *  run(tests: Array<TestRig>, RELOAD_DEPENDS: boolean = false, globals: Globals): Generator<TestResult[]> {
 
-        let id = 0, completed = 0;
+        let completed = 0;
 
         //Reset any running workers
-        for (const wkr of this.workers) {
-
-            if (!wkr.READY || RELOAD_DEPENDS) {
-
-                if (wkr.target)
-                    wkr.target.terminate();
-
-                wkr.target = this.createWorker(wkr);
-                wkr.READY = true;
-                wkr.start = 0;
-            }
-
-            //* REMOVE - No longer need to access this data in worker. */ this.initiateTestRun(wkr, globals);
-        }
+        this.loadWorkers(RELOAD_DEPENDS, this.workers);
 
         const
-            finished: Array<TestResult> = this.finished,
+            server_tests = tests.filter(t => !t.BROWSER),
+            server_workers = this.workers;
+
+        const
+            finished: TestResult[] = this.finished,
             number_of_tests = tests.length;
 
         finished.length = 0;
@@ -133,11 +123,45 @@ export class RunnerBoss {
 
             let out: TestResult[] = null;
 
-            for (const wkr of this.workers) {
+            //server tests
+            this.runWorkers(server_tests, server_workers, finished);
 
+            if (finished.length > 0) {
+                out = finished.slice();
+                completed += out.length;
+                finished.length = 0;
+            }
+
+            yield out;
+        }
+
+        finished.length = 0;
+
+        return;
+    }
+
+    private loadWorkers(RELOAD_DEPENDS: boolean, workers, url?) {
+        for (const wkr of workers) {
+
+            if (!wkr.READY || RELOAD_DEPENDS) {
+
+                if (wkr.target)
+                    wkr.target.terminate();
+
+                wkr.target = this.createWorker(wkr, url);
+                wkr.READY = true;
+                wkr.start = 0;
+            }
+
+            //* REMOVE - No longer need to access this data in worker. */ this.initiateTestRun(wkr, globals);
+        }
+    }
+
+    private async runWorkers(tests: TestRig[], workers: WorkerHandler[], finished: TestResult[], module?) {
+        if (tests.length > 0) {
+            for (const wkr of workers) {
                 if (wkr.READY && tests.length > 0) {
-                    const test = tests.splice(0, 1)[0];
-
+                    const test = tests.shift();
                     if (test.error) {
                         finished.push({
                             start: 0,
@@ -149,7 +173,8 @@ export class RunnerBoss {
                             TIMED_OUT: true,
                             PASSED: false
                         });
-                    } else {
+                    }
+                    else {
                         wkr.test = test;
                         wkr.start = performance.now();
                         wkr.target.postMessage({ test: wkr.test });
@@ -164,7 +189,7 @@ export class RunnerBoss {
                     if (dur > 2000) {
 
                         wkr.target.terminate();
-                        wkr.target = this.createWorker(wkr);
+                        wkr.target = this.createWorker(wkr, module);
                         wkr.READY = true;
 
                         finished.push({
@@ -180,18 +205,7 @@ export class RunnerBoss {
                     }
                 }
             }
-
-            if (finished.length > 0) {
-                out = finished.slice();
-                completed += out.length;
-                finished.length = 0;
-            }
-
-            yield out;
         }
-
-        finished.length = 0;
-
-        return;
     }
 };
+

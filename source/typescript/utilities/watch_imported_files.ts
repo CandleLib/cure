@@ -96,7 +96,7 @@ function getPackagePath(path: string, globals: Globals)
         path = URL.resolveRelative(globals.package_main, globals.package_dir).path;
         IS_PACKAGE_PATH = true;
     } else if (path.indexOf(globals.package_name) == 0) {
-        path = URL.resolveRelative(path.replace(globals.package_main, ""), globals.package_dir).path;
+        path = URL.resolveRelative(path.replace(globals.package_name, "./"), globals.package_dir).path;
         IS_PACKAGE_PATH = true;
     }
 
@@ -107,6 +107,8 @@ function getPackagePath(path: string, globals: Globals)
  * Handles the creation of file watchers for relative imported modules.
  */
 export async function handleWatchOfRelativeDependencies(suite: TestSuite, globals: Globals) {
+
+    console.log(`\nLoading watched files from suite: ${suite.origin}`);
 
     const { rigs: tests, origin } = suite, active_paths: Set<string> = new Set();
 
@@ -129,6 +131,10 @@ export async function handleWatchOfRelativeDependencies(suite: TestSuite, global
     }
 
     //And suite to the newly identifier watched file handlers
-    for (const path of active_paths.values())
-        globals.watched_files_map.get(path).set(origin, suite);
+    for (const path of active_paths.values()) {
+        if (globals.watched_files_map.get(path))
+            globals.watched_files_map.get(path).set(origin, suite);
+        else
+            throw new Error("Could not configure watch of path " + path);
+    }
 }

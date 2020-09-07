@@ -2,10 +2,10 @@ import spark from "@candlefw/spark";
 
 import { completedRun, updateRun, startRun } from "../reporting/report.js";
 
-import { Globals } from "source/types/globals.js";
+import { Globals } from "../types/globals.js";
 
-import { TestRig } from "source/types/test_rig.js";
-import { TestSuite } from "source/types/test_suite";
+import { TestRig } from "../types/test_rig.js";
+import { TestSuite } from "../types/test_suite";
 import { TestResult } from "../types/test_result.js";
 import { TestMap } from "../types/test_map.js";
 

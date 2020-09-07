@@ -7,7 +7,6 @@ import {
 } from "@candlefw/conflagrate";
 
 import data from "../utilities/error_line_parser.js";
-import { harness } from "./test_harness.js";
 import URL from "@candlefw/url";
 
 
@@ -76,7 +75,7 @@ class TestError {
      * @param accessible_files File paths that cfw.test is allowed to inspect for error reporting.
      * @param map @type {SourceMap} of the compiled @type {TestRig} source
      */
-    constructor(message, origin = harness.origin, line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
+    constructor(message, origin, line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
 
         this.name = "TestError";
         this.origin = origin;
@@ -101,7 +100,7 @@ class TestError {
                  */
                 error_frame = error.stack.includes("test_harness.js") ? error.stack.split("\n")[2] : error.stack.split("\n")[1];
 
-            this.message = error.message || error.name;
+            this.message = error.message;// || error.name;
 
             this.original_error_stack = error.stack;
             let out = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), data);
@@ -114,7 +113,7 @@ class TestError {
 
             const loc = out.value.pop();
 
-            if (loc.type == "URL") {
+            if (loc?.type == "URL") {
 
                 this.origin = loc.url;
 
@@ -127,7 +126,7 @@ class TestError {
             } else { // "ANONYMOUS"
 
                 const { line: source_line, column: source_column }
-                    = getSourceLineColumn(loc.line, loc.col, decodeJSONSourceMap(map));
+                    = getSourceLineColumn(loc?.line, loc?.col, decodeJSONSourceMap(map));
 
                 this.line = source_line;
 
@@ -179,7 +178,7 @@ class TestError {
             }
             //*/;
 
-            return { lex: getLexerFromLineColumnString(line, column, data), origin };
+            return { lex: getLexerFromLineColumnString(line, column, data, origin), origin };
         }
 
         return { lex: null, origin };
@@ -191,13 +190,14 @@ class TestError {
 
         const { lex, origin } = await this.blameSource(accessible_files, origin_url);
 
+        const stack_data = this.original_error_stack
+            ? "\n Original Error: " + this.original_error_stack
+            : "";
+
+
         if (lex) {
             return `${
-                lex.errorMessage(this.message, origin) + (
-                    this.original_error_stack
-                        ? "\n Original Error: " + this.original_error_stack
-                        : ""
-                )}`;
+                lex.errorMessage(this.message, origin) + stack_data}`;
         } else
             return this.message;
 
@@ -214,8 +214,12 @@ export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
     return getSourceLineColumn(line, column, source_map);
 }
 
-export function getLexerFromLineColumnString(line, column, string): Lexer {
+export function getLexerFromLineColumnString(line, column, string, origin = ""): Lexer {
     const lex = new Lexer(string);
+
+    lex.source = origin;
+
+    line -= 1;
 
     lex.CHARACTERS_ONLY = true;
 
