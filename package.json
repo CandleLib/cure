@@ -10,7 +10,7 @@
 	},
 	"scripts": {
 		"prepublishOnly": "yarn build && yarn test",
-		"test": "./bin/cfw.test.js ./test/cfw.test.spec.js",
+		"test": "cfw.test -i ./test/...",
 		"build.watch": "tsc --watch",
 		"build": "tsc -p ./tsconfig.json",
 		"compile": "hydrocarbon compile --type module --unattended -o  ./source/utilities/ ./source/grammar/error_line_parser.hcg"
