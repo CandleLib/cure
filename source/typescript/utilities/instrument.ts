@@ -12,8 +12,12 @@ import { traverse, skip_root } from "@candlefw/conflagrate";
 
 import { sym_version } from "./sym_version.js";
 import { format_rules } from "./format_rules.js";
+import { getPackageJsonObject } from "@candlefw/wax";
+import { PackageJSONData } from "@candlefw/wax/build/types/types/package";
 
 const fsp = fs.promises;
+
+
 
 export const test = null;
 
@@ -25,8 +29,8 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
     const
         url = URL.resolveRelative(source_file_path, pwd + "/"),
         data = await url.fetchText(),
-        ast = parser(data),
-        new_ast = parser(";"),
+        { ast } = parser(data),
+        new_ast = parser(";").ast,
         imports = [];
 
     let n = [];
@@ -58,8 +62,9 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
                             .then(skip_root())) {
                             if (id.type & JSNodeClass.IDENTIFIER)
                                 imports.push(ext(id));
-                            else
-                                imports.push(ext(id.nodes[1]));
+                            else {
+                                imports.push(ext(id.nodes[1] || id.nodes[0]));
+                            }
                         }
                         break;
                 }
@@ -87,7 +92,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
 
     return renderWithFormatting(new_ast, format_rules);
 }
-export function processPackageData(pkg: Package, FORCE: boolean = false) {
+export function processPackageData(pkg: PackageJSONData, FORCE: boolean = false) {
 
 
     let {
@@ -141,7 +146,15 @@ export function processPackageData(pkg: Package, FORCE: boolean = false) {
  */
 export async function instrument(dir: string = process.cwd(), FORCE: boolean = false): Promise<string> {
 
-    const package_data = await getPackageJSON(dir);
+    await URL.server();
+
+    let url = new URL(dir);
+
+    if (url.IS_RELATIVE) {
+        url = URL.resolveRelative(url, process.cwd() + "/");
+    }
+
+    const package_data = await getPackageJsonObject(url.path);
 
     if (package_data.FOUND) {
 
@@ -155,6 +168,7 @@ export async function instrument(dir: string = process.cwd(), FORCE: boolean = f
         await fsp.mkdir(path.join(dir, "test"), { recursive: true });
         await fsp.writeFile(path.join(dir, "test", test_name), file, { encoding: "utf8" });
     }
+
 
     return "";
 }
