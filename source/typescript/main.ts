@@ -7,7 +7,6 @@ import { createTestFrame } from "./utilities/create_test_frame.js";
 
 import { BasicReporter } from "./reporting/basic_reporter.js";
 import { NullReporter } from "./reporting/null_reporter.js";
-import { harness } from "./test_running/test_harness.js";
 
 /**
  * Load everything into the global object
@@ -17,7 +16,7 @@ import { harness } from "./test_running/test_harness.js";
 const global_object = (typeof global !== "undefined") ? global : window;
 
 if (global_object) {
-    const cfw_test_data = { harness, createTestFrame };
+    const cfw_test_data = { createTestFrame };
     //@ts-ignore
     if (typeof global_object.cfw == "undefined") {
         //@ts-ignore
@@ -33,5 +32,4 @@ export {
     TestFrame,
     Outcome,
     createTestFrame,
-    harness
 };
