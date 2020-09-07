@@ -43,7 +43,7 @@ function endWatchedTests(globals: Globals, resolution: (arg: Outcome) => void) {
     }
 }
 
-function InitializeReporterColors(reporter: Reporter): Reporter {
+export function InitializeReporterColors(reporter: Reporter): Reporter {
     reporter.colors = Object.assign({}, colors, reporter.colors);
     return reporter;
 }
@@ -71,7 +71,8 @@ export function createTestFrame(
         PRELOAD_IMPORTS = false,
         WATCH = false,
         number_of_workers = 2,
-        assertion_compilers = []
+        assertion_compilers = [],
+        test_dir,
     } = <TestFrameOptions>Object.assign({}, DefaultOptions, config_options);
 
     let
@@ -87,9 +88,11 @@ export function createTestFrame(
                 WATCH,
             },
 
+            test_dir,
+
             package_name: "",
 
-            package_dir: "",
+            package_dir: new URL,
 
             package_main: "",
 
@@ -163,8 +166,10 @@ export function createTestFrame(
 
             try {
 
+
                 for (const suite of suites.values())
                     await loadSuite(suite, globals);
+
 
                 const st = Array.from(suites.values());
 

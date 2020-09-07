@@ -1,14 +1,19 @@
 #!/usr/bin/env node
 
-import { getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
+import { getPackageJsonObject, getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
 
 import { createTestFrame, NullReporter } from "../main.js";
 import { instrument } from "../utilities/instrument.js";
-import { sym_version } from "../utilities/sym_version.js";
 import URL from "@candlefw/url";
+
+
 import fs from "fs";
+
 import node_path from "path";
 const fsp = fs.promises;
+
+
+let sym_version = "";
 
 const
 
@@ -31,10 +36,9 @@ const
         "?": false
     }),
 
-    files = args.input ? [<string>args.input.val] : [""],
+
     number_of_workers = args.threads ? parseInt(<string>args.threads.val) : 1,
     WATCH = !!(args.w),
-    HELP = !!(args.help || args["?"]) || files.length == 0,
     OUTPUT = !!(args.o),
     FORCE = !!(args.f),
     INSTRUMENT = (
@@ -118,8 +122,17 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
 
 README: https://github.com/CandleFW/test/blob/master/readme.md
 `;
+let files = args.input ? [<string>args.input.val] : [""];
+
+const HELP = !!(args.help || args["?"]) || files.length == 0;
+
 
 async function start() {
+    await URL.server();
+
+    const { package: pkg, FOUND, package_dir } = await getPackageJsonObject(URL.getEXEURL(import.meta).path);
+
+    sym_version = pkg.version;
 
     process.title = "cfw.test";
 
@@ -165,9 +178,17 @@ async function start() {
 
                 files.length = 0;
                 files.push(...(await getSpecFileNames(url)));
+            } else {
+                files = files.map(s => {
+                    let url = new URL(s);
+                    if (url.IS_RELATIVE) {
+                        url = URL.resolveRelative(url, process.cwd() + "/");
+                    }
+                    return url.path;
+                });
             }
 
-            const frame = createTestFrame({ WATCH, number_of_workers }, ...files);
+            const frame = createTestFrame({ WATCH, number_of_workers, test_dir: package_dir }, ...files);
 
             await frame.start().then(d => {
 
@@ -208,7 +229,7 @@ export async function getSpecFileNames(url) {
             }
 
         } else {
-            if (path.includes("spec.js"))
+            if (path.includes(".spec.js"))
                 strings.push(path);
         }
     }

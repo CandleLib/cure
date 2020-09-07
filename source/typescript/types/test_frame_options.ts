@@ -29,4 +29,9 @@ export interface TestFrameOptions {
      * @default false
      */
     PRELOAD_IMPORTS?: boolean;
+
+    /**
+     * Root dir of @candlefw/test
+     */
+    test_dir: string;
 }

@@ -80,5 +80,9 @@ export interface Globals {
      * Main entry point for the package being tested.
      */
     package_main?: string,
+    /**
+     * Root directory for @candlefw/test
+     */
+    test_dir: string,
 
 };
