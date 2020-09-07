@@ -1,10 +1,9 @@
-import { ext, JSNodeType } from "@candlefw/js";
-import { traverse, make_skippable, filter } from "@candlefw/conflagrate";
+import { JSNodeType, JSNode } from "@candlefw/js";
+import { traverse } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
-import { MinTreeExtendedNode } from "@candlefw/js/build/types/types/mintree_extended_node";
 import { ImportModule } from "../types/import_module";
 
-export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]) {
+export function compileImport(node: JSNode, imports: ImportModule[]) {
 
 
 
@@ -15,7 +14,7 @@ export function compileImport(node: MinTreeExtendedNode, imports: ImportModule[]
 
     //  process.exit();
 
-    let url = new URL(module_specifier);
+    let url = new URL(<string>module_specifier);
 
     const obj = <ImportModule>{
         imports: new Set,

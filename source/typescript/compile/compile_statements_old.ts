@@ -501,7 +501,8 @@ export function compileClosureStatement(
                 test_maps: sequence_rig.test_maps,
                 pos: node.pos,
                 IS_ASYNC: OUTER_AWAIT || new_stmt.AWAIT,
-                SOLO, RUN: !SKIP, INSPECT
+                SOLO, RUN: !SKIP, INSPECT,
+                expression: enclosing_node
             },
             import_names: new_stmt.inputs,
         });

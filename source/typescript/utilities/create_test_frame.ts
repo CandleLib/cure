@@ -49,6 +49,7 @@ export function InitializeReporterColors(reporter: Reporter): Reporter {
 }
 
 const DefaultOptions: TestFrameOptions = {
+    test_dir: "",
     PRELOAD_IMPORTS: false,
     WATCH: false,
     number_of_workers: 1,

@@ -32,6 +32,8 @@ const
         o: "output",
         threads: true,
         t: "threads",
+        f: false,
+        force: "f",
         value: "",
         "?": false
     }),
@@ -163,7 +165,7 @@ async function start() {
 
         if (OUTPUT) {
 
-            const frame = createTestFrame({ WATCH: false, number_of_workers }, ...files);
+            const frame = createTestFrame({ WATCH: false, number_of_workers, test_dir: "" }, ...files);
 
             frame.setReporter(new NullReporter());
 
@@ -192,8 +194,8 @@ async function start() {
 
             await frame.start().then(d => {
 
-                if (d.error)
-                    console.error(d);
+                if (d.errors)
+                    d.errors.forEach(console.error);
 
                 process.exit(d.FAILED ? 255 : 0);
             });
