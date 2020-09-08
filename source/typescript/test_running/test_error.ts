@@ -62,6 +62,12 @@ class TestError {
     WORKER: boolean;
 
     /**
+     * If there error was created in order to inspect an object
+     * this should be set to true
+     */
+    INSPECTION_ERROR: boolean;
+
+    /**
      * Creates a TestError object.
      * 
      * This object is used to report all errors that are caught within cfw.test, including
@@ -77,6 +83,8 @@ class TestError {
      */
     constructor(message, origin = "", line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
 
+        if (message instanceof TestError) return message;
+
         this.name = "TestError";
         this.origin = origin;
         this.line = line - 1;
@@ -86,6 +94,7 @@ class TestError {
         this.original_error_stack = "";
         this.index = -1;
         this.WORKER = WORKER;
+        this.INSPECTION_ERROR = false;
 
         if (message instanceof Error) {
 
@@ -102,40 +111,38 @@ class TestError {
 
             this.message = error.message;// || error.name;
 
-            this.original_error_stack = error.stack;
-            let out = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), data);
+            this.original_error_stack = error.stack.split("\n").slice(1).join("\n");
 
-            if (!out)
+            let { value, error: e } = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), <ParserData><any>data);
+
+            if (e)
                 return; //throw EvalError("Could not parse stack line");
 
-            if (out.error)
-                return; //throw out.error;
-
-            const loc = out.value.pop();
+            const loc = value.pop();
 
             if (loc?.type == "URL") {
 
                 this.origin = loc.url;
 
-                this.line = loc.line;
+                this.line = loc.line - 1;
 
-                this.column = loc.col;
+                this.column = loc.col - 1;
 
                 //*DEBUG*/  this.message += " " + JSON.stringify(out); //*/
 
-            } else { // "ANONYMOUS"
+            } else { // "ANONYMOUS" Error generated within a test rig.
 
                 const { line: source_line, column: source_column }
-                    = getSourceLineColumn(loc?.line, loc?.col, decodeJSONSourceMap(map));
+                    = getSourceLineColumn(loc?.line - 2, loc?.col, decodeJSONSourceMap(map));
 
                 this.line = source_line;
 
-                this.column = source_column;
+                this.column = source_column + 1;
+
             }
 
-        } else {
+        } else
             this.message = message;
-        }
     }
 
     /**
@@ -191,7 +198,7 @@ class TestError {
         const { lex, origin } = await this.blameSource(accessible_files, origin_url);
 
         const stack_data = this.original_error_stack
-            ? "\n Original Error: " + this.original_error_stack
+            ? "\n" + this.original_error_stack
             : "";
 
 
@@ -219,7 +226,7 @@ export function getLexerFromLineColumnString(line, column, string, origin = ""):
 
     lex.source = origin;
 
-    line -= 1;
+    //line -= 0;
 
     lex.CHARACTERS_ONLY = true;
 

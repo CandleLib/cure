@@ -41,4 +41,4 @@ assert(1 == "1");
 
 "10 The NullReport update method should return true";
 const np = new NullReporter();
-asset(await np.complete() == true);
+assert(await np.complete() == true);

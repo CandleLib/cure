@@ -1,0 +1,1 @@
+export function ExternalThrow() { throw new Error("I've also been waiting for this"); }

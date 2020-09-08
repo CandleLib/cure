@@ -124,7 +124,7 @@ export class RunnerBoss {
             let out: TestResult[] = null;
 
             //server tests
-            this.runWorkers(server_tests, server_workers, finished);
+            this.runWorkers(globals, server_tests, server_workers, finished);
 
             if (finished.length > 0) {
                 out = finished.slice();
@@ -157,7 +157,7 @@ export class RunnerBoss {
         }
     }
 
-    private async runWorkers(tests: TestRig[], workers: WorkerHandler[], finished: TestResult[], module?) {
+    private async runWorkers(globals: Globals, tests: TestRig[], workers: WorkerHandler[], finished: TestResult[], module?) {
         if (tests.length > 0) {
             for (const wkr of workers) {
                 if (wkr.READY && tests.length > 0) {
@@ -186,7 +186,7 @@ export class RunnerBoss {
 
                     const dur = performance.now() - wkr.start;
 
-                    if (dur > 2000) {
+                    if (dur > globals.max_timeout) {
 
                         wkr.target.terminate();
                         wkr.target = this.createWorker(wkr, module);

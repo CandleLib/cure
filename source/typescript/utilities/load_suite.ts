@@ -17,6 +17,9 @@ export async function loadSuite(suite: TestSuite, globals: Globals) {
         const { flags: { WATCH, PRELOAD_IMPORTS } } = globals,
             url = new URL(path.resolve(process.cwd(), suite.origin)),
             text = await url.fetchText();
+
+        suite.name = url.filename;
+
         suite.data = text;
 
         suite.rigs.length = 0;

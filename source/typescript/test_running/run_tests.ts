@@ -53,9 +53,9 @@ function mapResults(rst: TestResult) {
 }
 export async function runTests(tests: TestRig[], suites: TestSuite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
 
-    const update_timout = 5, { runner, reporter, outcome } = globals;
+    const update_timeout = 0, { runner, reporter, outcome } = globals;
 
-    let FAILED = false, t = update_timout, SOLO_RUN = false;
+    let FAILED = false, t = update_timeout, SOLO_RUN = false;
 
     try {
 
@@ -86,9 +86,9 @@ export async function runTests(tests: TestRig[], suites: TestSuite[], globals: G
 
                     outcome.results.push(...(res).flatMap(mapResults));
 
-                    if (t-- < 1) {
+                    if (t-- <= 1) {
                         updateRun(outcome.results, globals);
-                        t = update_timout;
+                        t = update_timeout;
                     }
 
                 }

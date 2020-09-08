@@ -9,8 +9,6 @@ import {
     stmt, renderWithFormatting
 } from "@candlefw/js";
 import { traverse, skip_root } from "@candlefw/conflagrate";
-
-import { sym_version } from "./sym_version.js";
 import { format_rules } from "./format_rules.js";
 import { getPackageJsonObject } from "@candlefw/wax";
 import { PackageJSONData } from "@candlefw/wax/build/types/types/package";
@@ -92,7 +90,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
 
     return renderWithFormatting(new_ast, format_rules);
 }
-export function processPackageData(pkg: PackageJSONData, FORCE: boolean = false) {
+export function processPackageData(pkg: PackageJSONData, tst_pkg: PackageJSONData, FORCE: boolean = false) {
 
 
     let {
@@ -112,7 +110,7 @@ export function processPackageData(pkg: PackageJSONData, FORCE: boolean = false)
         devDependencies = pkg.devDependencies;
     }
 
-    devDependencies["@candlefw/test"] = sym_version;
+    devDependencies["@candlefw/test"] = tst_pkg.version;
 
     const test_name = name.replace(/[\@\/\\]/g, " ").trim().split(" ").join(".") + ".spec.js";
 
@@ -122,8 +120,8 @@ export function processPackageData(pkg: PackageJSONData, FORCE: boolean = false)
     if (pkg.scripts.test && !FORCE)
         throw new Error(`This will overwrite existing test script [ ${pkg.scripts.test} ]. Aborting.`);
 
-    pkg.scripts.test = `cfw.test ./test/${test_name}`;
-    pkg.scripts["test.watch"] = `cfw.test -w ./test/${test_name}`;
+    pkg.scripts.test = `cfw.test ./test/**`;
+    pkg.scripts["test.watch"] = `cfw.test -w ./test/**`;
 
     return {
         main,
@@ -153,14 +151,14 @@ export async function instrument(dir: string = process.cwd(), FORCE: boolean = f
     if (url.IS_RELATIVE) {
         url = URL.resolveRelative(url, process.cwd() + "/");
     }
-
+    const { package: tst_pkg, FOUND } = await getPackageJsonObject(URL.getEXEURL(import.meta).path);
     const package_data = await getPackageJsonObject(url.path);
 
-    if (package_data.FOUND) {
+    if (package_data.FOUND && FOUND) {
 
         const
             { package: pkg, package_dir: dir } = package_data,
-            { main, name, test_name } = processPackageData(pkg, FORCE),
+            { main, name, test_name } = processPackageData(pkg, tst_pkg, FORCE),
             file = await createSpecFile(name, main, dir),
             package_json = JSON.stringify(pkg, null, 4);
 

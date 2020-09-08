@@ -34,4 +34,10 @@ export interface TestFrameOptions {
      * Root dir of @candlefw/test
      */
     test_dir: string;
+
+    /**
+     * Maximum time (in milliseconds) a test rig is allowed to 
+     * run before throwing an error for taking too long.
+     */
+    max_timeout?: number;
 }
