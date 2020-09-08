@@ -31,8 +31,17 @@ async function RunTest({ test }: { test: TestRig; }) {
 
     const result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
 
+    result.start = performance.now();
+
+    const log = console.log;
+
     try {
-        await (await constructTestFunction(
+
+        console.log = harness.inspect;
+
+        harness.map = test.map;
+
+        const fn = (await constructTestFunction(
             test,
             harness,
             ImportedModules,
@@ -41,13 +50,16 @@ async function RunTest({ test }: { test: TestRig; }) {
             createAddendum,
             pass,
             fail
-        ))();
+        ));
+        result.start = performance.now();
+        await fn();
     } catch (e) {
+
+        console.log = log;
 
         let error = null;
 
         if (e instanceof TestError) {
-
             error = e;
         }
         else {
@@ -59,18 +71,19 @@ async function RunTest({ test }: { test: TestRig; }) {
         }
 
         error.index = harness.test_index;
-        result.errors = harness.errors;
-        result.errors.push(error);
-        result.end = performance.now();
-        result.PASSED = false;
+
+        harness.errors.push(error);
     }
 
-    harness.last_error = null;
-    result.start = performance.now();
+    console.log = log;
+
     result.end = performance.now();
+
+    harness.last_error = null;
+
     result.errors = harness.errors;
 
-    if (result.errors.length > 0)
+    if (result.errors.filter(e => !e.INSPECTION_ERROR).length > 0)
         result.PASSED = false;
 
     result.duration = result.end - result.start;

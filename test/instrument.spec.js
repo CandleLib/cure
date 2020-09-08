@@ -103,7 +103,9 @@ SEQUENCE: {
 
     assert(data.devDependencies["@candlefw/test"] == main_data.version);
 
-    assert(data?.scripts.test == "cfw.test ./test/candlefw.test.spec.js");
+    assert(data?.scripts.test == "cfw.test ./test/**");
+
+    assert(data?.scripts["test.watch"] == "cfw.test -w ./test/**");
 
     assert(await fsp.rmdir(dir, { recursive: true }));
 }

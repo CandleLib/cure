@@ -38,17 +38,21 @@ const
         "?": false
     }),
 
-
     number_of_workers = args.threads ? parseInt(<string>args.threads.val) : 1,
+
     WATCH = !!(args.w),
+
     OUTPUT = !!(args.o),
+
     FORCE = !!(args.f),
+
     INSTRUMENT = (
         args.__array__[0]
         &&
         args.__array__[0][0].toLowerCase() == "instrument"
     ),
     TL = `Delightfully Brilliant Testing.`,
+
     INSTRUMENT_HELP_MASSAGE = `
 
 Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)}
@@ -124,10 +128,9 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
 
 README: https://github.com/CandleFW/test/blob/master/readme.md
 `;
-let files = args.input ? [<string>args.input.val] : [""];
+let files: string[] = args.trailing_arguments;
 
 const HELP = !!(args.help || args["?"]) || files.length == 0;
-
 
 async function start() {
     await URL.server();
@@ -174,21 +177,14 @@ async function start() {
             });
         } else {
 
-            //if files is an * operator, load all files that have spec.js in their name
-            if (files[0].includes("...")) {
-                const url = URL.resolveRelative(files[0].replace("...", ""), process.cwd() + "/");
+            files = await getSpecFileNames(...files.map(s => {
+                let url = new URL(s);
 
-                files.length = 0;
-                files.push(...(await getSpecFileNames(url)));
-            } else {
-                files = files.map(s => {
-                    let url = new URL(s);
-                    if (url.IS_RELATIVE) {
-                        url = URL.resolveRelative(url, process.cwd() + "/");
-                    }
-                    return url.path;
-                });
-            }
+                if (url.IS_RELATIVE)
+                    url = URL.resolveRelative(url, process.cwd() + "/");
+
+                return url.path;
+            }));
 
             const frame = createTestFrame({ WATCH, number_of_workers, test_dir: package_dir }, ...files);
 
@@ -197,21 +193,24 @@ async function start() {
                 if (d.errors)
                     d.errors.forEach(console.error);
 
-                process.exit(d.FAILED ? 255 : 0);
+                process.exit(d.FAILED ? 1 : 0);
             });
         }
     }
 }
 
-export async function getSpecFileNames(url) {
+export async function getSpecFileNames(...files: string[]): Promise<string[]> {
 
     //recursively load data from all subfolders
 
-    const pending = [{
-        dir_type: "directory",
-        path: url.toString()
-    }],
-        strings = [];
+    const pending = files
+        .filter(f => !(new URL(f)).ext)
+        .map(f => ({
+            dir_type: "directory",
+            path: f
+        })),
+        strings: string[] = files
+            .filter(f => !!(new URL(f)).ext && f.includes(".spec.js"));
 
 
     for (let i = 0; i < pending.length; i++) {

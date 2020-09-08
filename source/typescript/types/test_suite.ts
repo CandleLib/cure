@@ -30,4 +30,9 @@ export interface TestSuite {
      * The character data of the source test file.
      */
     data: string;
+
+    /**
+     * The file name of the suite 
+     */
+    name: string;
 };

@@ -54,6 +54,7 @@ const DefaultOptions: TestFrameOptions = {
     WATCH: false,
     number_of_workers: 1,
     assertion_compilers: [],
+    max_timeout: 2000
     //test_globs: [path.resolve(process.cwd(), "test/**/*")],
 };
 
@@ -74,11 +75,14 @@ export function createTestFrame(
         number_of_workers = 2,
         assertion_compilers = [],
         test_dir,
+        max_timeout
     } = <TestFrameOptions>Object.assign({}, DefaultOptions, config_options);
 
     let
         resolution = null,
         globals: Globals = {
+
+            max_timeout,
 
             flags: {
 
@@ -138,11 +142,10 @@ export function createTestFrame(
 
         start: (): Promise<Outcome> => new Promise(async (res) => {
 
-            await URL.polyfill();
+            await URL.server();
 
             const { package: pkg, FOUND: PACKAGE_FOUND, package_dir }
                 = await getPackageJsonObject(process.cwd() + "/");
-
 
             if (PACKAGE_FOUND) {
                 globals.package_name = pkg?.name ?? "";
@@ -156,7 +159,7 @@ export function createTestFrame(
             resolution = res;
 
             globals.suites = new Map(test_suite_url_strings.map((url_string, index) => [
-                url_string, { origin: url_string, rigs: [], index, data: "" }
+                url_string, { origin: url_string, rigs: [], index, data: "", name: "" }
             ]));
 
             globals.runner = new RunnerBoss(Math.max(number_of_workers, 1));
@@ -167,10 +170,8 @@ export function createTestFrame(
 
             try {
 
-
                 for (const suite of suites.values())
                     await loadSuite(suite, globals);
-
 
                 const st = Array.from(suites.values());
 

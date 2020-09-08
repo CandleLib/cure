@@ -36,7 +36,9 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
             }
 
             const e = new Error("cfw.test.harness.inspect intercept:\n    " + rst + args.map(val => util.inspect(val, false, limit, true)).join("    \n") + "\n");
-            e.stack = e.stack.split("\n").slice(2).join("\n");
+
+            e.stack = e.stack.split("\n").slice(3).join("\n");
+
             return e;
         },
 
@@ -67,6 +69,8 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
             last_error: null,
 
             origin: "",
+
+            map: "",
 
             mark(index: number) {
                 //@ts-ignore
@@ -171,14 +175,13 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
 
             inspect: (...args) => {
                 const e = createInspectionError(...args);
-                harness.errors.push(new te(e));
+                const test_error = new te(e, "", 0, 0, "", harness.origin, harness.map);
+                test_error.INSPECTION_ERROR = true;
+                harness.errors.push(test_error);
             },
 
             inspectAndThrow: (...args) => {
-
-                const e = createInspectionError(...args);
-
-                throw e;
+                throw createInspectionError(...args);
             }
 
         };

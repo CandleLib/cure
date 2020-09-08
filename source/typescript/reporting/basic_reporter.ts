@@ -1,125 +1,32 @@
-import { Reporter } from "../types/reporter.js";
-import { CLITextDraw } from "../utilities/cli_text_console.js";
-import { TestResult } from "../types/test_result.js";
-import { rst, pass, fail, symA, valD, valA, valB, valC, symB, symC, objA, objB, objC, objD, msgC, symD } from "../utilities/colors.js";
 import { performance } from "perf_hooks";
-import { TestSuite } from "../types/test_suite.js";
-import { TestRig } from "../types/test_rig.js";
-import { TestError, getLexerFromLineColumnString } from "../test_running/test_error.js";
 import { inspect } from "util";
-import { parser, renderWithFormatting, JSNodeType, JSNodeClass, JSNode } from "@candlefw/js";
-import { format_rules } from "../utilities/format_rules.js";
+
+import { TestError } from "../test_running/test_error.js";
 import { Globals } from "../types/globals.js";
+import { Reporter } from "../types/reporter.js";
+import { TestResult } from "../types/test_result.js";
+import { TestRig } from "../types/test_rig.js";
+
+import { CLITextDraw } from "../utilities/cli_text_console.js";
+import { rst, symD } from "../utilities/colors.js";
+import { createInspectionMessage } from "./create_inspection_method.js";
 
 
-function syntaxHighlight(str: string, prop_name, node: JSNode): string {
-    const { type } = node;
-
-    if ("==>><<<+-||&&!/*".includes(str))
-        return symC + str + rst;
-
-    if ("(){}[]".includes(str))
-        return symD + str + rst;
-
-    switch (type) {
-        case JSNodeType.NewInstanceExpression:
-        case JSNodeType.NewExpression:
-        case JSNodeType.VariableDeclaration:
-        case JSNodeType.LexicalDeclaration:
-        case JSNodeType.IfStatement:
-        case JSNodeType.ForInStatement:
-        case JSNodeType.WhileStatement:
-        case JSNodeType.DoStatement:
-        case JSNodeType.TryStatement:
-        case JSNodeType.ForOfStatement:
-        case JSNodeType.ForOfStatement:
-            return valB + str + rst;
-        case JSNodeType.IdentifierProperty:
-            return objD + str + rst;
-        case JSNodeType.IdentifierBinding:
-        case JSNodeType.IdentifierReference:
-            return objC + str + rst;
-        case JSNodeType.TemplateHead:
-        case JSNodeType.TemplateMiddle:
-        case JSNodeType.TemplateTail:
-        case JSNodeType.Template:
-        case JSNodeType.StringLiteral:
-            return valA + str.replace(/\x1b\[[^m]+m/g, "") + rst;
-    }
-
-    if (type & JSNodeClass.LITERAL)
-        return symA + str + rst;
-
-    return str;
-}
-/**
- * Creates a printable inspection message.
- * @param result 
- * @param test 
- * @param suite 
- * @param reporter 
- */
-async function createInspectionMessage(result: TestResult, test: TestRig, suite: TestSuite, reporter: Reporter, watched_files: Set<string>): Promise<string> {
-
-    let errors = [];
-
-    for (let error of result.errors) {
-
-        if (error.WORKER)
-            error = Object.assign(new TestError(""), error);
-
-        errors.push(await error.toAsyncBlameString(watched_files));
-    }
-    const
-        { msgD, pass, symD, valB, symC, symA, valA } = reporter.colors,
-        { line, column } = test.pos,
-        str_col = valA,
-        num_col = symA,
-        str =
-            `${rst}
-Duration: ${num_col + result.duration + rst}
-Start Time: ${num_col + result.start + rst}
-End Time: ${num_col + result.end + rst}
-Timed Out: ${num_col + result.TIMED_OUT + rst}
-
-Test Type: ${num_col + test.type + rst}
-Browser: ${num_col + !!test.BROWSER + rst}
-Passed: ${num_col + result.PASSED + rst}
-Asynchronous Test: ${num_col + test.IS_ASYNC + rst}
-
-Source File: ${str_col + suite.origin + rst}
-
-Imports:
-    ${
-            test.import_arg_specifiers.map(({ module_name, module_specifier }) => symD + module_name + rst + " from \n        " + pass + module_specifier + rst).join("\n    ")
-            || pass + "none"
-            }
-
--------------------------------------------------------------------------------
-
-${getLexerFromLineColumnString(line, column, suite.data).errorMessage("Source Location", suite.origin).split("\n").join(("\n    "))}
-
--------------------------------------------------------------------------------
-
-Test Rig Source Code:
-
-    ${renderWithFormatting(parser(test.source).ast, format_rules, syntaxHighlight).trim().split("\n").join("\n    ")}
-
-${rst}-------------------------------------------------------------------------------`;
-
-    return str.trim();
-}
-
-function getNameData(name: string) {
+function getNameData(test: TestRig, globals: Globals) {
+    const name = test.name;
 
     const
-        name_parts = name.split("-->"),
-        suites = name_parts.slice(0, -1),
-        name_string = name_parts.pop();
+        suite_name = [...globals.suites.values()][test.suite_index].name
+            .replace(/[_-]/g, " ")
+            .split(" ")
+            .map(d => d[0].toLocaleUpperCase() + d.slice(1).toLocaleLowerCase())
+            .join(" ");
 
-    return { suites, name: name_string };
+    return { suites: [suite_name], name: name };
 }
-type SuiteData = { tests: Map<string, { INSPECT: boolean, name: string, complete: boolean, failed: boolean; duration: number; }>, suites: Map<string, SuiteData>; };
+
+type Tests = Map<string, { INSPECT: boolean, name: string, complete: boolean, failed: boolean; duration: number; }>;
+type SuiteData = { tests: Tests, suites: Map<string, SuiteData>; };
 /**
  * Basic Report is the template reporter that implements all primary features of a reporter.
  */
@@ -169,6 +76,27 @@ export class BasicReporter implements Reporter {
         return strings.join("\n");
     }
 
+    async loadingSuites(global: Globals, terminal) {
+
+    }
+
+    async loadingTests(global: Globals, terminal) {
+
+
+    }
+
+    async reloadingWatchedFile(global: Globals, terminal) {
+
+    }
+
+    async reloadingWatchedSuite(global: Globals, terminal) {
+
+    }
+
+    async prestart(global: Globals, terminal) {
+
+    }
+
     async start(pending_tests: TestRig[], global: Globals, terminal: CLITextDraw) {
 
         const { suites } = global;
@@ -185,23 +113,23 @@ export class BasicReporter implements Reporter {
         try {
 
 
-            for (const { name: combined_name, INSPECT } of pending_tests) {
+            for (const test of pending_tests) {
 
                 let suites_ = this.suites.suites, target_suite = this.suites;
 
-                const { suites, name } = getNameData(combined_name);
+                const { suites, name } = getNameData(test, global);
 
                 for (const suite of suites) {
 
                     if (!suites_.has(suite))
-                        suites_.set(suite, { tests: <Map<string, { INSPECT: boolean, name: string, complete: boolean, failed: boolean; duration: number; }>>new Map(), suites: new Map() });
+                        suites_.set(suite, { tests: <Tests>new Map(), suites: new Map() });
 
                     target_suite = suites_.get(suite);
 
                     suites_ = target_suite.suites;
                 };
 
-                target_suite.tests.set(name, { INSPECT, name, complete: false, failed: false, duration: 0 });
+                target_suite.tests.set(name, { INSPECT: test.INSPECT, name, complete: false, failed: false, duration: 0 });
 
             }
         } catch (e) {
@@ -214,23 +142,23 @@ export class BasicReporter implements Reporter {
 
         terminal.clear();
 
-        for (const { test: { INSPECT, name: combined_name }, errors, duration } of results) {
+        for (const { test, errors, duration, PASSED } of results) {
 
             let suites_ = this.suites.suites, target_suite = this.suites;
 
-            const { suites, name } = getNameData(combined_name);
+            const { suites, name } = getNameData(test, global);
 
             for (const suite of suites) {
 
                 if (!suites_.has(suite))
-                    suites_.set(suite, { tests: <Map<string, { INSPECT: boolean, name: string, complete: boolean, failed: boolean; duration: number; }>>new Map(), suites: new Map() });
+                    suites_.set(suite, { tests: <Tests>new Map(), suites: new Map() });
 
                 target_suite = suites_.get(suite);
 
                 suites_ = target_suite.suites;
             };
 
-            target_suite.tests.set(name, { INSPECT, name, complete: true, failed: errors ? errors.length > 0 : true, duration });
+            target_suite.tests.set(name, { INSPECT: test.INSPECT, name, complete: true, failed: !PASSED, duration });
         }
 
         const out = this.render();
@@ -269,29 +197,29 @@ export class BasicReporter implements Reporter {
         try {
             for (const result of results) {
 
-                const { test, errors: test_errors } = result;
+                const { test, errors: test_errors, PASSED } = result;
 
-                if (!test_errors)
-                    terminal.log(`Missing test_errors from test ${inspect(result)}`);
+                if (!PASSED) {
+                    failed++;
+                    FAILED = true;
+                }
 
-                const { suites: suites_name, name } = getNameData(test.name);
+                const { suites: suites_name, name } = getNameData(test, global);
 
                 if (test_errors && test_errors.length > 0) {
 
-                    failed++;
 
                     for (let error of test_errors) {
+                        //FAILED = true;
 
-
-                        FAILED = true;
-
-                        if (error.WORKER)
-                            error = Object.assign(new TestError(""), error);
-
+                        if (error.WORKER) {
+                            console.log(error);
+                            error = Object.assign(new TestError(error), error);
+                        }
 
                         const message = await error.toAsyncBlameString(watched_files, suites[test.suite_index].origin);
 
-                        errors.push(`${rst}[ ${msgA + suites_name.join(" > ")} - ${rst + name + msgA} ]${rst} failed:\n\n    ${
+                        errors.push(`${rst}${msgA}[  ${name} ]${rst} ${error.INSPECTION_ERROR ? "" : "failed"}:\n\n    ${
                             fail
                             + message
                                 .replace(error.match_source, error.replace_source)

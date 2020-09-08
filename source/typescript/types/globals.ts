@@ -67,6 +67,11 @@ export interface Globals {
     };
 
     /**
+     * Maximum amount of time in milliseconds to wait for a test to complete.
+     */
+    max_timeout: number;
+
+    /**
      * Name of the package test running within. 
      */
     package_name?: string,

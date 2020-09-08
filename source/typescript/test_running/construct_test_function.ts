@@ -27,8 +27,6 @@ export async function constructTestFunction(
 
     harness.accessible_files = accessible_files;
 
-    console.log = harness.inspect;
-
     for (const { module_specifier: source } of sources) {
         if (!ImportedModules.has(source))
             ImportedModules.set(source, await ld(source));

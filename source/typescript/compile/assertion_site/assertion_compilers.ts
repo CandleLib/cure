@@ -100,8 +100,8 @@ const
                     message: `${fail}Boolean literal ${bkgr}[${valA + value + bkgr}]${fail} provides no useful test information`,
                     highlight: valA + node.value + fail,
                     match: node.value + "",
-                    column: 0,
-                    line: 0
+                    column: node.pos.column,
+                    line: node.pos.line
                 };
             },
         },
@@ -128,10 +128,10 @@ const
 
                 return {
                     message: `${fail}Expected ${bkgr}[${objA + node.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral($harness.caught_exception)}${bkgr}]${fail} to not throw an exception${fail}`,
-                    highlight: objA + node.pos.slice() + fail,
+                    highlight: valA + node.pos.slice() + fail,
                     match: node.pos.slice(),
-                    column: 0,
-                    line: 0
+                    column: node.pos.column,
+                    line: node.pos.line
                 };
             },
         },
@@ -229,7 +229,7 @@ const
                     message: `${fail} ${right_value} was not found in the prototype chain of ${left_value}`,
                     highlight: [objA + $r(left), rst + "instanceof", objB + $r(right) + rst + fail].join(" "),
                     match: node.pos.slice(),
-                    column: right.pos.column - 10,
+                    column: right.pos.column - 11,
                     line: right.pos.line
                 };
             },

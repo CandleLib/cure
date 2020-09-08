@@ -1,6 +1,6 @@
 {
 	"name": "@candlefw/test",
-	"version": "0.3.1",
+	"version": "0.3.2",
 	"description": "CandleFW Testing System",
 	"type": "module",
 	"types": "./build/types/main.d.ts",
@@ -10,7 +10,7 @@
 	},
 	"scripts": {
 		"prepublishOnly": "yarn build && yarn test",
-		"test": "cfw.test -i ./test/...",
+		"test": "cfw.test --threads=2 ./test/**",
 		"build.watch": "tsc --watch",
 		"build": "tsc -p ./tsconfig.json",
 		"compile": "hydrocarbon compile --type module --unattended -o  ./source/utilities/ ./source/grammar/error_line_parser.hcg"
