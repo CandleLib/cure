@@ -8,6 +8,7 @@ import { Reporter } from "../main.js";
 import { Scope, createCompileScope, SequenceData } from "./compile_statements_old.js";
 import { compileImport } from "./compile_import.js";
 import { buildAssertionSiteNode } from "./build_assertion_site_rig.js";
+import { StatementProp } from "./StatementProp";
 
 
 export const jst = (node: JSNode, depth?: number) => traverse(node, "nodes", depth);
@@ -15,46 +16,6 @@ export const jst = (node: JSNode, depth?: number) => traverse(node, "nodes", dep
 export type RawRigs = Array<{ rig: RawTestRig, import_names: Set<string>; }>;
 
 const { getIdentifierName: id } = tools;
-
-export interface StatementProp {
-    /**
-     * Any AST node that has the STATEMENT 
-     * class flag.
-     */
-    stmt: JSNode,
-
-
-    /**
-     * Any variable reference within
-     * the statement that does not 
-     * have a matching declaration
-     * within the statement closure
-     */
-    declared_variables: Set<string>;
-
-    /**
-     * Any declaration within the statement
-     * closure that is not lexically scoped
-     * within the same closure. Mainly var 
-     * declarations in block statements
-     */
-    required_references: Set<string>;
-
-    /**
-     * If true then the stmt should
-     * be used regardless of the references
-     */
-    FORCE_USE: boolean;
-
-    /**
-     * If true then an await expression is present 
-     * within the stmt
-     */
-    AWAIT: boolean;
-
-    raw_rigs: RawTestRig[];
-}
-
 
 /**[API]
  * Generates test rigs from all code within a file and 
@@ -383,7 +344,6 @@ function processStatement(
                     .skipRoot()
                     .filter("type", JSNodeType.IdentifierBinding)
                 ) {
-                    //console.log(id(bdg));
                     lex_decl.add(id(bdg));
                 }
                 break;
