@@ -1,5 +1,6 @@
-import { JSNodeClass, JSNode, stmt, JSNodeType, exp, parser, JSNodeTypeLU } from "@candlefw/js";
-import { traverse, bit_filter, make_replaceable, extract, replace } from "@candlefw/conflagrate";
+import { JSNode, stmt, parser, JSNodeTypeLU } from "@candlefw/js";
+import { traverse } from "@candlefw/conflagrate";
+
 import CompilerBindings from "./assertion_compilers.js";
 import { selectBindingCompiler, loadBindingCompiler } from "./assertion_compiler_manager.js";
 import { Reporter } from "../../main.js";
@@ -48,16 +49,7 @@ export function compileAssertionSite(expr: JSNode, reporter: Reporter)
                 receiver = { ast: null };
 
 
-            for (const { node, meta } of traverse(thr, "nodes")
-
-                //.extract(receiver)
-
-                //.replace(node => (node.pos = expr.pos, node))
-
-                //.bitFilter("type", JSNodeClass.IDENTIFIER)
-
-                //.makeReplaceable()
-            ) {
+            for (const { node, meta } of traverse(thr, "nodes")) {
                 node.pos = expr.pos;
             }
 
