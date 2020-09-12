@@ -2,14 +2,15 @@
 
 import { instrument, processPackageData, createSpecFile } from "../build/library/utilities/instrument.js";
 import { getPackageJsonObject as getPackageJSON } from "@candlefw/wax";
-import { sym_version } from "../build/library/utilities/sym_version.js";
 import fs from "fs";
 import path from "path";
 import URL from "@candlefw/url";
 
-{
-    "Gets package.json";
 
+URL.toString();
+
+"Gets package.json";
+{
     "Loads package.json";
     assert((await getPackageJSON()).FOUND == true);
 
@@ -17,7 +18,7 @@ import URL from "@candlefw/url";
     assert((await getPackageJSON()).package.name == "@candlefw/test");
 
     "The directory that package.json is found in should be the same as CWD/PWD";
-    assert((await getPackageJSON()).package_dir == process.cwd());
+    assert((await getPackageJSON()).package_dir == process.cwd() + "/");
 }
 
 {
@@ -30,46 +31,21 @@ import URL from "@candlefw/url";
     assert(!processPackageData({ main: "test", name: "@candlefw/test" }));
 
     "processPackageData does not throw if the package is a module";
-    assert(processPackageData({ main: "test", type: "module", name: "@candlefw/test" }));
+    assert(processPackageData({ main: "test", type: "module", name: "@candlefw/test" }, {}));
 
     "Adds @candlefw/test@latest to devDependencies of package.json";
     const pkg = { main: "test", type: "module", name: "@candlefw/test" };
-    processPackageData(pkg);
-    ((pkg.devDependencies["@candlefw/test"] == sym_version));
+    const { package: tst_pkg } = await getPackageJSON();
+    processPackageData(pkg, tst_pkg);
+    assert(pkg.devDependencies["@candlefw/test"] == tst_pkg.version);
 }
 
 {
     "Creates spec file";
-
-    "Creates spec files string from source file: sym_version.js";
-
-    const sym_version_string =
-        `import {sym_version} from "../build/library/utilities/sym_version.js"; "cfw.test sym_version test spec"; "TODO - test: sym_version"; ((sym_version));`;
-
-    assert(await createSpecFile("cfw.test sym_version", "./build/library/utilities/sym_version.js") == sym_version_string);
-
-
-    "Creates spec files string from source file: instrument.js";
-
-    const inspect_string =
-        `import {test,getPackageJSON,createSpecFile,processPackageData,instrument} from "../build/library/utilities/instrument.js"; ` +
-        `"cfw.test inspect test spec"; "TODO - test: test"; ((test)); "TODO - test: getPackageJSON"; ((getPackageJSON)); "TODO - test: ` +
-        `createSpecFile"; ((createSpecFile)); "TODO - test: processPackageData"; ((processPackageData)); "TODO - test: instrument"; ((instrument));`;
-
-    assert(await createSpecFile("cfw.test inspect", "./build/library/utilities/instrument.js") == inspect_string);
-
-    "Creates spec files string from source file: main.js";
-
-    const main_string =
-        `import {NullReporter,BasicReporter,createTestFrame} from "../build/library/main.js"; "cfw.test inspect test spec"; `
-        + `"TODO - test: NullReporter"; ((NullReporter)); "TODO - test: BasicReporter"; ((BasicReporter)); "TODO - test: `
-        + `createTestFrame"; ((createTestFrame));`;
-
-    assert(await createSpecFile("cfw.test inspect", "./build/library/main.js") == main_string);
 }
 
 
-SEQUENCE: {
+assert_group("Full Sequence", sequence, () => {
     "Simulated Test"; "#";
 
     const
@@ -108,4 +84,4 @@ SEQUENCE: {
     assert(data?.scripts["test.watch"] == "cfw.test -w ./test/**");
 
     assert(await fsp.rmdir(dir, { recursive: true }));
-}
+});

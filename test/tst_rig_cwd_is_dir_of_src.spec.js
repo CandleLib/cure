@@ -14,4 +14,4 @@ const
 
 assert(FOUND == true);
 assert(pkg?.name == "@candlefw/test");
-assert(expected_dir == URL.GLOBAL);
+assert(expected_dir == URL.GLOBAL + "");
