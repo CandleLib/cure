@@ -14,6 +14,6 @@ assert(window.location.href == URL.GLOBAL.toString(), browser);
 
 assert("Document is defined", typeof document !== "undefined", browser);
 
-assert("Window is defined", typeof window !== "undefined", browser, inspect);
+assert("Window is defined", typeof window !== "undefined", browser);
 
 assert("Document Body is an HTML Element", document.body instanceof HTMLElement, browser);

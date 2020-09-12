@@ -6,7 +6,7 @@
             import { constructTestFunction } from "/construct_test_function/acquire/";
             import { harnessConstructor } from "/test_harness/acquire/";
 
-            const TestError = Error;
+            const TestError = function(d){ const {message, stack} = new Error(d); this.message = message, this.stack = stack};
 
             //Load test runners 
             async function loadImport(source) {
@@ -20,22 +20,29 @@
                     ImportedModules = new Map(),
                     harness = harnessConstructor((a,b)=>a===b, {
                         inspect: JSON.stringify,
-                    }, performance, "", Error, true);
+                    }, performance, "", TestError, true);
 
                 const result= { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
-
+                    
+                result.start = performance.now();
                 try {
-                    await (await constructTestFunction(
+
+                    const  fn = await (await constructTestFunction(
                         test, 
                         harness, 
                         ImportedModules, 
                         TestError, 
-                        loadImport ) )();
+                        loadImport ));
+                    
+                        result.start = performance.now();
+                    await fn();
                 } catch (e) {
 
                     log(e)
-
+                    //alert(e)
                     let error = null;
+
+                    error = e;
 
                     if (e instanceof TestError) {
                         error = e;
@@ -57,14 +64,15 @@
                 console.log = log;
 
                 harness.last_error = null;
-                result.start = performance.now();
                 result.end = performance.now();
                 result.errors = harness.errors;
 
-                if (result.errors.length > 0)
+                if (result.errors.length > 0){
                     result.PASSED = false;
+                }
 
                 result.duration = result.end - result.start;
+
 
                 return result;
             }

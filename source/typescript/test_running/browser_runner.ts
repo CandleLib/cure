@@ -8,6 +8,7 @@ import path from "path";
 import { Globals } from "../types/globals.js";
 import { TestResult } from "../types/test_result";
 import { TestRig } from "../types/test_rig.js";
+import { TestError } from "./test_error.js";
 
 let SERVER_LOADED = false, server_test_rigs: TestRig[] = [], server_test_results: TestResult[] = [], active_tests: Set<number> = null, to_complete: number = 0;
 export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], test_result: TestResult[]) {
@@ -20,7 +21,9 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
 
     if (SERVER_LOADED)
         return;
-    const port = 8083;
+
+    const port = await lantern.getUnusedPort();
+
     SERVER_LOADED = true;
 
     /**

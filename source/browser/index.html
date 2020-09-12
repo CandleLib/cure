@@ -1,10 +1,26 @@
 <!DOCTYPE html>
 <html>
     <head>
+        <style>
+            body{
+                padding: 0;
+                margin: 0;
+                border: none;
+                width: 100%;
+                font-size: 12px;
+                font-size: 1em;
+                background-color: #ffffff;
+                color: rgb(0, 0, 0);
+            }
+        </style>
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap" rel="stylesheet">
+        <!--<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300&display=swap" rel="stylesheet">-->
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&family=Titillium+Web:wght@300&display=swap" rel="stylesheet">
+
+
+
     </head>
     <body>
-        <h1>CandleFW.TEST</h1>
-        loading...
     </body>
     
     <script async type=module>
@@ -16,32 +32,32 @@
       //  import glow from "/@candlefw/glow";
         
 
-        let ACTIVE = true;
+        let ACTIVE = true, SLOW_POOL = true;
 
         async function start(){
+
+
+           async function complete_test(result, test_id){    
+      
+                result.errors = result.errors.map(e=>Object.assign({}, e))
+
+                const {completed} = (await (new URL("/test_rigs/resolve/")).submitJSON({
+                    result,
+                    test_id
+                }))
+
+                if(completed)  ACTIVE = false;
+            }
             
            await wick.setPresets({
                options:{
                     //GENERATE_SOURCE_MAPS:true,
-                    REMOVE_DEBUGGER_STATEMENTS:false
-
-               },
+                    REMOVE_DEBUGGER_STATEMENTS:false  },
                 api: {
 
-                    URL,
+                    complete_test,
 
-                    async complete_test(result, test_id){    
-
-                        console.log(result)
-                        
-                        const {completed} = (await (new URL("/test_rigs/resolve/")).submitJSON({
-                            result,
-                            test_id
-                        }))
-
-                        if(completed)
-                            ACTIVE = false;
-                    },
+                    URL
                 },
                 models: {
                     meta:{tests : wick.objects.Observable([])}
@@ -54,18 +70,36 @@
 
             const globals = (await (new URL("/globals/acquire/")).fetchJSON());
 
-            let falloff = 50;
-        
-            while(ACTIVE){
+            let falloff = 2;
 
-                const {NO_TESTS, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
+            while(SLOW_POOL){
 
-                if(!NO_TESTS){
-                    wick.rt.presets.models.meta.tests.push(Object.assign(test, {test_id}))
-                    await spark.sleep(10);
-                }else {
-                    await spark.sleep(falloff += (falloff * 0.5));
+                if(!ACTIVE){
+
+                    const {NO_TESTS, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
+
+                    if(!NO_TESTS){
+                        wick.rt.presets.models.meta.tests.length = 0;
+                        wick.rt.presets.models.meta.tests.push(Object.assign(test, {test_id}))
+                        ACTIVE= true;
+                    }
                 }
+
+                await spark.sleep(100)
+            
+                while(ACTIVE){        
+                    const {NO_TESTS, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
+                    
+                    if(!NO_TESTS){
+                        wick.rt.presets.models.meta.tests.push(Object.assign(test, {test_id}))
+                        await spark.sleep(2);
+                        falloff = 2;
+                    }else {
+                        await spark.sleep(falloff += (falloff * 0.5));
+                    }
+                }
+
+                await spark.sleep(1000)
             }
         }
 

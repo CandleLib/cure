@@ -17,7 +17,8 @@ async function frameLoad(){
     
     pass = result.PASSED;
     
-    total_time = Math.round(result.duration * 10000000);
+    total_time = (Math.round((result.duration * (result.duration < 1 ? 10000 : 10))) / 10) 
+        + (result.duration < 1 ? "μs" : "ms");
     
     complete_test(result, test_id);
 
@@ -27,10 +28,79 @@ async function frameLoad(){
 frame.onload = ()=>frameLoad();
 
 export default <div>
-    id: ${test_id}
-    type: ${ type.toLowerCase() } 
-    source: <code>${ name } </code>
-    passed: <code>${ pass } </code>
-    time: <code>${ total_time + "ms" } </code>
+    <div class="id"> ${test_id }</div>
+    <div class="rs" style=${ pass ? "border-color:#89bd93;color:#89bd93" : "border-color:#ca4940;color:#ca4940" }> ${ (typeof pass != "undefined" && (pass ? "passed" : "failed")) || "pending"}</div>
+    <div class="ty"> type <span class="val"><br/>${ type.toLowerCase() }</span>  </div>
+    <div class="tm"> time <span class="val"><br/>${ total_time || "pending" } </span></div>
+    <div class="sr"> name <span class="val"><br/>${ name.replace("-->", " :: ") } </span> </div>
     <iframe style="display: none;" src="/components/iframe.html"></iframe>
-</div>
+</div>;
+
+<style>
+    root{
+        position: relative;
+        display: flex;
+        margin: 20px 50px;
+        padding: 5px;
+        border-radius: 5px;
+        border: 1px solid #cccccc;
+        flex-direction: row;
+        font-family: "Fira Mono" , arial;
+        color: rgb(35 88 255);
+        font-weight: 500;
+        font-size: 0.8em;
+        background-color: rgba(63,63,63,0);
+    }
+
+    root:nth-child(2n){
+        background-color: rgb(248 248 248);
+    }
+
+
+    div {
+        border-left: 1px solid #d7d7d7;
+        padding: 10px 15px;
+    }
+
+    .id, .rs{
+        flex-grow: 0;
+        flex-shrink: 0;
+        display: inline-block;
+        position: relative;
+    }
+
+    .id{
+    color: white;
+        font-size: 1.1em;
+        padding-right: 98px;
+        padding-left: 11px;
+        border-color: transparent;
+        background-color: #ff5e30;
+        border-radius: 5px 0 0 5px;
+    }
+    
+    .rs{
+        padding-top:0.75%;
+        border-radius:0 5px 5px 0;
+        color: white;
+        border: 2px solid transparent;
+        font-weight:800;
+        border-left:none;
+        margin-right:20px;
+    }
+
+    .ty{
+        border-left:none;
+    }
+
+    .val{
+        color:#595959;
+        padding-left: 5px;
+        font-weight:800
+    }
+
+
+    .tm, .rs{
+        width:120px;
+    }
+</style>;

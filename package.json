@@ -23,6 +23,7 @@
 	"license": "MIT",
 	"dependencies": {
 		"@candlefw/conflagrate": "*",
+		"@candlefw/css": "*",
 		"@candlefw/hydrocarbon": "*",
 		"@candlefw/js": "*",
 		"@candlefw/lantern": "*",
