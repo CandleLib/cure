@@ -52,7 +52,7 @@ export async function loadSuite(suite: TestSuite, globals: Globals) {
 
                         await runTests(suite.rigs.slice(), [suite], globals);
 
-                        console.log("Waiting for changes...");
+                        globals.reporter.notify("Waiting for changes...");
 
                         globals.flags.PENDING = false;
                     }

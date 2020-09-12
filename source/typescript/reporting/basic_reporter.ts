@@ -39,6 +39,18 @@ export class BasicReporter implements Reporter {
     time_start: number;
 
     constructor() { this.suites = null; this.time_start = 0; }
+    notifications: any[];
+
+    constructor() {
+        this.suites = null;
+        this.time_start = 0;
+        this.notifications = [];
+    }
+
+    notify(...messages) {
+        const message = messages.map(m => m.toString()).join(" ");
+        console.log(`${this.colors.symB + message + rst}`);
+    }
 
     render(suites = this.suites, prepend = "") {
 

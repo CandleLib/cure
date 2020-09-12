@@ -33,7 +33,6 @@ const source = await(URL.resolveRelative("./data/standard_test_spec.js")).fetchT
 
 const rigs = compileRawTestRigs(parser(source).ast, reporter, []);
 
-//console.log(0, 1, rigs);
 // compileStatementsNew expects a global object and  
 assert(rigs.length == 11);
 

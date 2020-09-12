@@ -17,7 +17,10 @@ function createRelativeFileWatcher(path: URL, globals: Globals) {
 
         const path_string = path.toString();
 
+        globals.reporter.notify("Watching", path + "");
+
         const watcher = fs.watch(path_string, async function () {
+
 
             if (!globals.flags.PENDING) {
 
@@ -29,7 +32,7 @@ function createRelativeFileWatcher(path: URL, globals: Globals) {
 
                 globals.flags.PENDING = false;
 
-                console.log("Waiting for changes...");
+                globals.reporter.notify("Waiting for changes...");
             }
         });
 
@@ -108,7 +111,7 @@ function getPackagePath(path: string, globals: Globals)
  */
 export async function handleWatchOfRelativeDependencies(suite: TestSuite, globals: Globals) {
 
-    console.log(`\nLoading watched files from suite: ${suite.origin}`);
+    globals.reporter.notify(`\nLoading watched files from suite: ${suite.origin}`);
 
     const { rigs: tests, origin } = suite, active_paths: Set<string> = new Set();
 
