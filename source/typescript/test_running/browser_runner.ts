@@ -199,8 +199,6 @@ function startFirefox(port) {
     });
 
     process.on("SIGTERM", () => {
-        console.log("AAAAAAAAAAAAAAAAAAAAAAA");
-        console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAA");
         browser.kill("SIGKILL");
         //browser.kill();
         return false;
@@ -261,9 +259,6 @@ function startChrome(port) {
     });
 
     process.on("SIGINT", () => {
-
-        console.log("AAAAAAAAAAAAAAAAAAAAAAA");
-        console.log("AAAAAAAAAAAAAAAAAAAAAAAAAAA");
         //browser.kill("SIGKILL");
         process.kill(browser.pid);
         process.exit(0);
