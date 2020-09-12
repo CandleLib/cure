@@ -1,5 +1,5 @@
 import { JSNode, JSNodeType } from "@candlefw/js";
-import { jst } from "../compile_statements_old.js";
+import { jst } from "../jst.js";
 
 
 function fillInput(set_from, set_to) {
