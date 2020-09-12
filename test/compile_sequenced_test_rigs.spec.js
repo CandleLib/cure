@@ -20,8 +20,8 @@ const source = await(URL.resolveRelative("./data/sequence_test_spec.js")).fetchT
 
 InitializeReporterColors(reporter);
 
-const rigs = compileRawTestRigs(parser(source).ast, reporter, imports);
+const result = compileRawTestRigs(parser(source).ast, reporter, imports);
 
 // compileStatementsNew expects a global object and  
-assert(rigs.length == 1);
-assert(rigs[0].rig.test_maps.length == 11);
+assert(result.raw_rigs.length == 1);
+assert(result.raw_rigs[0].test_maps.length == 11);

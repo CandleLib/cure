@@ -5,15 +5,36 @@ import { ImportModule } from "../types/import_module.js";
 import { RawTestRig } from "../types/raw_test.js";
 
 import { Reporter } from "../main.js";
-import { Scope, createCompileScope, SequenceData } from "./compile_statements_old.js";
 import { compileImport } from "./compile_import.js";
 import { buildAssertionSiteNode } from "./build_assertion_site_rig.js";
-import { StatementProp } from "./StatementProp";
+import { StatementProp } from "./statement_props";
+import { gatherStatementsAndDeclarations } from "./gather_statements_amd_declarations.js";
+import { cSet, cUnion, cDiff } from "./closure_set.js";
 
-
+type RigCase = {
+    rig: RawTestRig;
+    data: StatementProp;
+    offset: number;
+};
 export const jst = (node: JSNode, depth?: number) => traverse(node, "nodes", depth);
 
 export type RawRigs = Array<{ rig: RawTestRig, import_names: Set<string>; }>;
+
+function isExprStmtAssertionSite(stmt: JSNode): boolean {
+    if (stmt.type == JSNodeType.ExpressionStatement) {
+        if (stmt.nodes[0].type == JSNodeType.CallExpression) {
+            if (id(stmt.nodes[0].nodes[0]) == "assert") {
+                return true;
+            }
+        }
+    }
+    return false;
+}
+
+function compileSequencedTests({ INSPECT, SOLO, RUN, name, index, pos, ast }, i) {
+
+    return { INSPECT, SOLO, RUN: true, name, index: i, pos };
+}
 
 const { getIdentifierName: id } = tools;
 
@@ -40,420 +61,355 @@ const { getIdentifierName: id } = tools;
 //that call the site. 
 export function compileRawTestRigs(
     ast: JSNode,
-    reporter: Reporter,
+    report: Reporter,
     imports: ImportModule[],
-    scope: Scope = createCompileScope(ast, null),
-    suite_names: string[] = [],
-    sequence_data: SequenceData = null,
-): RawRigs {
-    const
-        tests: { rig: RawTestRig, data: StatementProp, offset: number; }[] = [],
-        statements: StatementProp[] = [],
+    LEAVE_ASSERTION_SITE = false
+): StatementProp {
 
+    let lex_decl: cSet | Set<string> = new Set;
+    let glbl_decl: cSet | Set<string> = new Set;
+    let glbl_ref: cSet | cUnion | Set<string> = new Set;
+
+    const
+        tests: RigCase[] = [],
+        statements: StatementProp[] = [],
         //Only function declarations are hoisted.
         declarations: StatementProp[] = [];
 
-    let active_name = "", SOLO = false, SKIP = false;
+    let
+        AWAIT = false,
+        active_name = "";
 
-    main: for (let { node, meta: { skip } } of jst(ast, 2)
+    if (
+        ast.type == JSNodeType.FunctionDeclaration
+        ||
+        ast.type == JSNodeType.FunctionExpression
+        ||
+        ast.type == JSNodeType.ArrowFunction
+    ) {
+        if (ast.type !== JSNodeType.ArrowFunction) {
+
+            const [id_node] = ast.nodes;
+
+            if (id_node) glbl_decl.add(id(id_node));
+        }
+    }
+
+    for (let { node, meta: { skip, mutate } } of jst(ast)
         .skipRoot()
         .makeSkippable()
-        .bitFilter("type", JSNodeClass.STATEMENT)
+        .makeMutable()
     ) {
         switch (node.type) {
 
-            case JSNodeType.ImportDeclaration: { compileImport(node, imports); skip(); } break;
+            case JSNodeType.FormalParameters: continue;
 
-            case JSNodeType.LabeledStatement: {
+            case JSNodeType.ImportDeclaration: compileImport(node, imports); skip(); break;
 
-                const
-                    prop = processStatement(node, reporter),
-                    [label] = node.nodes;
+            case JSNodeType.IdentifierBinding: if (id(node)) glbl_decl.add(id(node)); break;
 
-                switch ((<string>label.value).toLowerCase()) {
-                    case "sequence":
-                        const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
-                            rig: {
-                                type: "SEQUENCE",
-                                index: 0,
-                                name: "",
-                                ast: prop.stmt,
-                                RUN: true,
-                                SOLO: false,
-                                INSPECT: false,
-                                IS_ASYNC: true,
-                                test_maps: prop.raw_rigs.map(({ INSPECT, SOLO, RUN, name, index, pos, ast }, i) => (
-                                    ast.nodes[0] = parse_statement(`$harness.test_index = ${i}; `),
-                                    { INSPECT, SOLO, RUN: true, name, index: i, pos })
-                                ),
-                                imports: [],
-                            },
-                            data: prop,
-                            offset: statements.length
-                        };
+            case JSNodeType.IdentifierReference: if (id(node)) glbl_ref.add(id(node)); break;
 
-                        tests.push(pending);
-                        break;
-                    default:
-                        statements.push(prop);
-                }
-
-            } break;
+            case JSNodeType.AwaitExpression: AWAIT = true; break;
 
             case JSNodeType.ExpressionStatement: {
 
-                //Pure call expression are all ways assumed to have side effects that must be included
                 const [expr] = node.nodes;
 
                 if (isExprStmtAssertionSite(node)) {
+
+                    expr.nodes[0].value = ""; // Forcefully delete assert name
+
+                    const
+                        rig = buildAssertionSiteNode(expr, report, tests.length),
+                        data = compileRawTestRigs(
+                            expr,
+                            report,
+                            imports,
+                            false,
+                        );
+
+                    rig.name = rig.name || active_name || renderCompressed(rig.expression);
+
+                    if (LEAVE_ASSERTION_SITE) {
+                        for (const ref of data.required_references.values())
+                            glbl_ref.add(ref);
+
+                        mutate(rig.ast);
+                    } else
+                        mutate(null);
 
                     // Forcefully remove assert name to prevent it being used
                     // as a reference lookup
                     expr.nodes[0].value = "";
 
-                    const pending = {
-                        rig: buildAssertionSiteNode(node.nodes[0], reporter),
-                        data: processStatement(node.nodes[0], reporter),
-                        offset: statements.length
-                    };
-
-                    pending.rig.name = pending.rig.name
-                        || active_name
-                        || renderCompressed(pending.rig.expression);
+                    const pending = { rig, data, offset: statements.length };
 
                     tests.push(pending);
 
                     active_name = "";
 
-                } else if (expr.type == JSNodeType.StringLiteral) {
+                    skip();
 
-                    active_name = <string>expr.value;
+                } else if (node.nodes[0].type == JSNodeType.StringLiteral) {
+
+                    active_name = <string>node.nodes[0].value;
+
+                    mutate(null);
+
+                } else if (ast.type == JSNodeType.StringLiteral) {
+
+                    active_name = <string>ast.value;
 
                 } else if (expr.type == JSNodeType.CallExpression) {
 
-                    const prop = processStatement(node, reporter);
+                    const val = expr.nodes[0].value;
 
-                    prop.FORCE_USE = true;
+                    let group_name = "";
 
-                    statements.push(prop);
+                    if (val == "assert_group") {
+
+                        let fn_stmt: JSNode = null, SEQUENCED = false;
+
+                        for (const { node } of jst(expr.nodes[1], 2)) {
+                            if (node.type == JSNodeType.IdentifierReference) {
+                                if ((<string>node.value).toLowerCase() == "sequence") {
+                                    SEQUENCED = true;
+                                }
+                            } if (node.type == JSNodeType.StringLiteral)
+                                group_name = <string>node.value;
+                            else if (
+                                node.type == JSNodeType.FunctionExpression
+                                || node.type == JSNodeType.ArrowFunction
+                            ) {
+                                if (
+                                    node.type == JSNodeType.FunctionExpression
+                                    && node.nodes[0]
+                                ) node.nodes[0] = null;
+
+                                fn_stmt = node;
+                            }
+                        }
+                        if (fn_stmt) {
+
+                            const prop = compileRawTestRigs(
+                                fn_stmt.type == JSNodeType.ArrowFunction ? fn_stmt.nodes[1] : fn_stmt,
+                                report,
+                                imports,
+                                SEQUENCED
+                            );
+
+                            if (SEQUENCED) {
+                                //Create a sequenced test rig   
+
+                                if (prop.stmt.type == JSNodeType.FunctionExpression)
+                                    prop.stmt.nodes = prop.stmt.nodes.slice(-1)[0].nodes;
+
+                                prop.stmt.type = JSNodeType.Script;
+
+                                const imports = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
+
+                                prop.required_references = new cUnion(imports, prop.required_references);
+
+                                const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
+
+                                    rig: {
+                                        type: "SEQUENCE",
+                                        name: group_name,
+                                        index: 0,
+                                        RUN: prop.raw_rigs.some(r => r.RUN),
+                                        SOLO: prop.raw_rigs.some(r => r.SOLO),
+                                        INSPECT: prop.raw_rigs.some(r => r.INSPECT),
+                                        IS_ASYNC: prop.raw_rigs.some(r => r.IS_ASYNC),
+                                        imports: [],
+                                        import_names: imports,
+                                        test_maps: prop.raw_rigs.map(compileSequencedTests),
+                                        pos: prop.stmt.pos,
+                                        ast: prop.stmt,
+                                        expression: null
+                                    },
+
+                                    data: prop,
+
+                                    offset: statements.length
+                                };
+
+                                tests.push(pending);
+
+                            } else {
+
+                                const pending_test = prop.raw_rigs.map(r => {
+                                    if (group_name)
+                                        r.name = group_name + "-->" + r.name;
+                                    return r;
+                                }).map(r => mapRig(r, prop, statements.length));
+
+                                tests.push(...pending_test);
+                            }
+                        }
+
+                        mutate(null);
+
+                    } else {
+
+                        const prop = compileRawTestRigs(node, report, imports, false);
+
+                        statements.push(prop);
+
+                        glbl_ref = setGlobalRef(prop, glbl_ref);
+                        glbl_decl = setGlobalDecl(prop, glbl_decl);
+
+                        prop.FORCE_USE = true;
+                    }
 
                 } else {
 
-                    const prop = processStatement(node, reporter);
+                    const prop = compileRawTestRigs(
+                        node,
+                        report,
+                        imports,
+                        false
+                    );
+
+                    glbl_ref = setGlobalRef(prop, glbl_ref);
 
                     statements.push(prop);
                 }
+
+                skip();
             } break;
 
-            case JSNodeType.BlockStatement:
-                break;
+            case JSNodeType.FunctionDeclaration:
+            case JSNodeType.FunctionExpression:
+            case JSNodeType.BlockStatement: {
 
-            case JSNodeType.FunctionDeclaration: {
-                //Hoist this declaration
-                const prop = processStatement(node, reporter);
-                declarations.push(prop);
-            } break;
+                const prop = compileRawTestRigs(node, report, imports);
 
-            default: {
+                glbl_ref = setGlobalRef(prop, glbl_ref);
+                glbl_decl = setGlobalDecl(prop, glbl_decl);
 
-                //Extract IdentifierReferences and IdentifierAssignments 
-                // and append to the statement scope.
-                const prop = processStatement(node, reporter);
-                statements.push(prop);
-            } break;
-        }
-    }
-
-    const rigs = [];
-
-    for (const { rig, offset, data } of tests) {
-        const { stmts, imports } = gatherStatementsAndDeclarations(data, offset, statements, declarations);
-
-        if (rig.type == "DISCRETE") {
-            rig.ast = <JSNode>{
-                type: JSNodeType.Script,
-                nodes: [
-                    ...stmts,
-                    rig.ast
-                ],
-                pos: ast.pos
-            };
-        } else {
-            rig.ast = <JSNode>{
-                type: JSNodeType.Script,
-                nodes: [
-                    ...stmts,
-                    rig.ast
-                ],
-                pos: ast.pos
-            };
-        }
-
-
-        rigs.push({ rig, import_names: imports });
-    }
-
-    return rigs;
-}
-
-function gatherStatementsAndDeclarations(
-    refs: StatementProp,
-    offset: number,
-    statements: StatementProp[] = [],
-    //Only function declarations are hoisted.
-    declarations: StatementProp[] = []
-) {
-
-    const
-        active_refs = new Set(refs.required_references.values()),
-        declared_refs: Set<string> = new Set(),
-        stmts: JSNode[] = [];
-
-    for (let i = offset - 1; i > -1; i--) {
-
-        const stmt = statements[i];
-
-        let use = !!stmt.FORCE_USE;
-
-        if (!use)
-            for (const ref of active_refs.values()) {
-                if (
-                    stmt.required_references.has(ref)
-                    || stmt.declared_variables.has(ref)
-                ) {
-                    use = true;
-                    break;
-                }
-            }
-
-        if (use) stmts.push(stmt.stmt);
-
-        for (const ref of stmt.required_references.values())
-            active_refs.add(ref);
-
-        for (const ref of stmt.declared_variables.values()) {
-            declared_refs.add(ref);
-            active_refs.delete(ref);
-        }
-
-    }
-
-    for (let i = declarations.length - 1; i > -1; i--) {
-
-        const declaration = declarations[i];
-
-        let use = false;
-
-        for (const ref of active_refs.values()) {
-            if (declaration.required_references.has(ref) || declaration.declared_variables.has(ref)) {
-                use = true;
-                break;
-            }
-        }
-
-        for (const ref of declaration.required_references.values())
-            active_refs.add(ref);
-
-        for (const ref of declaration.declared_variables.values())
-            declared_refs.add(ref);
-
-        if (use) stmts.push(declaration.stmt);
-    }
-
-    for (const ref of declared_refs.values())
-        active_refs.delete(ref);
-
-    return { stmts: stmts.reverse(), imports: active_refs };
-}
-
-function processStatement(
-    stmt: JSNode,
-    report: Reporter,
-    AT_ROOT = true,
-    lex_decl: ClosureSet | Set<string> = new Set,
-    local_decl: ClosureSet | Set<string> = new Set,
-    glbl_decl: ClosureSet | Set<string> = local_decl,
-    glbl_ref: Set<string> = new Set,
-): StatementProp {
-
-    let AWAIT = false,
-        raw_rigs = [],
-        active_name = "";
-
-    if (stmt.type == JSNodeType.FunctionDeclaration ||
-        stmt.type == JSNodeType.FunctionExpression) {
-        const
-            [id_node] = stmt.nodes,
-            value = id(id_node);
-        if (
-            !local_decl.has(value)
-            && !lex_decl.has(value)
-        ) { local_decl.add(value); }
-
-        local_decl = new ClosureSet(local_decl);
-
-        AT_ROOT = false;
-    }
-
-    for (const { node, meta } of traverse(stmt, "nodes")
-        .skipRoot()
-        .makeSkippable()
-        .makeMutable()
-    ) {
-
-        switch (node.type) {
-
-            case JSNodeType.ExpressionStatement: {
-
-                if (isExprStmtAssertionSite(node)) {
-
-                    node.nodes[0].nodes[0].value = ""; // Forcefully delete assert name
-
-                    const rig = buildAssertionSiteNode(node.nodes[0], report);
-
-                    rig.name = rig.name || active_name || renderCompressed(rig.expression);
-
-                    raw_rigs.push(rig);
-
-                    rig.ast = {
-                        type: JSNodeType.BlockStatement,
-                        nodes: [
-                            parse_statement(`$harness.test_index = ${raw_rigs.length}; `),
-                            rig.ast
-                        ],
-                        pos: node.pos
-                    };
-
-                    meta.mutate(rig.ast);
-
-                    meta.skip(80);
-
-                    active_name = "";
-
-                } else if (node.nodes[0].type == JSNodeType.StringLiteral) {
-                    active_name = <string>node.nodes[0].value;
-                    meta.mutate(null);
+                if (node.type == JSNodeType.BlockStatement) {
+                    const pending_test = prop.raw_rigs
+                        .map(r => mapRig(r, prop, statements.length));
+                    tests.push(...pending_test);
                 }
 
+                if (prop.stmt.nodes.length > 0) {
+
+                    AWAIT = prop.AWAIT || AWAIT;
+
+                    if (node.type != JSNodeType.BlockStatement) {
+                        declarations.push(prop);
+                    } else {
+                        statements.push(prop);
+                    }
+                }
+                skip();
             } break;
 
-            case JSNodeType.FormalParameters: continue;
+            case JSNodeType.ArrowFunction: {
+
+                const prop = compileRawTestRigs(node, report, imports);
+
+                glbl_ref = setGlobalRef(prop, glbl_ref);
+                glbl_decl = setGlobalDecl(prop, glbl_decl);
+
+                AWAIT = prop.AWAIT || AWAIT;
+
+                skip();
+            } break;
 
             case JSNodeType.LexicalDeclaration:
                 for (const { node: bdg } of traverse(node, "nodes", 2)
                     .skipRoot()
                     .filter("type", JSNodeType.IdentifierBinding)
-                ) {
-                    lex_decl.add(id(bdg));
-                }
-                break;
-            case JSNodeType.FunctionDeclaration:
-            case JSNodeType.FunctionExpression: {
+                ) glbl_decl.add(id(bdg));
 
-                const { AWAIT: SHOULD_AWAIT, raw_rigs: r } = processStatement(
-                    node,
-                    report,
-                    false,
-                    new ClosureSet(lex_decl),
-                    local_decl,
-                    glbl_decl,
-                    glbl_ref
-                );
-                raw_rigs.push(...r);
-                meta.skip(4);
-                AWAIT = SHOULD_AWAIT || AWAIT;
-            } break;
-            case JSNodeType.ArrowFunction: {
+            default: {
+                if (node.type & JSNodeClass.STATEMENT) {
+                    //Extract IdentifierReferences and IdentifierAssignments 
+                    // and append to the statement scope.
+                    const prop = compileRawTestRigs(node, report, imports);
 
-                const { AWAIT: SHOULD_AWAIT, raw_rigs: r } = processStatement(
-                    node,
-                    report,
-                    false,
-                    new ClosureSet(lex_decl),
-                    new ClosureSet(local_decl),
-                    glbl_decl,
-                    glbl_ref
-                );
-                raw_rigs.push(...r);
-                meta.skip(4);
-                AWAIT = SHOULD_AWAIT || AWAIT;
-            } break;
+                    AWAIT = prop.AWAIT || AWAIT;
 
-            case JSNodeType.BlockStatement: {
-                const { AWAIT: SHOULD_AWAIT, raw_rigs: r } = processStatement(node,
-                    report,
-                    AT_ROOT,
-                    new ClosureSet(lex_decl),
-                    local_decl,
-                    glbl_decl,
-                    glbl_ref
-                );
-                raw_rigs.push(...r);
-                AWAIT = SHOULD_AWAIT || AWAIT;
-            } break;
+                    glbl_ref = setGlobalRef(prop, glbl_ref);
+                    glbl_decl = setGlobalDecl(prop, glbl_decl);
 
-            case JSNodeType.AwaitExpression: {
-                AWAIT = true;
-            } break;
+                    if (prop.stmt?.nodes?.length > 0)
+                        statements.push(prop);
 
-            case JSNodeType.IdentifierBinding: {
-                const value = id(node);
-                if (!local_decl.has(value) && !lex_decl.has(value))
-                    (AT_ROOT ? glbl_decl : local_decl).add(value);
-            } break;
-
-            case JSNodeType.IdentifierReference: {
-                const value = id(node);
-
-                if (
-                    value &&
-                    !local_decl.has(value)
-                    && !lex_decl.has(value)
-                ) {
-                    glbl_ref.add(value);
+                    skip();
                 }
             } break;
-
-            default: break;
         }
     }
 
+    for (const decl of declarations) {
+        if (decl.required_references.size > 0) {
+            if (decl.declared_variables.size > 0)
+                glbl_ref = new cDiff(new cUnion(glbl_ref, decl.required_references), decl.declared_variables);
+            else
+                glbl_ref = new cUnion(glbl_ref, decl.required_references);
+        }
+    }
+
+    const
+        declared_variables = <Set<string>>glbl_decl,
+        required_references = new cDiff(glbl_ref, glbl_decl),
+        rigs = [];
+
+    for (const { rig, offset, data } of tests) {
+
+        const { stmts, imports } = gatherStatementsAndDeclarations(data, offset, statements, declarations);
+        //*
+        rig.ast = <JSNode>{
+            type: JSNodeType.Script,
+            nodes: [
+                ...stmts,
+                rig.ast
+            ],
+            pos: ast.pos
+        };
+
+        //*/
+        // rig.ast.nodes.unshift(...stmts);
+        //  console.log(console.log(rig.ast));
+
+        rig.import_names = imports;
+
+        rigs.push(rig);
+    }
 
     return {
-        stmt,
-        declared_variables: <Set<string>>glbl_decl,
-        required_references: glbl_ref,
+        stmt: ast,
+        declared_variables,
+        required_references,
         FORCE_USE: false,
-        raw_rigs,
+        raw_rigs: rigs,
         AWAIT
     };
-}
 
-class ClosureSet {
-    outer_set: Set<string> | ClosureSet;
-    private inner_set: Set<string>;
-    constructor(outer_set: Set<string> | ClosureSet) {
-        this.outer_set = outer_set;
-        this.inner_set = new Set;
-    }
-    has(str) {
-        if (!this.inner_set.has(str)) return !!this.outer_set?.has(str);
-        return true;
-
-    }
-    add(str) {
-        this.inner_set.add(str);
-        return this;
+    function mapRig(rig: RawTestRig, s: StatementProp, offset: number): { rig: RawTestRig; data: StatementProp; offset: number; } {
+        return <RigCase>{ rig, data: Object.assign(s, { b: true, required_references: new cUnion(s.required_references, rig.import_names) }), offset };
     }
 }
+function setGlobalDecl(prop: StatementProp, glbl_decl: cSet | Set<string>) {
+    if (prop.declared_variables.size > 0)
+        glbl_decl = new cUnion(glbl_decl, prop.declared_variables);
+    return glbl_decl;
+}
 
-function isExprStmtAssertionSite(stmt: JSNode): boolean {
-    if (stmt.type == JSNodeType.ExpressionStatement) {
-        if (stmt.nodes[0].type == JSNodeType.CallExpression) {
-            if (id(stmt.nodes[0].nodes[0]) == "assert") {
-                return true;
-            }
-        }
+function setGlobalRef(prop: StatementProp, glbl_ref: cSet | Set<string> | cUnion) {
+
+    if (prop.required_references.size > 0) {
+
+        const ref = (prop.declared_variables.size > 0)
+            ? new cDiff(prop.required_references, prop.declared_variables)
+            : prop.required_references;
+
+        return new cUnion(glbl_ref, ref);
     }
-    return false;
+
+    return glbl_ref;
 }

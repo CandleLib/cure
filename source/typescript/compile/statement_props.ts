@@ -1,5 +1,6 @@
 import { JSNode } from "@candlefw/js";
 import { RawTestRig } from "../types/raw_test.js";
+import { cUnion, cSet } from "./closure_set.js";
 
 export interface StatementProp {
     /**
@@ -23,7 +24,7 @@ export interface StatementProp {
      * within the same closure. Mainly var
      * declarations in block statements
      */
-    required_references: Set<string>;
+    required_references: Set<string> | cUnion | cSet;
 
     /**
      * If true then the stmt should

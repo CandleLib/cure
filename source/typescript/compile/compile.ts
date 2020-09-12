@@ -25,15 +25,18 @@ export async function compileTest(ast: JSNode, reporter: Reporter, origin: strin
 
     const
         imports: Array<ImportModule> = [],
-        tests: Array<RawTestRig> = [];
-
-    let i = 0, test = null, rigs = [];
-
-    const raw_rigs = <Array<{ rig: RawTestRig, import_names: Set<string>; }>><unknown>compileRawTestRigs(ast, reporter, imports);
+        rigs = [],
+        ast_prop = compileRawTestRigs(ast, reporter, imports);
 
     let index = 0;
 
-    for (const { rig, import_names } of raw_rigs) {
+    //console.log(imports, ast_prop.raw_rigs[0]);
+
+    //  process.exit();
+
+    for (const rig of ast_prop.raw_rigs) {
+
+        const { import_names } = rig;
 
         if (rig.type == "DISCRETE")
             rig.index = index++;
@@ -42,16 +45,11 @@ export async function compileTest(ast: JSNode, reporter: Reporter, origin: strin
             index += rig.test_maps.length;
         }
 
-        for (const imp of imports) {
+        for (const $import of imports)
+            for (const id of $import.import_names)
+                if (import_names.has(id.import_name))
+                    rig.imports.push({ module: $import, name: id });
 
-            for (const id of imp.import_names)
-
-                if (import_names.has(id.import_name)) {
-
-                    rig.imports.push({ module: imp, name: id });
-
-                }
-        }
 
         rigs.push(rig);
     }
