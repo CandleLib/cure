@@ -11,13 +11,16 @@ import { Globals } from "../types/globals.js";
 
 const fsp = fs.promises;
 
-function createRelativeFileWatcher(path: URL, globals: Globals) {
+function createFileWatcher(path: URL, globals: Globals) {
 
     try {
 
         const path_string = path.toString();
 
+        globals.reporter.notify("Watching", path + "");
+
         const watcher = fs.watch(path_string, async function () {
+
 
             if (!globals.flags.PENDING) {
 
@@ -29,7 +32,7 @@ function createRelativeFileWatcher(path: URL, globals: Globals) {
 
                 globals.flags.PENDING = false;
 
-                console.log("Waiting for changes...");
+                globals.reporter.notify("Waiting for changes...");
             }
         });
 
@@ -40,23 +43,27 @@ function createRelativeFileWatcher(path: URL, globals: Globals) {
 }
 
 /**
- * Reads import statements from imported files and attempts to load relative targets for watching purposes. 
- * This is done recursively until no other files can be watched.
+ * Reads import statements from imported files and attempts to load relative 
+ * targets for watching purposes.  This is done recursively until no new 
+ * relative files can be found.
  * 
  * @param filepath 
  * @param suite 
  * @param globals 
  */
 async function loadImports(filepath: URL, suite: TestSuite, globals: Globals) {
+
+
     const file_path_string = filepath.toString();
 
-    if (!filepath.isSUBDIRECTORY_OF(globals.package_dir)) return;
+    if (globals.watched_files_map.has(file_path_string) || !filepath.isSUBDIRECTORY_OF(globals.package_dir)) return;
 
-    if (!globals.watched_files_map.get(file_path_string)) {
+    if (!globals.watched_files_map.has(file_path_string)) {
 
         globals.watched_files_map.set(file_path_string, new Map());
 
-        if (globals.flags.WATCH) createRelativeFileWatcher(filepath, globals);
+        if (globals.flags.WATCH)
+            createFileWatcher(filepath, globals);
 
         if (filepath.ext == "js") {
 
@@ -70,12 +77,12 @@ async function loadImports(filepath: URL, suite: TestSuite, globals: Globals) {
 
                     const { path, IS_PACKAGE_PATH } = getPackagePath(<string>ext(node).url.value, globals);
 
-                    let url = new URL(path);
+                    let url = new URL(path), IS_RELATIVE = url.IS_RELATIVE;
 
-                    if (url.IS_RELATIVE)
+                    if (IS_RELATIVE)
                         url = URL.resolveRelative(url, filepath);
 
-                    if (url.IS_RELATIVE || IS_PACKAGE_PATH)
+                    if (IS_RELATIVE || IS_PACKAGE_PATH)
                         loadImports(url, suite, globals);
                 }
             } catch (e) {
@@ -108,7 +115,7 @@ function getPackagePath(path: string, globals: Globals)
  */
 export async function handleWatchOfRelativeDependencies(suite: TestSuite, globals: Globals) {
 
-    console.log(`\nLoading watched files from suite: ${suite.origin}`);
+    globals.reporter.notify(`\nLoading watched files from suite: ${suite.origin}`);
 
     const { rigs: tests, origin } = suite, active_paths: Set<string> = new Set();
 

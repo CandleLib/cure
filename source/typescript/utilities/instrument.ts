@@ -90,7 +90,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
 
     return renderWithFormatting(new_ast, format_rules);
 }
-export function processPackageData(pkg: PackageJSONData, tst_pkg: PackageJSONData, FORCE: boolean = false) {
+export function processPackageData(pkg: PackageJSONData, cfw_test_pkg: PackageJSONData = null, FORCE: boolean = false) {
 
 
     let {
@@ -110,7 +110,7 @@ export function processPackageData(pkg: PackageJSONData, tst_pkg: PackageJSONDat
         devDependencies = pkg.devDependencies;
     }
 
-    devDependencies["@candlefw/test"] = tst_pkg.version;
+    devDependencies["@candlefw/test"] = cfw_test_pkg.version;
 
     const test_name = name.replace(/[\@\/\\]/g, " ").trim().split(" ").join(".") + ".spec.js";
 

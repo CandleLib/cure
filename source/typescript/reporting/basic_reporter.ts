@@ -9,20 +9,23 @@ import { TestRig } from "../types/test_rig.js";
 
 import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { rst, symD } from "../utilities/colors.js";
-import { createInspectionMessage } from "./create_inspection_method.js";
+import { createInspectionMessage } from "./create_inspection_message.js";
 
 
 function getNameData(test: TestRig, globals: Globals) {
     const name = test.name;
-
+    const suite = [...globals.suites.values()][test.suite_index];
     const
-        suite_name = [...globals.suites.values()][test.suite_index].name
+        name_split = name.split(/-->/g),
+        test_name = name_split.pop(),
+        suite_name = suite.name
             .replace(/[_-]/g, " ")
             .split(" ")
             .map(d => d[0].toLocaleUpperCase() + d.slice(1).toLocaleLowerCase())
-            .join(" ");
+            .join(" "),
+        suite_sub_names = name_split;
 
-    return { suites: [suite_name], name: name };
+    return { suites: [suite_name + "\n" + suite.origin, ...suite_sub_names], name: test_name };
 }
 
 type Tests = Map<string, { INSPECT: boolean, name: string, complete: boolean, failed: boolean; duration: number; }>;
@@ -38,7 +41,22 @@ export class BasicReporter implements Reporter {
 
     time_start: number;
 
-    constructor() { this.suites = null; this.time_start = 0; }
+    notifications: any[];
+
+    WORKING: boolean;
+
+    pending: string;
+
+    constructor() {
+        this.suites = null;
+        this.time_start = 0;
+        this.notifications = [];
+    }
+
+    notify(...messages) {
+        const message = messages.map(m => m.toString()).join(" ");
+        console.log(`${this.colors.symB + message + rst}`);
+    }
 
     render(suites = this.suites, prepend = "") {
 
@@ -59,11 +77,11 @@ export class BasicReporter implements Reporter {
 
                     if (test.failed) {
 
-                        strings.push(prepend + fail + " ❌ " + insp + msgA + test.name + dur + rst);
+                        strings.push(prepend + fail + " ✗ " + insp + msgA + test.name + dur + rst);
                     }
                     else {
 
-                        strings.push(prepend + pass + " ✅ " + insp + msgA + test.name + dur + rst);
+                        strings.push(prepend + pass + " ✓ " + insp + msgA + test.name + dur + rst);
                     }
                 }
                 else
@@ -76,26 +94,15 @@ export class BasicReporter implements Reporter {
         return strings.join("\n");
     }
 
-    async loadingSuites(global: Globals, terminal) {
+    async loadingSuites(global: Globals, terminal) { }
 
-    }
+    async loadingTests(global: Globals, terminal) { }
 
-    async loadingTests(global: Globals, terminal) {
+    async reloadingWatchedFile(global: Globals, terminal) { }
 
+    async reloadingWatchedSuite(global: Globals, terminal) { }
 
-    }
-
-    async reloadingWatchedFile(global: Globals, terminal) {
-
-    }
-
-    async reloadingWatchedSuite(global: Globals, terminal) {
-
-    }
-
-    async prestart(global: Globals, terminal) {
-
-    }
+    async prestart(global: Globals, terminal) { }
 
     async start(pending_tests: TestRig[], global: Globals, terminal: CLITextDraw) {
 
@@ -135,12 +142,34 @@ export class BasicReporter implements Reporter {
         } catch (e) {
             //console.log(e);
         }
-
     }
 
-    async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
+    async renderToTerminal(output: string, terminal: CLITextDraw) {
+
+        if (this.WORKING) {
+            this.pending = output;
+            return;
+        }
+
+        this.WORKING = true;
 
         terminal.clear();
+
+        terminal.log(output);
+
+        await terminal.print();
+
+        this.WORKING = false;
+
+        if (this.pending) {
+            const transfer = this.pending;
+            this.pending = null;
+            this.renderToTerminal(transfer, terminal);
+        }
+    }
+
+
+    async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
 
         for (const { test, errors, duration, PASSED } of results) {
 
@@ -163,17 +192,16 @@ export class BasicReporter implements Reporter {
 
         const out = this.render();
 
-        if (!COMPLETE) {
-            terminal.log(out);
-            await terminal.print();
-        }
+        if (!COMPLETE)
+            this.renderToTerminal(out, terminal);
 
         return out;
     }
 
     async complete(results: TestResult[], global: Globals, terminal: CLITextDraw): Promise<boolean> {
-
         const
+            time_end = performance.now(),
+
             { suites: suite_map, watched_files_map }
                 = global,
 
@@ -213,7 +241,6 @@ export class BasicReporter implements Reporter {
                         //FAILED = true;
 
                         if (error.WORKER) {
-                            console.log(error);
                             error = Object.assign(new TestError(error), error);
                         }
 
@@ -266,11 +293,9 @@ export class BasicReporter implements Reporter {
 
         strings.push(`${total} test${total !== 1 ? "s" : ""} ran. ${total > 0 ? (failed > 0
             ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (total - failed)} test${total - failed !== 1 ? "s" : ""} passed`
-            : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(performance.now() - this.time_start) | 0}ms\n\n`);
+            : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
 
-        terminal.log(strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst);
-
-        await terminal.print();
+        this.renderToTerminal([strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst].join("\n"), terminal);
 
         return FAILED;
     }

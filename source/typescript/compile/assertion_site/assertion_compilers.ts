@@ -135,6 +135,36 @@ const
                 };
             },
         },
+        /**
+        * Await Expressions imply the same action as call expression.
+        */
+        //*
+        <AssertionSiteCompiler>{
+
+            signature: JSNodeType.AwaitExpression,
+
+            test: node => {
+                return true;
+            },
+
+            build: node => {
+                return `await $harness.throws(async ()=>($harness.regA=undefined, $harness.regA = ${node.pos.slice()}), true)`;
+            },
+
+            getExceptionMessage: (node, rp) => {
+
+                const
+                    { fail, bkgr, symA, objA, valA } = rp.colors;
+
+                return {
+                    message: `${fail}Expected ${bkgr}[${objA + node.pos.slice() + symA} ⇒ ${valA}\${$harness.makeLiteral($harness.caught_exception)}${bkgr}]${fail} to not throw an exception${fail}`,
+                    highlight: valA + node.pos.slice() + fail,
+                    match: node.pos.slice(),
+                    column: node.pos.column,
+                    line: node.pos.line
+                };
+            },
+        },//*/
 
         /**
          * Call Expression Should Throw

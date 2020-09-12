@@ -15,7 +15,7 @@ t();
 //Could have side effects, this statements should be included.
 d();
 
-SEQUENCE: {
+assert_group(sequence, () => {
 
     "0 Basic built in assertion should pass";
     assert(2 + 2 == 4);
@@ -55,4 +55,4 @@ SEQUENCE: {
     "10 The NullReport update method should return true";
     const np = new NullReporter();
     assert(await np.complete() == true);
-}
+});

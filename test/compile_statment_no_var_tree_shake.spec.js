@@ -9,19 +9,18 @@ import { InitializeReporterColors } from "@candlefw/test/build/library/utilities
 
 import URL from "@candlefw/url";
 
-import { parser, renderWithFormatting } from "@candlefw/js";
+import { parser, renderCompressed } from "@candlefw/js";
 
 import { BasicReporter } from "@candlefw/test";
 
-const source = await(URL.resolveRelative("./data/sequence_test_spec.js")).fetchText(),
+const source = await(URL.resolveRelative("./data/var_statement_rig.js")).fetchText(),
     imports = [],
-    tests = [],
     reporter = new BasicReporter;
 
 InitializeReporterColors(reporter);
 
-const result = compileRawTestRigs(parser(source).ast, reporter, imports);
+const output = compileRawTestRigs(parser(source).ast, reporter, imports);
+const rigs = output.raw_rigs;
 
-// compileStatementsNew expects a global object and  
-assert(result.raw_rigs.length == 1);
-assert(result.raw_rigs[0].test_maps.length == 11);
+assert(rigs[0].import_names.has("comp") == false);
+assert(rigs[0].import_names.has("wick") == true);

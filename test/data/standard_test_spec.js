@@ -8,10 +8,11 @@ import { NullReporter } from "@candlefw/test";
 function d(a = 2, b = 3) { }
 
 //
-const t = () => { chai; };
+const t = () => { chai(); };
 
 //Could have side effects, this statements should be included.
 t();
+
 //Could have side effects, this statements should be included.
 d();
 

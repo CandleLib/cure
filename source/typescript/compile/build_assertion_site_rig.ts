@@ -1,4 +1,4 @@
-import { JSNode, JSNodeType, renderCompressed } from "@candlefw/js";
+import { JSNode, JSNodeType, renderCompressed, stmt } from "@candlefw/js";
 import { RawTestRig } from "../types/raw_test.js";
 import { Reporter } from "../main.js";
 import { compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
@@ -6,34 +6,39 @@ import { jst } from "./jst.js";
 export function buildAssertionSiteNode(
     expression: JSNode,
     reporter: Reporter,
-    name = "",
-    SOLO = false,
-    INSPECT = false,
-    SKIP = false
+    index = 0
 ): RawTestRig {
 
-    let assertion_expr = null, BROWSER = null;
+    let assertion_expr = null, BROWSER = null, INSPECT = false, SKIP = false, SOLO = false, name = "";
 
-    for (const { node, meta: { index } } of jst(expression.nodes[1], 2).skipRoot()) {
+    for (const { node, meta: { skip } } of jst(expression.nodes[1], 2).skipRoot().makeSkippable()) {
 
         if (node.type == JSNodeType.IdentifierReference) {
-            if (node.value == "skip") {
+            const val = node.value;
 
+            // Remove the value from the node to 
+            // prevent the node from contributing
+            // to the assertion's required references
+
+
+            if (val == "skip") {
+                node.value = "";
                 SKIP = true;
                 continue;
-            } else if (node.value == "only" || node.value == "solo") {
-
+            } else if (val == "only" || val == "solo") {
+                node.value = "";
                 SOLO = true;
                 continue;
-            } else if (node.value == "inspect") {
-
+            } else if (val == "inspect") {
+                node.value = "";
                 INSPECT = true;
                 continue;
-            } else if (node.value == "browser") {
-
+            } else if (val == "browser") {
+                node.value = "";
                 BROWSER = true;
                 continue;
             }
+
         } else if (node.type == JSNodeType.StringLiteral) {
             if (name == "")
                 name = <string>node.value;
@@ -45,6 +50,8 @@ export function buildAssertionSiteNode(
                 renderCompressed(assertion_expr)}] already passed to this function.`);
 
         assertion_expr = node;
+
+        skip();
     }
 
     let AWAIT = false;
@@ -71,17 +78,23 @@ export function buildAssertionSiteNode(
 
     return <RawTestRig>{
         type: "DISCRETE",
-        index: 0,
-        expression: assertion_expr,
+        index,
         name,
-        ast,
+        RUN: !SKIP,
+        SOLO,
+        INSPECT,
+        IS_ASYNC: AWAIT,
+        BROWSER,
         error: null,
         imports: [],
         pos: assertion_expr.pos,
-        IS_ASYNC: AWAIT,
-        SOLO,
-        RUN: !SKIP,
-        BROWSER,
-        INSPECT
+        ast: {
+            type: JSNodeType.Script,
+            nodes: [
+                stmt(`$harness.test_index = ${index}; `),
+                ast
+            ]
+        },
+        expression: assertion_expr,
     };
 }

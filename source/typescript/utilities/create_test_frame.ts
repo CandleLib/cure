@@ -117,9 +117,10 @@ export function createTestFrame(
 
                 const { fail } = globals.reporter.colors;
 
-                console.log("\n" + fail + reason + colors.rst + "\n");
+                globals.reporter.notify("\n" + fail + reason + colors.rst + "\n");
 
                 if (error) {
+                    //Make sure this is printed no matter what.
                     console.error(error);
                     globals.outcome.errors.push(new TestError(error));
                 }
@@ -187,11 +188,11 @@ export function createTestFrame(
 
             if (WATCH) {
 
-                console.log("Waiting for changes...");
+                globals.reporter.notify("Waiting for changes...");
 
                 process.on("exit", () => {
 
-                    console.log("EXITING");
+                    globals.reporter.notify("EXITING");
 
                     endWatchedTests(globals, resolution);
                 });

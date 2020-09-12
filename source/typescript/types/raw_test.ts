@@ -22,6 +22,7 @@ export interface RawTestRig {
     hash?: string;
 
     error?: Error;
+    import_names: Set<string>;
 
     imports: { module: ImportModule, name: ImportName; }[];
 

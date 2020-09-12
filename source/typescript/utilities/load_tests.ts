@@ -26,6 +26,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
 
         lex.source = suite.origin;
 
+
         const { ast } = parser(lex);
 
         const

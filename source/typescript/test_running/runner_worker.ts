@@ -23,7 +23,11 @@ export async function loadImport(source) {
 }
 
 export function createAddendum(sources: import("/home/anthony/work/active/apps/cfw.workspace/packages/test/source/typescript/types/test_rig").ImportSource[], test: TestRig) {
-    return (sources.filter(s => s.module_specifier == "@candlefw/url").length > 0) ? `await URL.server(); URL.GLOBAL = new URL("${test.cwd}")` : "";
+    if (sources.findIndex(s => s.module_specifier == "@candlefw/wick") >= 0)
+        return `await cfw.wick.server(); cfw.url.GLOBAL = new cfw.url("${test.cwd + "/"}")`;
+    if (sources.findIndex(s => s.module_specifier == "@candlefw/url") >= 0)
+        return `await cfw.url.server(); cfw.url.GLOBAL = new cfw.url("${test.cwd + "/"}")`;
+    return "";
 }
 
 

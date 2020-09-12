@@ -13,7 +13,6 @@ import { format_rules } from "../utilities/format_rules.js";
 
 function syntaxHighlight(str: string, prop_name, node: JSNode): string {
 
-    console.log("A");
     const { type } = node;
 
     if ("==>><<<+-||&&!/*".includes(str))
@@ -81,9 +80,10 @@ Duration: ${num_col + result.duration + rst}
 Start Time: ${num_col + result.start + rst}
 End Time: ${num_col + result.end + rst}
 Timed Out: ${num_col + result.TIMED_OUT + rst}
-
 Passed: ${num_col + result.PASSED + rst}
+
 Asynchronous Test: ${num_col + test.IS_ASYNC + rst}
+Browser Test: ${num_col + !!test.BROWSER + rst}
 
 Source File: ${str_col + suite.origin + rst}
 
@@ -94,7 +94,7 @@ Imports:
 
 -------------------------------------------------------------------------------
 
-${getLexerFromLineColumnString(line, column, suite.data, suite.origin).errorMessage("Source Location", suite.origin).split("\n").join(("\n    "))}
+${getLexerFromLineColumnString(line + 1, column, suite.data, suite.origin).errorMessage("Source Location", suite.origin).split("\n").join(("\n    "))}
 
 -------------------------------------------------------------------------------
 

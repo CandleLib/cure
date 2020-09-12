@@ -32,7 +32,7 @@ export async function constructTestFunction(
             ImportedModules.set(source, await ld(source));
     }
 
-    const fn = ((true || test.IS_ASYNC) ? AsyncFunction : Function)(...[...args, addendum + source]),
+    const fn = (AsyncFunction)(...[...args, addendum + source]),
 
         test_args = [harness, TestError, ...spec.map(e => {
 

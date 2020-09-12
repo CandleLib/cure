@@ -12,6 +12,10 @@ import { Globals } from "./globals.js";
  * Provides an interface to report on running and completed tests.
  */
 export interface Reporter {
+    /**
+     * Called when a notification of an event is desired.
+     */
+    notify: (...message: string[]) => void;
 
     /**
      * Called when test files paths have been received and suites are about to be built.

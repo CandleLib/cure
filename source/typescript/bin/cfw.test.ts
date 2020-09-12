@@ -141,6 +141,8 @@ async function start() {
 
     process.title = "cfw.test";
 
+    const legit_log = console.log;
+
     /**
      * Instrumenting reads the project.json file, and uses it to prepare a test suite file.
      * 
@@ -154,17 +156,17 @@ async function start() {
 
     if (INSTRUMENT) {
 
-        if (HELP) return void console.log(INSTRUMENT_HELP_MASSAGE);
+        if (HELP) return void legit_log(INSTRUMENT_HELP_MASSAGE);
 
-        console.log("Instrumenting");
+        legit_log("Instrumenting");
 
         await instrument(process.cwd(), FORCE);
 
     } else {
 
-        if (files.length == 0) console.log(warning + "NO SUITE FILES FOUND" + reset);
+        if (files.length == 0) legit_log(warning + "NO SUITE FILES FOUND" + reset);
 
-        if (HELP || files.length == 0) return void console.log(HELP_MESSAGE);
+        if (HELP || files.length == 0) return void legit_log(HELP_MESSAGE);
 
         if (OUTPUT) {
 

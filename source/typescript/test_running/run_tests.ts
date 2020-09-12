@@ -11,9 +11,39 @@ import { TestMap } from "../types/test_map.js";
 
 
 function TestRigFromTestMap(test_map: TestMap, test_rig: TestRig): TestRig {
-    const { index, map, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args } = test_rig;
-    let o = Object.assign({ map, source, suite_index, pos, RUN, SOLO, INSPECT, IS_ASYNC, import_arg_specifiers, import_module_sources, type, test_function_object_args }, test_map);
+    const {
+        index,
+        map,
+        source,
+        suite_index,
+        pos,
+        RUN,
+        SOLO,
+        INSPECT,
+        IS_ASYNC,
+        import_arg_specifiers,
+        import_module_sources,
+        type,
+        test_function_object_args } = test_rig;
+
+    let o = Object.assign({
+        name: test_rig.name + "-->" + test_map.name,
+        map,
+        source,
+        suite_index,
+        pos,
+        RUN,
+        SOLO,
+        INSPECT,
+        IS_ASYNC,
+        import_arg_specifiers,
+        import_module_sources,
+        type,
+        test_function_object_args
+    }, test_map);
+
     o.index = index + o.index;
+
     return <TestRig>o;
 }
 
@@ -30,7 +60,8 @@ function mapResults(rst: TestResult) {
                 duration: rst.duration,
                 start: rst.start,
                 end: rst.end,
-                test: TestRigFromTestMap(tm, test),
+                test: TestRigFromTestMap(tm,
+                    test),
                 errors: []
             }));
 
@@ -51,7 +82,10 @@ function mapResults(rst: TestResult) {
     }
     return rst;
 }
-export async function runTests(tests: TestRig[], suites: TestSuite[], globals: Globals, RELOAD_DEPENDS: boolean = false) {
+export async function runTests(tests: TestRig[],
+    suites: TestSuite[],
+    globals: Globals,
+    RELOAD_DEPENDS: boolean = false) {
 
     const update_timeout = 0, { runner, reporter, outcome } = globals;
 
