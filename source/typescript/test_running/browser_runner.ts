@@ -55,7 +55,7 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
         },
         {
             name: "RESOLVE_TEST_RIG",
-            description: "Browser responding with the results of a test",
+            description: "Browser responding with the result s of a test",
             MIME: "application/json",
             respond: async function (tools) {
 
@@ -68,6 +68,10 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
                     server_test_rigs[test_id] = null;
 
                     active_tests.delete(test_id);
+
+                    //convert any errors into local test errors
+                    result.errors = result.errors.map(e => (new TestError(Object.assign(new Error, e))));
+
 
                     server_test_results.push(result);
 
@@ -171,10 +175,23 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
                 if (tools.filename !== "")
                     return false;
                 tools.setMIME();
-                console.log(globals.test_dir + "source/browser/index.html");
                 return tools.sendRawStreamFromFile(resource_directory + "/index.html");
             },
-            keys: { ext: server.ext.all, dir: "/*" }
+            keys: { ext: server.ext.all, dir: "/" }
+        },
+        {
+            name: "Test Files",
+            description: "Loads files from test dir of the tested repo",
+            MIME: "text/html",
+            respond: async function (tools) {
+                if (tools.filename !== "")
+                    return false;
+
+                tools.setMIMEBasedOnExt();
+
+                return tools.sendRawStreamFromFile([globals.package_dir, "test/", tools.pathname].join(("/")).replace(/\/\//g, "/"));
+            },
+            keys: { ext: server.ext.all, dir: "/test/*" }
         },
         $404_dispatch
     );
@@ -183,8 +200,8 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
     await spark.sleep(100);
 
 
-    startFirefox(port);
-    //startChrome(port);
+    //startFirefox(port);
+    startChrome(port);
 }
 
 function startFirefox(port) {
@@ -236,6 +253,8 @@ function startChrome(port) {
             '--metrics-recording-only',
             '--disable-default-apps',
             '--mute-audio',
+            '--minimal',
+            `--browser-test`,
             '--disable-backgrounding-occluded-windows',
             // on macOS, disable-background-timer-throttling is not enough
             // and we need disable-renderer-backgrounding too
@@ -262,8 +281,8 @@ function startChrome(port) {
     });
 
     process.on("SIGINT", () => {
-        //browser.kill("SIGKILL");
-        process.kill(browser.pid);
+        browser.kill("SIGTERM");
+        //process.kill(browser.pid);
         process.exit(0);
         return false;
     });
