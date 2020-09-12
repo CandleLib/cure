@@ -115,11 +115,21 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
                 }
             },
 
-            throws: (fn: Function): boolean => {
+            throws: (fn: Function, async = false): boolean | Promise<boolean> => {
+                if (async) {
+                    return new Promise(async res => {
+                        try {
+                            harness.regA = await fn();
+                            res(false);
+                        } catch (e) {
+                            harness.caught_exception = e;
+                            res(true);
+                        }
+                    });
+                }
                 try {
                     harness.regA = fn();
-                }
-                catch (e) {
+                } catch (e) {
                     harness.caught_exception = e;
                     return true;
                 }
