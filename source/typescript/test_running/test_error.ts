@@ -5,9 +5,8 @@ import {
     getSourceLineColumn,
     decodeJSONSourceMap,
 } from "@candlefw/conflagrate";
-
-import data from "../utilities/error_line_parser.js";
 import URL from "@candlefw/url";
+import data from "../utilities/error_line_parser.js";
 
 
 type StackTraceLocation = {
@@ -83,12 +82,13 @@ class TestError {
      */
     constructor(message, origin = "", line = 0, column = 0, match_source = "", replace_source = "", map: string = null, WORKER = true) {
 
+
         if (message instanceof TestError) return message;
 
         this.name = "TestError";
         this.origin = origin;
-        this.line = line - 1;
-        this.column = column - 1;
+        this.line = line;
+        this.column = column;
         this.match_source = match_source;
         this.replace_source = replace_source;
         this.original_error_stack = "";
@@ -115,6 +115,7 @@ class TestError {
 
             let { value, error: e } = lrParse<Array<StackTraceLocation>>(new Lexer(error_frame), <ParserData><any>data);
 
+
             if (e)
                 return; //throw EvalError("Could not parse stack line");
 
@@ -124,9 +125,9 @@ class TestError {
 
                 this.origin = loc.url;
 
-                this.line = loc.line - 1;
+                this.line = loc.line;
 
-                this.column = loc.col - 1;
+                this.column = loc.col;
 
                 //*DEBUG*/  this.message += " " + JSON.stringify(out); //*/
 
@@ -135,7 +136,7 @@ class TestError {
                 const { line: source_line, column: source_column }
                     = getSourceLineColumn(loc?.line - 2, loc?.col, decodeJSONSourceMap(map));
 
-                this.line = source_line;
+                this.line = source_line + 1;
 
                 this.column = source_column + 1;
 
@@ -161,7 +162,7 @@ class TestError {
                 data = (await (new URL(origin)).fetchText());
 
             //Check for source map.
-            ///* 
+            //* 
             while (data.includes("//#")) {
                 for (const [, loc] of data.matchAll(/sourceMappingURL=(.+)/g)) {
 
@@ -179,8 +180,8 @@ class TestError {
 
                     origin = this.origin = source_url.path;
                     data = source;
-                    column = c;
-                    line = l;
+                    column = c + 1;
+                    line = l + 1;
                 }
             }
             //*/;
@@ -197,7 +198,7 @@ class TestError {
 
         const { lex, origin } = await this.blameSource(accessible_files, origin_url);
 
-        const stack_data = this.original_error_stack
+        const stack_data = (this.original_error_stack && !this.INSPECTION_ERROR)
             ? "\n" + this.original_error_stack
             : "";
 
@@ -222,18 +223,17 @@ export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
 }
 
 export function getLexerFromLineColumnString(line, column, string, origin = ""): Lexer {
+
     const lex = new Lexer(string);
 
     lex.source = origin;
 
-    //line -= 0;
+    line -= 1;
 
     lex.CHARACTERS_ONLY = true;
 
-    while (!lex.END) {
-        if (lex.line == line && lex.char >= column) break;
-        lex.next();
-    }
+    while (!lex.END && lex.line != line) { lex.next(); }
+    while (!lex.END && lex.char < column) { lex.next(); };
 
     return lex;
 }

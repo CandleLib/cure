@@ -28,13 +28,13 @@ export function compileAssertionSite(expr: JSNode, reporter: Reporter)
             const
                 js_string = binding_compiler.build(expr),
 
-                { highlight, message, match, column, line } = binding_compiler.getExceptionMessage(expr, reporter),
+                { highlight, message, match } = binding_compiler.getExceptionMessage(expr, reporter),
 
                 error_data = [
                     `\`${message}\``,
                     `""`,
-                    line + 1 || expr.pos.line + 1,
-                    column + 1 || expr.pos.char + 1,
+                    expr.pos.line + 1,
+                    expr.pos.char,
                     `\`${match.replace(/"/g, "\"")}\``,
                     `\`${highlight.replace(/"/g, "\\\"")}\``
                 ];
