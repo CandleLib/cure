@@ -221,6 +221,7 @@ export function compileRawTestRigs(
                                         SOLO: prop.raw_rigs.some(r => r.SOLO),
                                         INSPECT: prop.raw_rigs.some(r => r.INSPECT),
                                         IS_ASYNC: prop.raw_rigs.some(r => r.IS_ASYNC),
+                                        BROWSER: prop.raw_rigs.some(r => r.BROWSER),
                                         imports: [],
                                         import_names: imports,
                                         test_maps: prop.raw_rigs.map(compileSequencedTests),
