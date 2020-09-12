@@ -153,6 +153,8 @@ export class BasicReporter implements Reporter {
 
         this.WORKING = true;
 
+        terminal.clear();
+
         terminal.log(output);
 
         await terminal.print();
@@ -168,10 +170,6 @@ export class BasicReporter implements Reporter {
 
 
     async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
-
-
-
-        terminal.clear();
 
         for (const { test, errors, duration, PASSED } of results) {
 
@@ -201,8 +199,9 @@ export class BasicReporter implements Reporter {
     }
 
     async complete(results: TestResult[], global: Globals, terminal: CLITextDraw): Promise<boolean> {
-        const time_end = performance.now();
         const
+            time_end = performance.now(),
+
             { suites: suite_map, watched_files_map }
                 = global,
 
