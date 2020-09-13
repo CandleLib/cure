@@ -200,14 +200,14 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
     await spark.sleep(100);
 
 
-    //startFirefox(port);
-    startChrome(port);
+    //startFirefox(port, globals);
+    startChrome(port, globals);
 }
 
-function startFirefox(port) {
+function startFirefox(port, globals: Globals) {
     const browser = spawn("firefox",
         [
-            //  `-headless`,
+            (globals.flags.USE_HEADLESS_BROWSER) ? `-headless` : "",
             '-new-instance',
             `https://localhost:${port}/`
         ],
@@ -230,7 +230,7 @@ function startFirefox(port) {
 }
 
 
-function startChrome(port) {
+function startChrome(port, globals: Globals) {
     const browser = spawn("google-chrome",
         [
             // https://github.com/GoogleChrome/chrome-launcher/blob/master/docs/chrome-flags-for-tools.md#--enable-automation
@@ -254,7 +254,7 @@ function startChrome(port) {
             '--disable-default-apps',
             '--mute-audio',
             '--minimal',
-            `--browser-test`,
+            //`--browser-test`,
             '--disable-backgrounding-occluded-windows',
             // on macOS, disable-background-timer-throttling is not enough
             // and we need disable-renderer-backgrounding too
@@ -264,7 +264,8 @@ function startChrome(port) {
             '--disable-device-discovery-notifications',
             '--force-fieldtrials=*BackgroundTracing/default/',
             `--enable-logging=stderr`,
-            //`--headless`,
+            "--remote-debugging-port=9222",
+            (globals.flags.USE_HEADLESS_BROWSER) ? `--headless` : "",
             //'--enable-kiosk-mode',
             `https://localhost:${port}/`
         ],

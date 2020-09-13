@@ -40,4 +40,9 @@ export interface TestFrameOptions {
      * run before throwing an error for taking too long.
      */
     max_timeout?: number;
+
+    /**
+     * If true, runs browser tests in headless mode (if available for selected browsers)
+     */
+    BROWSER_HEADLESS?: boolean;
 }

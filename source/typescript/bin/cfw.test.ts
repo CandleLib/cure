@@ -35,10 +35,13 @@ const
         f: false,
         force: "f",
         value: "",
+        headless: false,
         "?": false
     }),
 
     number_of_workers = args.threads ? parseInt(<string>args.threads.val) : 1,
+
+    USE_HEADLESS = !!(args.headless.val),
 
     WATCH = !!(args.w),
 
@@ -106,7 +109,11 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
     Number of Worker Threads: --threads <count>  
         
         Number of workers threads to use to run tests concurrently.
-        Minimum is 1 thread,
+        Default is 1 thread.
+
+    Headless Browser Testing: --headless
+        
+        Run browser tests in headless mode.
 
     Watch Input Files:  -w
         
@@ -170,7 +177,7 @@ async function start() {
 
         if (OUTPUT) {
 
-            const frame = createTestFrame({ WATCH: false, number_of_workers, test_dir: "" }, ...files);
+            const frame = createTestFrame({ BROWSER_HEADLESS: USE_HEADLESS, WATCH: false, number_of_workers, test_dir: "" }, ...files);
 
             frame.setReporter(new NullReporter());
 
@@ -188,7 +195,7 @@ async function start() {
                 return url.path;
             }));
 
-            const frame = createTestFrame({ WATCH, number_of_workers, test_dir: package_dir }, ...files);
+            const frame = createTestFrame({ BROWSER_HEADLESS: USE_HEADLESS, WATCH, number_of_workers, test_dir: package_dir }, ...files);
 
             await frame.start().then(d => {
 

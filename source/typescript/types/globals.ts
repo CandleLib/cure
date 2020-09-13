@@ -64,6 +64,8 @@ export interface Globals {
          */
         PRELOAD_IMPORTS: boolean;
 
+        USE_HEADLESS_BROWSER: boolean;
+
     };
 
     /**

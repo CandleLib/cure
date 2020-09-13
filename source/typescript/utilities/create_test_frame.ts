@@ -75,7 +75,8 @@ export function createTestFrame(
         number_of_workers = 2,
         assertion_compilers = [],
         test_dir,
-        max_timeout
+        max_timeout,
+        BROWSER_HEADLESS
     } = <TestFrameOptions>Object.assign({}, DefaultOptions, config_options);
 
     let
@@ -91,6 +92,8 @@ export function createTestFrame(
                 PENDING: false,
 
                 WATCH,
+
+                USE_HEADLESS_BROWSER: BROWSER_HEADLESS
             },
 
             test_dir,
@@ -168,6 +171,9 @@ export function createTestFrame(
             globals.watchers.length = 0;
 
             const { suites } = globals;
+
+            if (globals.flags.USE_HEADLESS_BROWSER)
+                globals.reporter.notify("-- browser tests will be run in a headless browser --");
 
             try {
 
