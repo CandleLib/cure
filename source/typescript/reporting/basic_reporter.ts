@@ -164,7 +164,7 @@ export class BasicReporter implements Reporter {
         if (this.pending) {
             const transfer = this.pending;
             this.pending = null;
-            this.renderToTerminal(transfer, terminal);
+            await this.renderToTerminal(transfer, terminal);
         }
     }
 
@@ -295,7 +295,7 @@ export class BasicReporter implements Reporter {
             ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (total - failed)} test${total - failed !== 1 ? "s" : ""} passed`
             : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
 
-        this.renderToTerminal([strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst].join("\n"), terminal);
+        await this.renderToTerminal([strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst].join("\n"), terminal);
 
         return FAILED;
     }
