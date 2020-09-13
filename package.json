@@ -10,7 +10,7 @@
 	},
 	"scripts": {
 		"prepublishOnly": "yarn build && yarn test",
-		"test": "cfw.test --threads=2 ./test/**",
+		"test": "node ./build/library/bin/cfw.test.js --threads=2 ./test/",
 		"test.watch": "cfw.test -w --threads=2 ./test/**",
 		"build.watch": "tsc --watch",
 		"build": "tsc -p ./tsconfig.json",

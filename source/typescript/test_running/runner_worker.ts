@@ -5,7 +5,7 @@ import util from "util";
 //Types
 import { parentPort } from "worker_threads";
 import { TestResult } from "../types/test_result.js";
-import { TestRig } from "../types/test_rig.js";
+import { TestRig } from "../types/test_rig";
 import { rst } from "../utilities/colors.js";
 import { TestError } from "./test_error.js";
 import { harnessConstructor } from "./test_harness.js";
