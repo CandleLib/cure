@@ -43,6 +43,7 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         console.log = harness.inspect;
 
+        //@ts-ignore
         harness.map = test.map;
 
         const fn = (await constructTestFunction(

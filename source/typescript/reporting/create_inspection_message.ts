@@ -100,7 +100,7 @@ ${getLexerFromLineColumnString(line + 1, column, suite.data, suite.origin).error
 
 Test Rig Source Code:
 
-    ${renderWithFormatting(parser(test.source).ast, format_rules, syntaxHighlight).trim().split("\n").join("\n    ")}
+    ${renderWithFormatting(parser(test.source).ast, <any>format_rules, syntaxHighlight).trim().split("\n").join("\n    ")}
 
 ${rst}-------------------------------------------------------------------------------`;
 

@@ -88,7 +88,7 @@ export async function createSpecFile(pkg_name: string, source_file_path: string,
         new_ast.nodes.unshift(stmt(`import {${imp_str.join(",")}} from ".${source_file_path}"`));
     }
 
-    return renderWithFormatting(new_ast, format_rules);
+    return renderWithFormatting(new_ast, <any>format_rules);
 }
 export function processPackageData(pkg: PackageJSONData, cfw_test_pkg: PackageJSONData = null, FORCE: boolean = false) {
 

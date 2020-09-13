@@ -138,4 +138,6 @@ export interface TestHarness {
      * to the function.
      */
     inspectAndThrow: (...vals: any[]) => void;
+
+    map: any;
 }
