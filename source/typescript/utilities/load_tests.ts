@@ -82,7 +82,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
                 args.push("$harness", "AssertionError",
                     ...import_arg_names);
 
-                source = renderWithFormattingAndSourceMap(ast, format_rules, null, mappings, 0, null);
+                source = renderWithFormattingAndSourceMap(ast, <any>format_rules, null, mappings, 0, null);
             }
 
             const sm = createSourceMap(mappings, "", "", [], [], []);

@@ -67,7 +67,7 @@ export function compileRawTestRigs(
 ): StatementProp {
 
     let lex_decl: cSet | Set<string> = new Set;
-    let glbl_decl: cSet | Set<string> = new Set;
+    let glbl_decl: cSet | cUnion | cDiff | Set<string> = new Set;
     let glbl_ref: cSet | cUnion | Set<string> = new Set;
 
     const
@@ -400,7 +400,7 @@ export function compileRawTestRigs(
         return <RigCase>{ rig, data: Object.assign(s, { b: true, required_references: new cUnion(s.required_references, rig.import_names) }), offset };
     }
 }
-function setGlobalDecl(prop: StatementProp, glbl_decl: cSet | Set<string>) {
+function setGlobalDecl(prop: StatementProp, glbl_decl: cSet | Set<string> | cUnion) {
     if (prop.declared_variables.size > 0)
         glbl_decl = new cUnion(glbl_decl, prop.declared_variables);
     return glbl_decl;
