@@ -5,7 +5,7 @@ import util from "util";
 //Types
 import { parentPort } from "worker_threads";
 import { TestResult } from "../types/test_result.js";
-import { TestRig } from "../types/test_rig.js";
+import { TestRig, ImportSource } from "../types/test_rig.js";
 import { rst } from "../utilities/colors.js";
 import { TestError } from "./test_error.js";
 import { harnessConstructor } from "./test_harness.js";
@@ -22,7 +22,7 @@ export async function loadImport(source) {
     return await import(source);
 }
 
-export function createAddendum(sources: import("/home/anthony/work/active/apps/cfw.workspace/packages/test/source/typescript/types/test_rig").ImportSource[], test: TestRig) {
+export function createAddendum(sources: ImportSource[], test: TestRig) {
     if (sources.findIndex(s => s.module_specifier == "@candlefw/wick") >= 0)
         return `await cfw.wick.server(); cfw.url.GLOBAL = new cfw.url("${test.cwd + "/"}")`;
     if (sources.findIndex(s => s.module_specifier == "@candlefw/url") >= 0)

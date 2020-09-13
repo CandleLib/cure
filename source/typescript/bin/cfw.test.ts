@@ -41,7 +41,7 @@ const
 
     number_of_workers = args.threads ? parseInt(<string>args.threads.val) : 1,
 
-    USE_HEADLESS = !!(args.headless.val),
+    USE_HEADLESS = !!(args.headless),
 
     WATCH = !!(args.w),
 

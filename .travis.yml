@@ -23,4 +23,4 @@ cache:
     - node_modules
 
 script:
-  - tsc -p ./tsconfig.json && yarn test
+  - yarn link && yarn link @candlefw/test && tsc -p ./tsconfig.json && yarn test
