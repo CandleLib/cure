@@ -12,7 +12,7 @@
 
 import { createTestFrame, NullReporter } from "@candlefw/test";
 
-const frame = createTestFrame({ WATCH: false, number_of_workers: 1, max_timeout: 300 }, "./test/data/error_message_test_spec.js");
+const frame = createTestFrame({ WATCH: false, number_of_workers: 1, max_timeout: 1000 }, "./test/data/error_message_test_spec.js");
 
 frame.setReporter(new NullReporter());
 
