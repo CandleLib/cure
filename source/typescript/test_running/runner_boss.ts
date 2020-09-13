@@ -110,7 +110,7 @@ export class RunnerBoss {
         this.loadWorkers(RELOAD_DEPENDS, this.workers);
 
         const
-            server_tests = tests.filter(t => !t.BROWSER),
+            server_tests = tests,
             server_workers = this.workers;
 
         const

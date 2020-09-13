@@ -76,7 +76,7 @@ export function buildAssertionSiteNode(
 
     const { ast } = compileAssertionSite(assertion_expr, reporter);
 
-    return <RawTestRig>{
+    return <RawTestRig><any>{
         type: "DISCRETE",
         index,
         name,

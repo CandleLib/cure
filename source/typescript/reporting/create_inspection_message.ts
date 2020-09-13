@@ -83,7 +83,6 @@ Timed Out: ${num_col + result.TIMED_OUT + rst}
 Passed: ${num_col + result.PASSED + rst}
 
 Asynchronous Test: ${num_col + test.IS_ASYNC + rst}
-Browser Test: ${num_col + !!test.BROWSER + rst}
 
 Source File: ${str_col + suite.origin + rst}
 
