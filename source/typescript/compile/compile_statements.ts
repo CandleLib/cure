@@ -114,7 +114,12 @@ export function compileRawTestRigs(
 
             case JSNodeType.ExpressionStatement: {
 
-                const [expr] = node.nodes;
+                let [expr] = node.nodes;
+
+                if (node.nodes[0].type == JSNodeType.AwaitExpression) {
+                    AWAIT = true;
+                    expr = expr.nodes[0];
+                }
 
                 if (isExprStmtAssertionSite(node)) {
 
