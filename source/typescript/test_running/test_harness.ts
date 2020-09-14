@@ -1,5 +1,4 @@
 
-import { TestError } from "./test_error.js";
 import { TestHarness } from "../types/test_harness";
 
 const harnessConstructor = (equal, util, performance, rst, te: typeof TestError, BROWSER = false) => {
@@ -146,7 +145,6 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
                 return a == b;
             },
 
-
             externAssertion: (fn: Function): boolean => {
 
                 try {
@@ -192,6 +190,29 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
 
             inspectAndThrow: (...args) => {
                 throw createInspectionError(...args);
+            },
+
+            shouldHaveProperty(object, ...properties: string[]) {
+                for (const prop of properties) {
+                    if (typeof object[prop] == "undefined")
+                        harness.setException(new te(`Expected property ${prop} to be present on object ${util.inspect(object)}`));
+                }
+            },
+
+            shouldEqual(A, B, strict?: boolean) {
+                if (strict && A !== B) {
+                    harness.setException(new te(`Expected A->${A} to strictly equal B->${B}`));
+                } else if (A != B) {
+                    harness.setException(new te(`Expected A->${A} to equal B->${B}`));
+                }
+            },
+
+            shouldNotEqual(A, B, strict?: boolean) {
+                if (strict && A === B) {
+                    harness.setException(new te(`Expected A->${A} to strictly not equal B->${B}`));
+                } else if (A == B) {
+                    harness.setException(new te(`Expected A->${A} to not equal B->${B}`));
+                }
             }
 
         };

@@ -2,7 +2,7 @@
 
 import { getPackageJsonObject, getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
 
-import { createTestFrame, NullReporter } from "../main.js";
+import { createTestFrame, NullReporter, BasicReporter } from "../main.js";
 import { instrument } from "../utilities/instrument.js";
 import URL from "@candlefw/url";
 
@@ -10,6 +10,7 @@ import URL from "@candlefw/url";
 import fs from "fs";
 
 import node_path from "path";
+import { CIReporter } from "../reporting/ci_reporter.js";
 const fsp = fs.promises;
 
 
@@ -22,6 +23,7 @@ const
     reset = xtF(xtReset),
 
     args = getProcessArgs({
+        reporter: true,
         input: true,
         i: "input",
         watch: false,
@@ -55,6 +57,8 @@ const
         args.__array__[0][0].toLowerCase() == "instrument"
     ),
     TL = `Delightfully Brilliant Testing.`,
+
+    report = (args?.reporter?.val ?? "basic"),
 
     INSTRUMENT_HELP_MASSAGE = `
 
@@ -95,7 +99,6 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
 
 [Options]: 
 
-
     Show help message: --help | -h | ?  
         
         Display this help message and exit. 
@@ -114,6 +117,18 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
     Headless Browser Testing: --headless
         
         Run browser tests in headless mode.
+
+    Reporter: --reporter = basic | null | ci 
+        
+        Change the reporter type
+
+        [basic] : Reporter that provides detailed test information
+                  during and after tests are run.
+
+        [ci] : Same output as basic reporter, except it does not output
+               intermediate results.
+    
+        [null] : Reporter that does not output any information.
 
     Watch Input Files:  -w
         
@@ -135,7 +150,7 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
 
 README: https://github.com/CandleFW/test/blob/master/readme.md
 `;
-let files: string[] = args.trailing_arguments;
+let files: string[] = args.trailing_arguments || [];
 
 const HELP = !!(args.help || args["?"]) || files.length == 0;
 
@@ -197,6 +212,16 @@ async function start() {
 
             const frame = createTestFrame({ BROWSER_HEADLESS: USE_HEADLESS, WATCH, number_of_workers, test_dir: package_dir }, ...files);
 
+            switch (report) {
+                case "null":
+                    frame.setReporter(new NullReporter); break;
+                case "ci":
+                    frame.setReporter(new CIReporter); break;
+                case "basic":
+                default:
+                    frame.setReporter(new BasicReporter); break;
+            }
+
             await frame.start().then(d => {
 
                 if (d.errors)
@@ -210,7 +235,7 @@ async function start() {
 
 export async function getSpecFileNames(...files: string[]): Promise<string[]> {
 
-    //recursively load data from all subfolders
+    //recursively load data from all sub-folders
 
     const pending = files
         .filter(f => !(new URL(f)).ext)
