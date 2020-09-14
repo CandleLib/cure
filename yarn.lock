@@ -63,9 +63,9 @@
     "@candlefw/wind" "*"
 
 "@candlefw/lantern@*":
-  version "0.0.16"
-  resolved "https://registry.yarnpkg.com/@candlefw/lantern/-/lantern-0.0.16.tgz#cbdba3640d3525ef21b3d8d635de33f9375ea70d"
-  integrity sha512-OtviDBp6qRqqoJWq2a+gRkfY2clrqyoYy1TiAZqIzY5UButdrevBEROEyDQ7ASTwDRlouKOF9CASCaoM0UnY7Q==
+  version "0.0.18"
+  resolved "https://registry.yarnpkg.com/@candlefw/lantern/-/lantern-0.0.18.tgz#84c9b89ea1020fba6adb9d01a35f4dc6be2b6d88"
+  integrity sha512-PeVpV9fgcZTIWat9JzbYqpSyPOL3ye8kDUgcbNqcZWD8HHR6k6qwKMJrvOuoKR4FUclrkafbr0V/fg6sYr5Azw==
   dependencies:
     "@candlefw/cfw" "*"
     "@candlefw/conflagrate" "*"
@@ -118,9 +118,9 @@
     "@candlefw/wind" "*"
 
 "@candlefw/wick@*":
-  version "0.11.1"
-  resolved "https://registry.yarnpkg.com/@candlefw/wick/-/wick-0.11.1.tgz#a4414e1a2cf82ee4d39db75750bcd87fb9697f44"
-  integrity sha512-tPT3vXlplQ+1akommr8ebhPdUVlUNenvP0rXSrKkfg5U8Hm6tjbSwoXmvFMe+XNASUvkw78/8Uncl/52uOyKHg==
+  version "0.12.1"
+  resolved "https://registry.yarnpkg.com/@candlefw/wick/-/wick-0.12.1.tgz#fd5c2bbbf234c7cee9ddce1ab572c4b9b5570fc9"
+  integrity sha512-6iTlDJuFZayWyVhF/PkOpQpn/+YrXNXDdbnZ+LWuCErc9nKAFSWnw2YghHKnOt8HzrPSklLzQX9Y4bivF5QV/w==
   dependencies:
     "@candlefw/conflagrate" "*"
     "@candlefw/css" "*"
