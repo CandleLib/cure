@@ -1,5 +1,6 @@
 
 import { TestHarness } from "../types/test_harness";
+import { TestError } from "./test_error";
 
 const harnessConstructor = (equal, util, performance, rst, te: typeof TestError, BROWSER = false) => {
 
