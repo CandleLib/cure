@@ -32,12 +32,12 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
     const resource_directory = globals.test_dir + "source/browser/";
 
     const server = await lantern({
+        type: "http2",
         port,
-        host: "127.0.0.1",
-        secure: lantern.mock_certificate
-    },
-        { log: (..._) => { }, error: (..._) => { }, }
-    );
+        host: "0.0.0.0",
+        secure: lantern.mock_certificate,
+        log: lantern.null_logger
+    });
 
     server.addDispatch(
         {
@@ -55,7 +55,7 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
         },
         {
             name: "RESOLVE_TEST_RIG",
-            description: "Browser responding with the result s of a test",
+            description: "Browser responding with the results of a test",
             MIME: "application/json",
             respond: async function (tools) {
 
@@ -71,7 +71,6 @@ export async function prepareTestServer(globals: Globals, test_rigs: TestRig[], 
 
                     //convert any errors into local test errors
                     result.errors = result.errors.map(e => (new TestError(Object.assign(new Error, e))));
-
 
                     server_test_results.push(result);
 
