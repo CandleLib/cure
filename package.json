@@ -1,16 +1,16 @@
 {
 	"name": "@candlefw/test",
-	"version": "0.4.0",
+	"version": "0.4.1",
 	"description": "CandleFW Testing System",
 	"type": "module",
 	"types": "./build/types/main.d.ts",
 	"main": "./build/library/main.js",
 	"bin": {
-		"cfw.test": "./build/library/bin/cfw.test.js"
+		"cfw.test": "./build/library/bin/cli.js"
 	},
 	"scripts": {
 		"prepublishOnly": "yarn build && yarn test",
-		"test": "node ./build/library/bin/cfw.test.js --threads=2 ./test/",
+		"test": "node ./build/library/bin/cli.js --headless --threads=2 --reporter=ci ./test/",
 		"test.watch": "cfw.test -w --threads=2 ./test/**",
 		"build.watch": "tsc --watch",
 		"build": "tsc -p ./tsconfig.json",

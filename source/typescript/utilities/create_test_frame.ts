@@ -80,6 +80,7 @@ export function createTestFrame(
 
     let
         resolution = null,
+
         globals: Globals = {
 
             max_timeout,
@@ -103,7 +104,7 @@ export function createTestFrame(
 
             suites: null,
 
-            reporter: InitializeReporterColors(new BasicReporter()),
+            reporter: null,
 
             runner: null,
 
@@ -142,6 +143,9 @@ export function createTestFrame(
         endWatchedTests: () => endWatchedTests(globals, resolution),
 
         start: (): Promise<Outcome> => new Promise(async (res) => {
+
+            if (!globals.reporter)
+                globals.reporter = InitializeReporterColors(new BasicReporter());
 
             await URL.server();
 

@@ -1,9 +1,11 @@
 source/
-tests/
+test/
 doc/
 docs/
 workspaces/
 .git/
 .travis.yml
-.tsconfig.json
+tsconfig.json
+
+
 

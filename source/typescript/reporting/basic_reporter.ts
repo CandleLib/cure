@@ -162,8 +162,11 @@ export class BasicReporter implements Reporter {
         this.WORKING = false;
 
         if (this.pending) {
+
             const transfer = this.pending;
+
             this.pending = null;
+
             await this.renderToTerminal(transfer, terminal);
         }
     }
@@ -171,7 +174,7 @@ export class BasicReporter implements Reporter {
 
     async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
 
-        for (const { test, errors, duration, PASSED } of results) {
+        for (const { test, duration, PASSED } of results) {
 
             let suites_ = this.suites.suites, target_suite = this.suites;
 
@@ -202,8 +205,7 @@ export class BasicReporter implements Reporter {
         const
             time_end = performance.now(),
 
-            { suites: suite_map, watched_files_map }
-                = global,
+            { suites: suite_map, watched_files_map } = global,
 
             suites = [...suite_map.values()],
 
@@ -216,7 +218,7 @@ export class BasicReporter implements Reporter {
             errors = [], inspections = [];
 
         let
-            FAILED = false,
+            HAS_FAILED = false,
 
             total = results.length,
 
@@ -229,7 +231,7 @@ export class BasicReporter implements Reporter {
 
                 if (!PASSED) {
                     failed++;
-                    FAILED = true;
+                    HAS_FAILED = true;
                 }
 
                 const { suites: suites_name, name } = getNameData(test, global);
@@ -297,6 +299,6 @@ export class BasicReporter implements Reporter {
 
         await this.renderToTerminal([strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst].join("\n"), terminal);
 
-        return FAILED;
+        return HAS_FAILED;
     }
 }
