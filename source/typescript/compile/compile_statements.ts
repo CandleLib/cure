@@ -100,6 +100,8 @@ export function compileRawTestRigs(
         .makeSkippable()
         .makeMutable()
     ) {
+        let FORCE_USE = false;
+
         switch (node.type) {
 
             case JSNodeType.FormalParameters: continue;
@@ -332,8 +334,14 @@ export function compileRawTestRigs(
                 ) glbl_decl.add(id(bdg));
 
             default: {
+
+                if (node.type == JSNodeType.LabeledStatement
+                    && node.nodes[0].value == "keep"
+                ) FORCE_USE = true;
+
+
                 if (node.type & JSNodeClass.STATEMENT) {
-                    //Extract IdentifierReferences and IdentifierAssignments 
+                    // Extract IdentifierReferences and IdentifierAssignments 
                     // and append to the statement scope.
                     const prop = compileRawTestRigs(node, report, imports);
 
@@ -341,6 +349,8 @@ export function compileRawTestRigs(
 
                     glbl_ref = setGlobalRef(prop, glbl_ref);
                     glbl_decl = setGlobalDecl(prop, glbl_decl);
+
+                    prop.FORCE_USE = FORCE_USE || prop.FORCE_USE;
 
                     if (prop.stmt?.nodes?.length > 0)
                         statements.push(prop);
