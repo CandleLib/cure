@@ -176,12 +176,14 @@ export function compileRawTestRigs(
 
                     if (val == "assert_group") {
 
-                        let fn_stmt: JSNode = null, SEQUENCED = false;
+                        let fn_stmt: JSNode = null, SEQUENCED = false, BROWSER = false;
 
                         for (const { node } of jst(expr.nodes[1], 2)) {
                             if (node.type == JSNodeType.IdentifierReference) {
                                 if ((<string>node.value).toLowerCase() == "sequence") {
                                     SEQUENCED = true;
+                                } else if ((<string>node.value).toLowerCase() == "browser") {
+                                    BROWSER = true;
                                 }
                             } if (node.type == JSNodeType.StringLiteral)
                                 group_name = <string>node.value;
@@ -228,7 +230,7 @@ export function compileRawTestRigs(
                                         SOLO: prop.raw_rigs.some(r => r.SOLO),
                                         INSPECT: prop.raw_rigs.some(r => r.INSPECT),
                                         IS_ASYNC: prop.raw_rigs.some(r => r.IS_ASYNC),
-                                        BROWSER: prop.raw_rigs.some(r => r.BROWSER),
+                                        BROWSER: BROWSER || prop.raw_rigs.some(r => r.BROWSER),
                                         imports: [],
                                         import_names: imports,
                                         test_maps: prop.raw_rigs.map(compileSequencedTests),
@@ -249,6 +251,9 @@ export function compileRawTestRigs(
                                 const pending_test = prop.raw_rigs.map(r => {
                                     if (group_name)
                                         r.name = group_name + "-->" + r.name;
+
+                                    r.BROWSER = BROWSER || r.BROWSER;
+
                                     return r;
                                 }).map(r => mapRig(r, prop, statements.length));
 
