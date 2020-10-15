@@ -1,5 +1,4 @@
 import { performance } from "perf_hooks";
-import { inspect } from "util";
 
 import { TestError } from "../test_running/test_error.js";
 import { Globals } from "../types/globals.js";

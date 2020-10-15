@@ -30,10 +30,6 @@ export async function compileTest(ast: JSNode, reporter: Reporter, origin: strin
 
     let index = 0;
 
-    //console.log(imports, ast_prop.raw_rigs[0]);
-
-    //  process.exit();
-
     for (const rig of ast_prop.raw_rigs) {
 
         const { import_names } = rig;

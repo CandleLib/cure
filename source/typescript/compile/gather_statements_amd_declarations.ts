@@ -14,13 +14,6 @@ export function gatherStatementsAndDeclarations(
         declared_refs: Set<string> = new Set(),
         stmts: JSNode[] = [];
 
-    //    / console.log(0, 10, {
-    //    /     r: active_refs, offset,
-    //    /     statements: statements.map(s => ({ s: renderCompressed(s.stmt), fu: s.FORCE_USE, have: s.declared_variables, need: s.required_references })),
-    //    /     declarations: declarations.map(s => ({ s: renderCompressed(s.stmt), fu: s.FORCE_USE, have: s.declared_variables, need: s.required_references }))
-    //    / }
-    //    / );
-
     for (let i = offset - 1; i > -1; i--) {
 
         const stmt = statements[i];

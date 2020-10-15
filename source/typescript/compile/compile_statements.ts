@@ -393,10 +393,6 @@ export function compileRawTestRigs(
             pos: ast.pos
         };
 
-        //*/
-        // rig.ast.nodes.unshift(...stmts);
-        //  console.log(console.log(rig.ast));
-
         rig.import_names = imports;
 
         rigs.push(rig);
