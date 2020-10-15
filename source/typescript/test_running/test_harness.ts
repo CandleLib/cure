@@ -56,6 +56,8 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
 
             errors: [],
 
+            time_points: [],
+
             regA: null,
 
             regB: null,
@@ -81,14 +83,19 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
              * Marks point in execution time.  
              */
             markTime() {
-                const now = performance.now();
 
-                if (harness.last_time > 0) {
-                    //@ts-ignore
-                    harness.errors.push(new te(new Error("Time marked at: " + (now - harness.last_time)), "", 0, 0, "", ""));
-                    harness.last_time = -1;
-                } else
-                    harness.last_time = now;
+                harness.time_points.push(performance.now());
+            },
+
+            getTime(message: string) {
+                const now = performance.now();
+                const t = harness.time_points.pop();
+
+                if (typeof t == "number") {
+                    console.log((message ?? "Time marked at:") + " " + (now - t) + "ms");
+                    return now - t;
+                }
+                return Infinity;
             },
 
             makeLiteral: (value: any): string => {
