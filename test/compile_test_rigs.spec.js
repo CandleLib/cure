@@ -2,9 +2,9 @@
  * 
  * A Compile Statements function should build test rigs from a 
  * source file. Each test rig SHOULD represent all necessary 
- * statements required to correctly assesses the expression 
+ * statements required to correctly assess the expression 
  * within the assertion site. Spurious statements MAY be 
- * included, but statements that have an  effect on the result 
+ * included, but statements that have an effect on the result 
  * of the assertion expression MUST be included. 
  * 
  * There should be a unique test rig for each assertion site,

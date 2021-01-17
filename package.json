@@ -1,6 +1,6 @@
 {
 	"name": "@candlefw/test",
-	"version": "0.4.2",
+	"version": "0.4.3",
 	"description": "CandleFW Testing System",
 	"type": "module",
 	"types": "./build/types/main.d.ts",
@@ -25,7 +25,7 @@
 	"dependencies": {
 		"@candlefw/conflagrate": "*",
 		"@candlefw/hydrocarbon": "*",
-		"@candlefw/js": "*",
+		"@candlefw/js": "^0.3.1",
 		"@candlefw/lantern": "*",
 		"@candlefw/spark": "*",
 		"@candlefw/url": "*",

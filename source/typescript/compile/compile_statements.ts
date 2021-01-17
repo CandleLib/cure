@@ -57,13 +57,15 @@ const { getIdentifierName: id } = tools;
  * source file.
  */
 //Only top level assertion sites can be made discrete. Any nested assertion site
-//will an active captive of any TL assertion site that has dependencies on statements
-//that call the site. 
+//will be an active captive of any top level assertion site that depends on statements
+//that contain the captive assertion site. 
 export function compileRawTestRigs(
     ast: JSNode,
     report: Reporter,
     imports: ImportModule[],
-    LEAVE_ASSERTION_SITE = false
+    LEAVE_ASSERTION_SITE = false,
+    OUTER_SEQUENCED = false,
+    sequence_offset = 0,
 ): StatementProp {
 
     let lex_decl: cSet | Set<string> = new Set;
@@ -73,6 +75,7 @@ export function compileRawTestRigs(
     const
         tests: RigCase[] = [],
         statements: StatementProp[] = [],
+
         //Only function declarations are hoisted.
         declarations: StatementProp[] = [];
 
@@ -128,7 +131,7 @@ export function compileRawTestRigs(
                     expr.nodes[0].value = ""; // Forcefully delete assert name
 
                     const
-                        rig = buildAssertionSiteNode(expr, report, tests.length),
+                        rig = buildAssertionSiteNode(expr, report, tests.length + sequence_offset),
                         data = compileRawTestRigs(
                             expr,
                             report,
@@ -176,7 +179,7 @@ export function compileRawTestRigs(
 
                     if (val == "assert_group") {
 
-                        let fn_stmt: JSNode = null, SEQUENCED = false, BROWSER = false;
+                        let fn_stmt: JSNode = null, SEQUENCED = false, BROWSER = false, SOLO = false;
 
                         for (const { node } of jst(expr.nodes[1], 2)) {
                             if (node.type == JSNodeType.IdentifierReference) {
@@ -184,6 +187,8 @@ export function compileRawTestRigs(
                                     SEQUENCED = true;
                                 } else if ((<string>node.value).toLowerCase() == "browser") {
                                     BROWSER = true;
+                                } else if ((<string>node.value).toLowerCase() == "solo") {
+                                    SOLO = true;
                                 }
                             } if (node.type == JSNodeType.StringLiteral)
                                 group_name = <string>node.value;
@@ -201,52 +206,90 @@ export function compileRawTestRigs(
                         }
                         if (fn_stmt) {
 
-                            const prop = compileRawTestRigs(
-                                fn_stmt.type == JSNodeType.ArrowFunction ? fn_stmt.nodes[1] : fn_stmt,
-                                report,
-                                imports,
-                                SEQUENCED
-                            );
+                            if (SEQUENCED || OUTER_SEQUENCED) {
 
-                            if (SEQUENCED) {
-                                //Create a sequenced test rig   
+                                //Create a sequenced test rig  
+                                if (OUTER_SEQUENCED) {
 
-                                if (prop.stmt.type == JSNodeType.FunctionExpression)
-                                    prop.stmt.nodes = prop.stmt.nodes.slice(-1)[0].nodes;
+                                    const prop = compileRawTestRigs(fn_stmt.nodes.slice().pop(), report, imports, true, true, tests.length + sequence_offset);
+                                    const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
 
-                                prop.stmt.type = JSNodeType.Script;
+                                    prop.required_references = new cUnion(imports_, prop.required_references);
 
-                                const imports = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
+                                    const pending_test = prop.raw_rigs.map(r => {
+                                        if (group_name)
+                                            r.name = group_name + "-->" + r.name;
 
-                                prop.required_references = new cUnion(imports, prop.required_references);
+                                        r.SOLO = SOLO || r.SOLO;
+                                        r.BROWSER = BROWSER || r.BROWSER;
 
-                                const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
+                                        return r;
+                                    }).map(r => mapRig(r, prop, statements.length));
 
-                                    rig: {
-                                        type: "SEQUENCE",
-                                        name: group_name,
-                                        index: 0,
-                                        RUN: prop.raw_rigs.some(r => r.RUN),
-                                        SOLO: prop.raw_rigs.some(r => r.SOLO),
-                                        INSPECT: prop.raw_rigs.some(r => r.INSPECT),
-                                        IS_ASYNC: prop.raw_rigs.some(r => r.IS_ASYNC),
-                                        BROWSER: BROWSER || prop.raw_rigs.some(r => r.BROWSER),
-                                        imports: [],
-                                        import_names: imports,
-                                        test_maps: prop.raw_rigs.map(compileSequencedTests),
-                                        pos: prop.stmt.pos,
-                                        ast: prop.stmt,
-                                        expression: null
-                                    },
 
-                                    data: prop,
+                                    tests.push(...pending_test);
 
-                                    offset: statements.length
-                                };
+                                    statements.push(prop);
 
-                                tests.push(pending);
+                                    mutate(prop.stmt);
+                                } else {
 
+
+                                    const prop = compileRawTestRigs(
+                                        fn_stmt.type == JSNodeType.ArrowFunction ? fn_stmt.nodes[1] : fn_stmt,
+                                        report,
+                                        imports,
+                                        true,
+                                        true
+                                    );
+
+                                    if (prop.stmt.type == JSNodeType.FunctionExpression)
+                                        prop.stmt.nodes = prop.stmt.nodes.slice(-1)[0].nodes;
+
+                                    prop.stmt.type = JSNodeType.Script;
+
+                                    const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
+
+                                    prop.required_references = new cUnion(imports_, prop.required_references);
+
+                                    const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
+
+                                        rig: {
+                                            type: "SEQUENCE",
+                                            name: group_name,
+                                            index: 0,
+                                            RUN: prop.raw_rigs.some(r => r.RUN),
+                                            SOLO: prop.raw_rigs.some(r => r.SOLO),
+                                            INSPECT: prop.raw_rigs.some(r => r.INSPECT),
+                                            IS_ASYNC: prop.raw_rigs.some(r => r.IS_ASYNC),
+                                            BROWSER: BROWSER || prop.raw_rigs.some(r => r.BROWSER),
+                                            imports: [],
+                                            import_names: imports_,
+                                            test_maps: prop.raw_rigs.map(compileSequencedTests),
+                                            pos: prop.stmt.pos,
+                                            ast: prop.stmt,
+                                            expression: null
+                                        },
+
+                                        data: prop,
+
+                                        offset: statements.length
+                                    };
+
+                                    tests.push(pending);
+
+                                    mutate(null);
+
+                                }
                             } else {
+
+
+                                const prop = compileRawTestRigs(
+                                    fn_stmt.type == JSNodeType.ArrowFunction ? fn_stmt.nodes[1] : fn_stmt,
+                                    report,
+                                    imports,
+                                    false,
+                                );
 
                                 const pending_test = prop.raw_rigs.map(r => {
                                     if (group_name)
@@ -258,10 +301,12 @@ export function compileRawTestRigs(
                                 }).map(r => mapRig(r, prop, statements.length));
 
                                 tests.push(...pending_test);
+
+
+                                mutate(null);
+
                             }
                         }
-
-                        mutate(null);
 
                     } else {
 
