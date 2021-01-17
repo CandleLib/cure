@@ -185,7 +185,7 @@ export class RunnerBoss {
     }
 
     private async runWorkers(globals: Globals, tests: TestRig[], workers: WorkerHandler[], finished: TestResult[], module?) {
-        if (tests.length > 0) {
+        if (tests.length > 0 || workers.some(wkr => !wkr.READY)) {
             for (const wkr of workers) {
                 if (wkr.READY && tests.length > 0) {
                     const test = tests.shift();
