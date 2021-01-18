@@ -6,7 +6,8 @@ import { RawTestRig } from "../types/raw_test.js";
 
 import { Reporter } from "../main.js";
 import { compileImport } from "./compile_import.js";
-import { buildAssertionSiteNode } from "./build_assertion_site_rig.js";
+import { buildRawTestRig } from "./build_raw_test_rig.js";
+import { parseAssertionArguments } from "./parse_assertion_site_args.js";
 import { StatementProp } from "./statement_props";
 import { gatherStatementsAndDeclarations } from "./gather_statements_amd_declarations.js";
 import { cSet, cUnion, cDiff } from "./closure_set.js";
@@ -131,7 +132,7 @@ export function compileRawTestRigs(
                     expr.nodes[0].value = ""; // Forcefully delete assert name
 
                     const
-                        rig = buildAssertionSiteNode(expr, report, tests.length + sequence_offset),
+                        rig = buildRawTestRig(expr, report, tests.length + sequence_offset),
                         data = compileRawTestRigs(
                             expr,
                             report,
@@ -175,35 +176,20 @@ export function compileRawTestRigs(
 
                     const val = expr.nodes[0].value;
 
-                    let group_name = "";
-
                     if (val == "assert_group") {
 
-                        let fn_stmt: JSNode = null, SEQUENCED = false, BROWSER = false, SOLO = false;
+                        let fn_stmt: JSNode = null;
 
-                        for (const { node } of jst(expr.nodes[1], 2)) {
-                            if (node.type == JSNodeType.IdentifierReference) {
-                                if ((<string>node.value).toLowerCase() == "sequence") {
-                                    SEQUENCED = true;
-                                } else if ((<string>node.value).toLowerCase() == "browser") {
-                                    BROWSER = true;
-                                } else if ((<string>node.value).toLowerCase() == "solo") {
-                                    SOLO = true;
-                                }
-                            } if (node.type == JSNodeType.StringLiteral)
-                                group_name = <string>node.value;
-                            else if (
-                                node.type == JSNodeType.FunctionExpression
-                                || node.type == JSNodeType.ArrowFunction
-                            ) {
-                                if (
-                                    node.type == JSNodeType.FunctionExpression
-                                    && node.nodes[0]
-                                ) node.nodes[0] = null;
+                        let { SEQUENCED, BROWSER, SOLO, timeout_limit, assertion_expr: node, name }
+                            = parseAssertionArguments(expr),
+                            group_name = name;
 
-                                fn_stmt = node;
-                            }
+                        if (node.type == JSNodeType.FunctionExpression || node.type == JSNodeType.ArrowFunction) {
+                            if (node.type == JSNodeType.FunctionExpression && node.nodes[0])
+                                node.nodes[0] = null;
+                            fn_stmt = node;
                         }
+
                         if (fn_stmt) {
 
                             if (SEQUENCED || OUTER_SEQUENCED) {
@@ -254,7 +240,7 @@ export function compileRawTestRigs(
 
                                     const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
 
-                                        rig: {
+                                        rig: <RawTestRig>{
                                             type: "SEQUENCE",
                                             name: group_name,
                                             index: 0,
@@ -268,7 +254,8 @@ export function compileRawTestRigs(
                                             test_maps: prop.raw_rigs.map(compileSequencedTests),
                                             pos: prop.stmt.pos,
                                             ast: prop.stmt,
-                                            expression: null
+                                            expression: null,
+                                            timeout_limit
                                         },
 
                                         data: prop,

@@ -49,4 +49,6 @@ export interface RawTestRig {
      * The expression that is to be tested
      */
     expression: JSNode;
+
+    timeout_limit?: number;
 };

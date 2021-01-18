@@ -34,7 +34,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
 
         let source = "";
 
-        for (const { error: e, ast, imports, name, pos, index, type, test_maps, IS_ASYNC, SOLO, RUN, INSPECT, BROWSER } of raw_tests) {
+        for (const { error: e, ast, imports, name, pos, index, type, test_maps, IS_ASYNC, SOLO, RUN, INSPECT, BROWSER, timeout_limit } of raw_tests) {
 
             const
                 mappings = <Array<number[]>>[],
@@ -105,6 +105,7 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
                 RUN,
                 INSPECT,
                 BROWSER: BROWSER || false,
+                timeout_limit: timeout_limit > 0 ? timeout_limit : globals.max_timeout,
                 cwd: new URL(suite.origin).dir
             });
         }

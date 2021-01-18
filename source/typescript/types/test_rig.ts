@@ -165,5 +165,9 @@ export interface TestRig {
      * Run the test in a browser context if true.
      */
     BROWSER: boolean;
+    /**
+     * Maximum amount of time in milliseconds test is allowed to run before timing out
+     */
+    timeout_limit: number;
 };
 
