@@ -169,5 +169,10 @@ export interface TestRig {
      * Maximum amount of time in milliseconds test is allowed to run before timing out
      */
     timeout_limit: number;
+
+    /**
+     * Maximum number of times a timed out test can be retried before failing
+     */
+    retries: number;
 };
 

@@ -84,6 +84,8 @@ export function createTestFrame(
 
         globals: Globals = {
 
+            default_retries: 1,
+
             max_timeout,
 
             flags: {

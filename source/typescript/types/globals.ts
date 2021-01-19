@@ -74,6 +74,11 @@ export interface Globals {
     max_timeout: number;
 
     /**
+     * Default number of times a timed out test should be retried before failing
+     */
+    default_retries: number;
+
+    /**
      * Name of the package test running within. 
      */
     package_name?: string,

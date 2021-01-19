@@ -74,6 +74,8 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
 
             map: "",
 
+            start: 0,
+
             mark(index: number) {
                 //@ts-ignore
                 harness.errors.push(new te(new Error("marked: " + index), "", 0, 0, "", ""));

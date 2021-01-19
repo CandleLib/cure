@@ -6,6 +6,10 @@ import { ImportSource } from "./test_rig.js";
  */
 export interface TestHarness {
     /**
+     * Stack storing user registered time points;
+     */
+    time_points: number[];
+    /**
      * Timestamp 
      */
     last_time: number;
@@ -138,6 +142,12 @@ export interface TestHarness {
      * to the function.
      */
     inspectAndThrow: (...vals: any[]) => void;
+
+
+    /**
+     * Marks the start of the execution of the test code
+     */
+    start: number,
 
     map: any;
 }

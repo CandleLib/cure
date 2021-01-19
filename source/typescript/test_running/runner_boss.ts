@@ -219,16 +219,21 @@ export class RunnerBoss {
                         wkr.target = this.createWorker(wkr, module);
                         wkr.READY = true;
 
-                        finished.push({
-                            start: wkr.start,
-                            end: wkr.start + dur,
-                            duration: dur,
-                            //@ts-ignore
-                            errors: [new TestError("Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1)],
-                            test: wkr.test,
-                            TIMED_OUT: true,
-                            PASSED: false
-                        });
+                        if (wkr.test.retries > 0) {
+                            wkr.test.retries--;
+                            tests.push(wkr.test);
+                        } else {
+                            finished.push({
+                                start: wkr.start,
+                                end: wkr.start + dur,
+                                duration: dur,
+                                //@ts-ignore
+                                errors: [new TestError("Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1)],
+                                test: wkr.test,
+                                TIMED_OUT: true,
+                                PASSED: false
+                            });
+                        }
                     }
                 }
             }

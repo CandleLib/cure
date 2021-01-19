@@ -106,7 +106,8 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
                 INSPECT,
                 BROWSER: BROWSER || false,
                 timeout_limit: timeout_limit > 0 ? timeout_limit : globals.max_timeout,
-                cwd: new URL(suite.origin).dir
+                cwd: new URL(suite.origin).dir,
+                retries: globals.default_retries
             });
         }
 
