@@ -45,7 +45,7 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         //@ts-ignore
         harness.map = test.map;
-
+        //@ts-ignore
         global.harness = harness;
 
         const fn = (await constructTestFunction(
@@ -59,7 +59,7 @@ async function RunTest({ test }: { test: TestRig; }) {
             fail
         ));
 
-
+        //@ts-ignore
         harness.start = result.start = performance.now();
         await fn();
     } catch (e) {
@@ -70,8 +70,7 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         if (e instanceof TestError) {
             error = e;
-        }
-        else {
+        } else {
             try {
                 error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", test.map);
             } catch (ee) {
