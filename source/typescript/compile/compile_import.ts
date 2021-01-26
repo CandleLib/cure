@@ -2,11 +2,9 @@ import { JSNodeType, JSNode } from "@candlefw/js";
 import { traverse } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import { ImportModule } from "../types/import_module";
+import { CompileRawTestRigsOptions } from "./compile_statements";
 
-export function compileImport(node: JSNode, imports: ImportModule[]) {
-
-
-
+export function compileImport(node: JSNode, { imports }: CompileRawTestRigsOptions) {
 
     const module_specifier = node.nodes[1]?.nodes[0]?.value;
 
