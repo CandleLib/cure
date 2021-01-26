@@ -376,11 +376,15 @@ export function compileRawTestRigs(
                     && node.nodes[0].value == "keep"
                 ) FORCE_USE = true;
 
-
                 if (node.type & JSNodeClass.STATEMENT) {
                     // Extract IdentifierReferences and IdentifierAssignments 
                     // and append to the statement scope.
-                    const prop = compileRawTestRigs(node, report, imports);
+                    const
+                        prop = compileRawTestRigs(node, report, imports),
+                        pending_test = prop.raw_rigs
+                            .map(r => mapRig(r, prop, statements.length));
+
+                    tests.push(...pending_test);
 
                     AWAIT = prop.AWAIT || AWAIT;
 
