@@ -25,7 +25,11 @@ export function parseAssertionArguments(call_node: JSNode): AssertionSiteArgs {
         timeout_limit: 0
     };
 
-    for (const { node, meta: { skip } } of jst(call_node.nodes[1], 2).skipRoot().makeSkippable()) {
+    for (const { node, meta: { skip, mutate } } of jst(call_node.nodes[1], 2)
+        .skipRoot()
+        .makeSkippable()
+        .makeMutable()
+    ) {
 
         if (Node_Is_An_Identifier(node))
 
@@ -40,7 +44,7 @@ export function parseAssertionArguments(call_node: JSNode): AssertionSiteArgs {
             handleStringArgument(result, node);
 
         else
-            handleOtherExpressionTypes(result, node);
+            handleOtherExpressionTypes(result, node, mutate);
 
 
         skip();
@@ -66,13 +70,14 @@ function Node_Is_A_Number(node: JSNode) {
     return node.type == JSNodeType.NumericLiteral && Number.isInteger(parseFloat(<string>node.value));
 }
 
-function handleOtherExpressionTypes(result: AssertionSiteArgs, node: JSNode) {
+function handleOtherExpressionTypes(result: AssertionSiteArgs, node: JSNode, mutate: (replacement_node: JSNode) => void) {
 
     if (Node_Is_A_Call(node)) {
         const [name, first_argument] = node.nodes;
 
         if (name.value.toString().toLowerCase() == "name") {
             //console.log(name, first_argument);
+            mutate(null);
             return;
         }
     }
