@@ -57,11 +57,25 @@ function Node_Is_An_Identifier(node: JSNode) {
     return node.type == JSNodeType.IdentifierReference;
 }
 
+
+function Node_Is_A_Call(node: JSNode) {
+    return node.type == JSNodeType.CallExpression;
+}
+
 function Node_Is_A_Number(node: JSNode) {
     return node.type == JSNodeType.NumericLiteral && Number.isInteger(parseFloat(<string>node.value));
 }
 
 function handleOtherExpressionTypes(result: AssertionSiteArgs, node: JSNode) {
+
+    if (Node_Is_A_Call(node)) {
+        const [name, first_argument] = node.nodes;
+
+        if (name.value.toString().toLowerCase() == "name") {
+            //console.log(name, first_argument);
+            return;
+        }
+    }
 
     if (result.assertion_expr)
         throw createMultipleAssertionExpressionError(node, result.assertion_expr);
