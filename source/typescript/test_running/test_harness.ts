@@ -305,7 +305,7 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
     }
 
     function harness_clearClipboard() {
-        for (const test of clipboard.slice(1).reverse()) {
+        for (const test of clipboard) {
             const end = performance.now();
             const start = test.start;
             active_test_result.duration = end - start;
@@ -317,7 +317,7 @@ const harnessConstructor = (equal, util, performance, rst, te: typeof TestError,
     }
 
     function harness_getResults() {
-        return results.slice().reverse();
+        return results.slice();
     }
 
     const log = console.log;

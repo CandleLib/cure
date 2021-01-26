@@ -70,7 +70,7 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         harness_restoreLog();
 
-        results = harness_getResults().slice(1);
+        results = harness_getResults().slice(0, -1);
 
     } catch (e) {
 
@@ -96,7 +96,7 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         harness_clearClipboard();
 
-        results = harness_getResults().slice(0, 1); //Only return the worker test
+        results = harness_getResults().slice(-1); //Only return the worker test
     }
 
     if (results.length == 0) {
