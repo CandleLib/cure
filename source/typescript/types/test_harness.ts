@@ -143,6 +143,19 @@ export interface TestHarness {
      */
     inspectAndThrow: (...vals: any[]) => void;
 
+    /**
+     * Creates a new TestResult object and pushes it to
+     * the top of the test clipboard stack, which makes it the
+     * active test frame. All data pertaining to a test
+     * collected by this new object. 
+     */
+    pushTestResult: () => void;
+
+    /**
+     * Remove the top most TestResult from the test clipboard stack
+     * and adds it to the completed TestResult array.
+     */
+    popTestResult: () => void;
 
     /**
      * Marks the start of the execution of the test code
