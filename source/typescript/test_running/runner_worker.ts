@@ -12,11 +12,18 @@ import { harnessConstructor } from "./test_harness.js";
 import { constructTestFunction } from "./construct_test_function.js";
 import { fail, pass } from "../utilities/colors.js";
 
-export const
+export const ImportedModules: Map<string, any> = new Map();
 
-    ImportedModules: Map<string, any> = new Map(),
-    //@ts-ignore
-    harness = harnessConstructor(equal, util, performance, rst, TestError, false);
+//@ts-ignore
+const { harness,
+    harness_init,
+    harness_clearClipboard,
+    harness_getResults,
+    harness_overrideLog,
+    harness_restoreLog,
+} = harnessConstructor(equal, util, performance, rst, TestError, false);
+
+export { harness };
 
 export async function loadImport(source) {
     return await import(source);
@@ -32,17 +39,8 @@ export function createAddendum(sources: ImportSource[], test: TestRig) {
 
 
 async function RunTest({ test }: { test: TestRig; }) {
-
-    const result: TestResult = { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
-
-    result.start = performance.now();
-
-    const log = console.log;
-
+    let results = [];
     try {
-
-        console.log = harness.inspect;
-
         //@ts-ignore
         harness.map = test.map;
         //@ts-ignore
@@ -59,12 +57,24 @@ async function RunTest({ test }: { test: TestRig; }) {
             fail
         ));
 
-        //@ts-ignore
-        harness.start = result.start = performance.now();
+        harness_overrideLog();
+
+        harness_init();
+
+        //Global Test Result
+        harness.pushTestResult();
+
         await fn();
+
+        harness.popTestResult();
+
+        harness_restoreLog();
+
+        results = harness_getResults().slice(1);
+
     } catch (e) {
 
-        console.log = log;
+        harness_restoreLog();
 
         let error = null;
 
@@ -80,23 +90,33 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         error.index = harness.test_index;
 
-        harness.errors.push(error);
+        harness.setException(error);
+
+        harness.popTestResult();
+
+        harness_clearClipboard();
+
+        results = harness_getResults().slice(0, 1); //Only return the worker test
     }
 
-    console.log = log;
+    if (results.length == 0) {
 
-    result.end = performance.now();
+        harness_init();
 
-    harness.last_error = null;
+        harness.pushTestResult();
 
-    result.errors = harness.errors;
+        harness.setException(new Error("No results generated from this test"));
 
-    if (result.errors.filter(e => !e.INSPECTION_ERROR).length > 0)
-        result.PASSED = false;
+        harness.popTestResult();
 
-    result.duration = result.end - result.start;
+        results = harness_getResults();
+    }
 
-    parentPort.postMessage(result);
+    results.forEach((r, i) => {
+        if (!r.name) r.name = test.name + "_" + i;
+    });
+
+    parentPort.postMessage(results);
 }
 
 parentPort.on("message", RunTest);

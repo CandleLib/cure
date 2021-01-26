@@ -1,4 +1,5 @@
 import { TestError } from "../test_running/test_error.js";
+import { TestResult } from "./test_result.js";
 import { ImportSource } from "./test_rig.js";
 
 /**
@@ -58,7 +59,6 @@ export interface TestHarness {
      * Stores an exception caught within an assertion site.
      */
     caught_exception: Error | TestError;
-    last_error: Error | TestError;
 
     /**
      * In a sequenced run of tests, gives the index of the last

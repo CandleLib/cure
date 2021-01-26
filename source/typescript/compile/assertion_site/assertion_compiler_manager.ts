@@ -36,13 +36,12 @@ export function* selectBindingCompiler(node: JSNode): Generator<AssertionSiteCom
             yield c;
         }
     }
-    //return BindingCompilers
-    //return BindingCompilers.filter(c => );
 };
 
 export function clearBindingsCompilers() {
     BindingCompilers.length = 0;
 }
+
 export function test() {
     throw new SyntaxError("This is the error that was thrown");
 }

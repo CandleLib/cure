@@ -70,27 +70,9 @@ export class RunnerBoss {
             console.error(e);
         });
 
-        worker.on("message", result => {
-            finished.push(result);
-            wkr.READY = true;
-        });
-
-        return worker;
-    }
-
-    createBrowserWorker(wkr, module_url = this.module_url) {
-
-        const
-            finished = this.finished,
-            worker = new Worker(module_url);
-
-        worker.on("error", e => {
-            //globals.exit("Failed Worker", e);
-            console.error(e);
-        });
-
-        worker.on("message", result => {
-            finished.push(result);
+        worker.on("message", (results: TestResult[]) => {
+            results.forEach(res => res.test = wkr.test);
+            finished.push(results);
             wkr.READY = true;
         });
 
@@ -184,13 +166,14 @@ export class RunnerBoss {
         }
     }
 
-    private async runWorkers(tests: TestRig[], workers: WorkerHandler[], finished: TestResult[], module?) {
+    private async runWorkers(tests: TestRig[], workers: WorkerHandler[], finished: TestResult[][], module?) {
         if (tests.length > 0 || workers.some(wkr => !wkr.READY)) {
             for (const wkr of workers) {
                 if (wkr.READY && tests.length > 0) {
                     const test = tests.shift();
                     if (test.error) {
-                        finished.push({
+                        finished.push([{
+                            name: wkr.test.name,
                             start: 0,
                             end: 0,
                             duration: 0,
@@ -199,7 +182,7 @@ export class RunnerBoss {
                             test: test,
                             TIMED_OUT: true,
                             PASSED: false
-                        });
+                        }]);
                     }
                     else {
                         wkr.test = test;
@@ -223,7 +206,8 @@ export class RunnerBoss {
                             wkr.test.retries--;
                             tests.push(wkr.test);
                         } else {
-                            finished.push({
+                            finished.push([{
+                                name: wkr.test.name,
                                 start: wkr.start,
                                 end: wkr.start + dur,
                                 duration: dur,
@@ -232,7 +216,7 @@ export class RunnerBoss {
                                 test: wkr.test,
                                 TIMED_OUT: true,
                                 PASSED: false
-                            });
+                            }]);
                         }
                     }
                 }

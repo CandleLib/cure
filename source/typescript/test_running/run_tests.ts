@@ -49,6 +49,8 @@ function TestRigFromTestMap(test_map: TestMap, test_rig: TestRig): TestRig {
 
 function mapResults(rst: TestResult) {
 
+    return rst;
+
     const test = rst.test;
 
     if (test.type == "SEQUENCE") {

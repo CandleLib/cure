@@ -1,4 +1,4 @@
-import { JSNode, JSNodeType, stmt } from "@candlefw/js";
+import { JSNode, JSNodeType, renderCompressed, stmt } from "@candlefw/js";
 import { RawTestRig } from "../types/raw_test.js";
 import { Reporter } from "../main.js";
 import { compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
@@ -11,7 +11,16 @@ export function buildRawTestRig(
     index = 0
 ): RawTestRig {
 
-    const { assertion_expr, BROWSER, INSPECT, SKIP, SOLO, name, timeout_limit } = parseAssertionArguments(call_expression);
+    const {
+        assertion_expr,
+        name_expression,
+        BROWSER,
+        INSPECT,
+        SKIP,
+        SOLO,
+        name,
+        timeout_limit
+    } = parseAssertionArguments(call_expression);
 
     let AWAIT = false;
 
@@ -31,10 +40,10 @@ export function buildRawTestRig(
             assert_site_inputs.add(<string>value);
 
     if (!assertion_expr)
-        throw call_expression.pos.throw(`Could not find an expression for assertion site${call_expression.pos.slice()}`);
+        throw call_expression.pos.throw(`Could not find an expression for assertion site [${call_expression.pos.slice()}]`);
 
     const { ast } = compileAssertionSite(assertion_expr, reporter);
-
+    const { pos } = assertion_expr;
     return <RawTestRig><any>{
         type: "DISCRETE",
         index,
@@ -50,8 +59,11 @@ export function buildRawTestRig(
         ast: {
             type: JSNodeType.Script,
             nodes: [
-                stmt(`$harness.test_index = ${index}; `),
-                ast
+                stmt(`$harness.pushTestResult(${index});`),
+                ast,
+                stmt(`$harness.setSourceLocation(${[pos.off, pos.line + 1, pos.column].join(",")});`),
+                name_expression ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`) : stmt(";"),
+                stmt(`$harness.popTestResult(${index});`),
             ]
         },
         expression: assertion_expr,

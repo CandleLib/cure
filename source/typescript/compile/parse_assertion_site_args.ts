@@ -1,4 +1,4 @@
-import { JSNode, JSNodeType, renderCompressed } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeType, renderCompressed } from "@candlefw/js";
 import { jst } from "./jst.js";
 
 type AssertionSiteArgs = {
@@ -8,6 +8,7 @@ type AssertionSiteArgs = {
     SKIP: boolean;
     SOLO: boolean;
     SEQUENCED: boolean;
+    name_expression?: JSNode;
     name: string;
     timeout_limit: number;
 };
@@ -21,6 +22,7 @@ export function parseAssertionArguments(call_node: JSNode): AssertionSiteArgs {
         SKIP: false,
         SOLO: false,
         SEQUENCED: false,
+        name_expression: null,
         name: "",
         timeout_limit: 0
     };
@@ -75,8 +77,13 @@ function handleOtherExpressionTypes(result: AssertionSiteArgs, node: JSNode, mut
     if (Node_Is_A_Call(node)) {
         const [name, first_argument] = node.nodes;
 
-        if (name.value.toString().toLowerCase() == "name") {
+        if (
+            name.value.toString().toLowerCase() == "name"
+            &&
+            first_argument.type | JSNodeClass.EXPRESSION
+        ) {
             //console.log(name, first_argument);
+            result.name_expression = first_argument;
             mutate(null);
             return;
         }
