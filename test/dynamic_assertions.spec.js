@@ -9,13 +9,13 @@ const source = await (URL.resolveRelative("./data/dynamic_test.js")).fetchText()
 const raw_rigs = createTestRigsFromStringSource(source);
 
 assert("Rigs object is not undefined", raw_rigs !== undefined);
-assert("One RawTestRig object created", raw_rigs.length == 1);
+assert("One RawTestRig object created", raw_rigs.length == 8);
 assert("No import names", raw_rigs[0].import_names.size == 0);
 
 //Run the test
 const suite = await createTestSuiteFromSource(source);
 
-assert(suite == null);
+assert(suite != null);
 assert(suite.error == null);
 assert(suite.rigs.length == 8);
 
@@ -24,7 +24,7 @@ const outcome = await getSuiteTestOutcomeFromSource(source);
 assert(outcome != null);
 assert(outcome.FAILED == true);
 assert("32 Test Results have been dynamically generated", outcome.results.length == 32);
-assert(solo, "32 Test Names have been dynamically generated", outcome.results.map(r => r.name) == [
+assert("32 Test Names have been dynamically generated", outcome.results.map(r => r.name) == [
     "While A0", "While A1", "While A2", "While A3",
     "While B0", "While B1", "While B2", "While B3",
     "For(;;) A0", "For(;;) A1", "For(;;) A2", "For(;;) A3",
