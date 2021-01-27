@@ -7,8 +7,6 @@ import { ImportSource, ModuleSpecifier } from "./imports";
  * Contains a fully compiled test script that can be run. 
  */
 export interface Test {
-    //type: "SEQUENCE" | "DISCRETE",
-
     /**
      * Name of the test. Includes suite name and redundant name info.
      */
@@ -64,12 +62,6 @@ export interface Test {
      */
     suite_index: number;
 
-    ///**
-    //* In a SEQUENCE TestRig, test_maps map individual assertion 
-    //* sites to virtual test outcomes.
-    //*/
-    //test_maps?: TestMap[];
-    //
     /**
      * Flag for only running and reporting the results of this TestRig. 
      * 
@@ -114,10 +106,12 @@ export interface Test {
      * run from within their own directories. 
      */
     cwd: string;
+
     /**
      * Run the test in a browser context if true.
      */
     BROWSER: boolean;
+
     /**
      * Maximum amount of time in milliseconds test is allowed to run before timing out
      */

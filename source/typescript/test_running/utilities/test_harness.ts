@@ -2,7 +2,7 @@ import { TestHarness } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
 import { TestError } from "../../utilities/test_error";
 
-const harnessConstructor = (equal, util, performance: Performance, rst, te: typeof TestError, BROWSER = false) => {
+const constructHarness = (equal, util, performance: Performance, rst, te: typeof TestError) => {
 
     let active_test_result: TestInfo = null, previous_start = 0, results: TestInfo[] = [];
 
@@ -365,4 +365,4 @@ const harnessConstructor = (equal, util, performance: Performance, rst, te: type
 
 
 
-export { harnessConstructor };
+export { constructHarness };

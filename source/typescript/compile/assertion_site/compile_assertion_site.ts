@@ -2,58 +2,31 @@ import { traverse } from "@candlefw/conflagrate";
 import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, renderWithFormatting, stmt } from "@candlefw/js";
 import { Reporter } from "../../test.js";
 import { AssertionSite } from "../../types/assertion_site.js";
+import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
-import { compileLoopingStatement, CompileRawTestRigsOptions, compileTestsFromSourceAST } from "../compile_statements.js";
-import { selectBindingCompiler } from "../expression_handler/expression_handler_manager.js";
-import { getFirstBlockStatement } from "../utilities/get_first_block_statement.js";
+import { combinePropRefsAndDecl, compileLoopingStatement, repackageAssertionSite } from "../compile_statements.js";
+import { CompilerState } from "../../types/compiler_state";
+import { selectExpressionHandler } from "../expression_handler/expression_handler_manager.js";
 import { replaceFirstBlockContentWithNodes } from "../utilities/replace_block_statement_contents.js";
 import { jst } from "../utilities/traverse_js_node.js";
 import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
 
-export function compileAssertionSite(
-    call_expression: JSNode,
-    reporter: Reporter,
-    index = 0
+
+function createAssertSiteObject(
+    static_name: string,
+    SKIP: boolean,
+    SOLO: boolean,
+    INSPECT: boolean,
+    AWAIT: boolean,
+    BROWSER: any,
+    original_assertion_expression: JSNode,
+    ast: JSNode,
+    timeout_limit: number
 ): AssertionSite {
-
-    const {
-        assertion_expr,
-        name_expression,
-        BROWSER,
-        INSPECT,
-        SKIP,
-        SOLO,
-        name,
-        timeout_limit
-    } = parseAssertionSiteArguments(call_expression);
-
-    let AWAIT = false;
-
-    const assert_site_inputs: Set<string> = new Set();
-
-    for (const { node: { type, value } } of jst(assertion_expr)
-        .filter("type",
-            JSNodeType.AwaitExpression,
-            JSNodeType.IdentifierReference,
-            JSNodeType.IdentifierName,
-            JSNodeType.IdentifierBinding,
-            JSNodeType.Identifier,
-            JSNodeType.Identifier))
-        if (type == JSNodeType.AwaitExpression)
-            AWAIT = true;
-        else
-            assert_site_inputs.add(<string>value);
-
-    if (!assertion_expr)
-        throw call_expression.pos.throw(`Could not find an expression for assertion site [${call_expression.pos.slice()}]`);
-
-    const { ast } = compileAssertionSiteTestExpression(assertion_expr, reporter),
-        { pos } = assertion_expr,
-        rig_name = name || renderCompressed(assertion_expr);
-    return <AssertionSite><any>{
+    return <AssertionSite>{
         type: "DISCRETE",
-        index,
-        name: rig_name,
+        index: -1,
+        static_name,
         RUN: !SKIP,
         SOLO,
         INSPECT,
@@ -61,21 +34,10 @@ export function compileAssertionSite(
         BROWSER,
         error: null,
         imports: [],
-        pos: assertion_expr.pos,
-        ast: {
-            type: JSNodeType.Script,
-            nodes: [
-                stmt(`$harness.pushTestResult(${index});`),
-                ast,
-                stmt(`$harness.setSourceLocation(${[pos.off, pos.line + 1, pos.column].join(",")});`),
-                name_expression
-                    ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`)
-                    : stmt(`$harness.setResultName("${rig_name}")`),
-                stmt(`$harness.popTestResult(${index});`),
-            ]
-        },
-        expression: assertion_expr,
-        timeout_limit
+        pos: original_assertion_expression.pos,
+        expression: original_assertion_expression,
+        timeout_limit,
+        ast,
     };
 }
 
@@ -86,18 +48,17 @@ export function compileAssertionSite(
  * @param reporter - A Reporter for color data.
  * @param origin File path of the source test file.
  */
-export function compileAssertionSiteTestExpression(expr: JSNode, reporter: Reporter)
+export function compileAssertionSiteTestExpression(state: CompilerState, expr: JSNode)
     : { ast: JSNode, optional_name: string; } {
 
-
-    for (const binding_compiler of selectBindingCompiler(expr)) {
+    for (const binding_compiler of selectExpressionHandler(expr, state.globals)) {
 
         if (binding_compiler.test(expr)) {
 
             const
                 js_string = binding_compiler.build(expr),
 
-                { highlight, message, match } = binding_compiler.getExceptionMessage(expr, reporter),
+                { highlight, message, match } = binding_compiler.getExceptionMessage(expr, state.globals.reporter),
 
                 error_data = [
                     `\`${message}\``,
@@ -127,20 +88,72 @@ export function compileAssertionSiteTestExpression(expr: JSNode, reporter: Repor
     return { ast: expr, optional_name: `Could not find a AssertionSiteCompiler for JSNode [${JSNodeTypeLU[expr.type]}]`, };
 }
 
-export function compileAssertionGroupSite(
-    node: JSNode,
-    OUTER_SEQUENCED: boolean,
-    options: CompileRawTestRigsOptions
-): JSNode {
-    console.log(renderWithFormatting(node));
+export function compileAssertionSite(
+    state: CompilerState,
+    call_expression: JSNode,
+): AssertionSite {
+
+    const {
+        assertion_expr,
+        name_expression,
+        BROWSER,
+        INSPECT,
+        SKIP,
+        SOLO,
+        name,
+        timeout_limit
+    } = parseAssertionSiteArguments(call_expression);
+
+    if (!assertion_expr)
+        throw call_expression.pos.throw(`Could not find an expression for assertion site [${call_expression.pos.slice()}]`);
+
     const
-        { statements, test_sites, report, imports }
-            = options,
+        AWAIT = jst(assertion_expr).filter("type", JSNodeType.AwaitExpression).run(true).length > 0,
 
-        block = getFirstBlockStatement(node),
+        { ast: source_ast } = compileAssertionSiteTestExpression(state, assertion_expr),
 
-        { SEQUENCED, BROWSER, SOLO, timeout_limit, assertion_expr: assert_expr, name }
-            = parseAssertionSiteArguments(node), group_name = name,
+        rig_name = name || renderCompressed(assertion_expr),
+
+        { pos } = assertion_expr,
+
+        ast: JSNode = <JSNode><any>{
+            type: JSNodeType.Script,
+            nodes: [
+                stmt(`$harness.pushTestResult(${0});`),
+                source_ast,
+                stmt(`$harness.setSourceLocation(${[pos.off,
+                pos.line + 1, pos.column].join(",")});`),
+                name_expression
+                    ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`)
+                    : stmt(`$harness.setResultName("${rig_name}")`),
+                stmt(`$harness.popTestResult(${0});`),
+            ]
+        };
+
+    return createAssertSiteObject(
+        rig_name,
+        SKIP, SOLO,
+        INSPECT, AWAIT,
+        BROWSER,
+        assertion_expr,
+        ast,
+        timeout_limit
+    );
+}
+
+
+export function compileAssertionGroupSite(
+    state: CompilerState,
+    node: JSNode,
+    OUTER_SEQUENCED: boolean
+): JSNode {
+
+    const
+        { statements, tests: tests }
+            = state,
+
+        { SEQUENCED, BROWSER, SOLO, timeout_limit, name, INSPECT, SKIP }
+            = parseAssertionSiteArguments(node),
 
         RETURN_PROPS_ONLY = true,
 
@@ -148,78 +161,64 @@ export function compileAssertionGroupSite(
 
         OUT_SEQUENCED = true,
 
-        prop = compileLoopingStatement(options,
-            block,
+        prop = compileLoopingStatement(
+            state,
+            node,
             LEAVE_ASSERTION_SITE,
             OUT_SEQUENCED,
             RETURN_PROPS_ONLY
         );
 
-
-    console.log({ prop });
     if (prop) {
 
-        console.log(renderWithFormatting(node), LEAVE_ASSERTION_SITE);
-
         if (LEAVE_ASSERTION_SITE) {
-            process.exit();
-            const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
 
-            prop.required_references = new setUnion(imports_, prop.required_references);
 
-            for (const rig of prop.raw_rigs) {
+            const
+                imports_ = new Set(prop.assertion_sites.flatMap(r => [...r.import_names.values()])),
+                assertion_site =
+                    createAssertSiteObject(
+                        name,
+                        SKIP,
+                        SOLO,
+                        INSPECT,
+                        prop.assertion_sites.some(s => s.IS_ASYNC),
+                        BROWSER,
+                        node,
+                        prop.stmt,
+                        timeout_limit
+                    );
 
-                if (group_name)
-                    rig.name = group_name + "-->" + rig.name;
-
-                rig.BROWSER = BROWSER || rig.BROWSER;
-
-                rig.SOLO = SOLO || rig.SOLO;
-
-                rig.ast = replaceFirstBlockContentWithNodes(assert_expr, rig.ast);
-
-                test_sites.push(repackageRawTestRig(rig, prop, statements.length));
-            }
-
+            if (imports_.size > 0)
+                prop.required_references = new setUnion(imports_, prop.required_references);
+            //
+            tests.push(repackageAssertionSite(assertion_site, prop, statements.length));
+            //
             statements.push(prop);
-
+            //
             return prop.stmt;
 
         } else {
 
-            process.exit();
+            combinePropRefsAndDecl(state, prop);
 
+            for (const assertion_site of prop.assertion_sites) {
 
-            const prop = compileTestsFromSourceAST(
-                fn_stmt.type == JSNodeType.ArrowFunction ? fn_stmt.nodes[1] : fn_stmt,
-                report,
-                imports,
-                false
-            );
+                assertion_site.static_name = createHierarchalName(name, assertion_site.static_name);
+                assertion_site.BROWSER = assertion_site.BROWSER || BROWSER;
+                assertion_site.SOLO = assertion_site.SOLO || SOLO;
+                assertion_site.RUN = assertion_site.RUN || !SKIP;
+                assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
 
-            for (const rig of prop.raw_rigs) {
-
-                rig.ast = replaceFirstBlockContentWithNodes(node, rig.ast);
-
-                test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+                tests.push(repackageAssertionSite(assertion_site, prop, statements.length));
             }
-            /*
 
-            for (const rig of prop.raw_rigs) {
-
-                if (group_name)
-                    rig.name = group_name + "-->" + rig.name;
-
-                rig.BROWSER = BROWSER || rig.BROWSER;
-
-                rig.ast = replaceFirstBlockContentWithNodes(assert_expr, rig.ast);
-
-                test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+            if (prop.stmt.nodes.length > 0) {
+                state.AWAIT = prop.AWAIT || state.AWAIT;
+                statements.push(prop);
             }
-            */
-
-
         }
     }
+
     return null;
 }

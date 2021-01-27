@@ -1,3 +1,4 @@
+
 /**
  * The primary export is a function
  * @module compile
@@ -7,7 +8,7 @@ import { JSNode } from "@candlefw/js";
 import { ImportModule } from "../types/imports.js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { compileTestsFromSourceAST } from "./compile_statements.js";
-import { Reporter } from "../test.js";
+import { Globals } from "../types/globals.js";
 
 
 /**
@@ -17,20 +18,20 @@ import { Reporter } from "../test.js";
  * 
  * @param {Reporter} reporter - Users reporter.color to add asrenderWithFormattingAndSourceMapsertion messaging syntax highlights.
  */
-export async function compileTest(ast: JSNode, reporter: Reporter, origin: string):
+export async function compileTests(ast: JSNode, globals: Globals, origin: string):
 
-    Promise<{ raw_tests: AssertionSite[], imports: ImportModule[]; }> {
+    Promise<{ assertion_sites: AssertionSite[], imports: ImportModule[]; }> {
 
     ast.pos.source = origin;
 
     const
         imports: Array<ImportModule> = [],
-        rigs = [],
-        ast_prop = compileTestsFromSourceAST(ast, reporter, imports);
+        assertion_sites: AssertionSite[] = [],
+        ast_prop = compileTestsFromSourceAST(globals, ast, imports);
 
     let index = 0;
 
-    for (const rig of ast_prop.raw_rigs) {
+    for (const rig of ast_prop.assertion_sites) {
 
         const { import_names } = rig;
 
@@ -46,8 +47,8 @@ export async function compileTest(ast: JSNode, reporter: Reporter, origin: strin
                     rig.imports.push({ module: $import, name: id });
 
 
-        rigs.push(rig);
+        assertion_sites.push(rig);
     }
 
-    return { raw_tests: rigs, imports };
+    return { assertion_sites, imports };
 }

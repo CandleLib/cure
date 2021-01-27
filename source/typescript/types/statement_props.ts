@@ -38,5 +38,5 @@ export interface StatementProp {
      */
     AWAIT: boolean;
 
-    raw_rigs: AssertionSite[];
+    assertion_sites: AssertionSite[];
 }

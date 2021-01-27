@@ -1,6 +1,8 @@
 import { JSNode } from "@candlefw/js";
 import { Lexer } from "@candlefw/wind";
-import { ImportModule, ImportName } from "./imports";
+import { ImportRequirement, ImportModule, ImportName } from "./imports";
+
+
 
 export interface AssertionSite {
     type: "SEQUENCE" | "DISCRETE",
@@ -10,19 +12,12 @@ export interface AssertionSite {
      */
     index: number,
 
-    name: string;
+    static_name: string;
 
     ast: JSNode;
-
-    /**
-     * Weak hashing of the test structure.
-     */
-    hash?: string;
-
-    error?: Error;
     import_names: Set<string>;
 
-    imports: { module: ImportModule, name: ImportName; }[];
+    imports: ImportRequirement[];
 
     pos: Lexer;
     /**

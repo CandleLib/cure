@@ -96,9 +96,13 @@ export interface ImportName {
      * The original name of the imported reference as exported from the module;
      */
     module_name: string;
-
     /**
      * Position of the import name in the source
      */
     pos: Lexer;
 };
+
+export interface ImportRequirement {
+    module: ImportModule;
+    name: ImportName;
+}

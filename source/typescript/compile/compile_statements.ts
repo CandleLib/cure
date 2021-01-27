@@ -1,39 +1,23 @@
 import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeClass, JSNodeType, tools, renderWithFormatting } from "@candlefw/js";
-
-import { ImportModule } from "../types/imports.js";
+import { JSNode, JSNodeClass, JSNodeType, tools } from "@candlefw/js";
 import { AssertionSite } from "../types/assertion_site.js";
-import { Reporter } from "../test.js";
-import { compileImport } from "./compile_import.js";
-import { compileAssertionGroupSite, compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
+import { CompilerState } from "../types/compiler_state";
+import { Globals } from "../types/globals.js";
+import { ImportModule } from "../types/imports.js";
 import { StatementProp } from "../types/statement_props";
+import { TestSite } from "../types/test_site";
+import { closureSet, setDiff, setUnion } from "../utilities/sets.js";
+import { compileAssertionGroupSite, compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
+import { compileImport } from "./compile_import.js";
 import { compileStatementsAndDeclarations } from "./compile_statements_and_declarations.js";
-import { closureSet, setUnion, setDiff } from "../utilities/sets.js";
-import { jst } from "./utilities/traverse_js_node.js";
+import { createCompilerState as createCompilerState } from "./create_compiler_state.js";
 import { getFirstBlockStatement } from "./utilities/get_first_block_statement.js";
-import { replaceFirstBlockContentWithNodes } from "./utilities/replace_block_statement_contents.js";
 import { Is_Expression_An_Assertion_Site } from "./utilities/is_expression_assertion_site.js";
-export const id = tools.getIdentifierName;
-type TestSite = {
-    rig: AssertionSite;
-    data: StatementProp;
-    offset: number;
-};
+import { replaceFirstBlockContentWithNodes } from "./utilities/replace_block_statement_contents.js";
+import { jst } from "./utilities/traverse_js_node.js";
 
-export type CompileRawTestRigsOptions = {
-    ast: JSNode;
-    report: Reporter;
-    sequence_offset: number;
-    glbl_decl: closureSet | setUnion | setDiff | Set<string>;
-    glbl_ref: closureSet | setUnion | Set<string>;
-    test_sites: TestSite[],
-    imports: ImportModule[],
-    statements: StatementProp[];
-    declarations: StatementProp[];
-    AWAIT: boolean;
-    FORCE_USE: boolean;
-};
-export type RawRigs = Array<{ rig: AssertionSite, import_names: Set<string>; }>;
+
+export const id = tools.getIdentifierName;
 
 /**[API]
  * Generates test rigs from all code within a file and 
@@ -54,15 +38,14 @@ export type RawRigs = Array<{ rig: AssertionSite, import_names: Set<string>; }>;
 // function or method will be an active captive of any top level assertion site 
 // that depends on statements that contain the captive assertion site. 
 export function compileTestsFromSourceAST(
+    globals: Globals,
     AST: JSNode,
-    Report: Reporter,
     Imports: ImportModule[],
     LEAVE_ASSERTION_SITE = false,
     OUTER_SEQUENCED = false,
-    Sequence_Offset = 0,
 ): StatementProp {
 
-    const options = createCompilerOptions(AST, Report, Sequence_Offset, Imports);
+    const options = createCompilerState(globals, AST, Imports);
 
     captureFunctionParameterNames(options);
 
@@ -73,13 +56,36 @@ export function compileTestsFromSourceAST(
 
 function compileRigsFromDeclarationsAndStatementsAndTestSites({
     ast,
-    test_sites: tests,
+    tests,
     statements,
     declarations,
     AWAIT,
     glbl_ref,
     glbl_decl
-}: CompileRawTestRigsOptions) {
+}: CompilerState) {
+
+    const assertion_sites = [];
+
+    for (const { assertion_site, offset, data } of tests) {
+
+        const { stmts, imports } = compileStatementsAndDeclarations(data, offset, statements, declarations);
+
+        assertion_site.ast = <JSNode>{
+            type: JSNodeType.Script,
+            nodes: [
+                ...stmts,
+                ...(assertion_site.ast.type == JSNodeType.Script ?
+                    assertion_site.ast.nodes :
+                    [assertion_site.ast])
+            ],
+            pos: ast.pos
+        };
+
+        assertion_site.import_names = imports;
+
+        assertion_sites.push(assertion_site);
+    }
+
 
     for (const decl of declarations) {
         if (decl.required_references.size > 0) {
@@ -90,67 +96,42 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
         }
     }
 
-    const
-        declared_variables = <Set<string>>glbl_decl,
-        required_references = new setDiff(glbl_ref, glbl_decl),
-        rigs = [];
-
-    for (const { rig, offset, data } of tests) {
-
-        const { stmts, imports } = compileStatementsAndDeclarations(data, offset, statements, declarations);
-        //*
-        rig.ast = <JSNode>{
-            type: JSNodeType.Script,
-            nodes: [
-                ...stmts,
-                ...(rig.ast.type == JSNodeType.Script ?
-                    rig.ast.nodes :
-                    [rig.ast])
-            ],
-            pos: ast.pos
-        };
-
-        rig.import_names = imports;
-
-        rigs.push(rig);
-    }
-
-    return {
+    return <StatementProp>{
         stmt: ast,
-        declared_variables,
-        required_references,
+        declared_variables: <Set<string>>glbl_decl,
+        required_references: new setDiff(glbl_ref, glbl_decl),
         FORCE_USE: false,
-        raw_rigs: rigs,
+        assertion_sites: assertion_sites,
         AWAIT
     };
 }
 
 
-function walkJSNodeTree(options: CompileRawTestRigsOptions, LEAVE_ASSERTION_SITE: boolean, OUTER_SEQUENCED: boolean) {
+function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUTER_SEQUENCED: boolean) {
 
-    for (let { node, meta: { skip, mutate } } of jst(options.ast)
+    for (let { node, meta: { skip, mutate } } of jst(state.ast)
         .skipRoot()
         .makeSkippable()
         .makeMutable()) {
-        options.FORCE_USE = false;
+        state.FORCE_USE = false;
 
         switch (node.type) {
 
             case JSNodeType.FormalParameters: continue;
 
-            case JSNodeType.ImportDeclaration: compileImport(node, options); skip(); break;
+            case JSNodeType.ImportDeclaration: compileImport(node, state); skip(); break;
 
             case JSNodeType.IdentifierBinding: if (id(node))
-                options.glbl_decl.add(id(node)); break;
+                state.glbl_decl.add(id(node)); break;
 
             case JSNodeType.IdentifierReference: if (id(node))
-                options.glbl_ref.add(id(node)); break;
+                state.glbl_ref.add(id(node)); break;
 
-            case JSNodeType.AwaitExpression: options.AWAIT = true; break;
+            case JSNodeType.AwaitExpression: state.AWAIT = true; break;
 
             case JSNodeType.ExpressionStatement:
                 compileExpressionStatement(
-                    options,
+                    state,
                     node,
                     LEAVE_ASSERTION_SITE,
                     OUTER_SEQUENCED,
@@ -164,19 +145,19 @@ function walkJSNodeTree(options: CompileRawTestRigsOptions, LEAVE_ASSERTION_SITE
             case JSNodeType.DoStatement:
             case JSNodeType.ForStatement:
             case JSNodeType.WhileStatement:
-                compileLoopingStatement(options, node);
+                compileLoopingStatement(state, node);
                 skip();
                 break;
 
             case JSNodeType.FunctionDeclaration:
             case JSNodeType.FunctionExpression:
             case JSNodeType.BlockStatement:
-                compileClosureStatement(options, node);
+                compileClosureStatement(state, node);
                 skip();
                 break;
 
             case JSNodeType.ArrowFunction:
-                compileArrowFunction(options, node);
+                compileArrowFunction(state, node);
                 skip();
                 break;
 
@@ -184,11 +165,11 @@ function walkJSNodeTree(options: CompileRawTestRigsOptions, LEAVE_ASSERTION_SITE
                 for (const { node: bdg } of traverse(node, "nodes", 2)
                     .skipRoot()
                     .filter("type", JSNodeType.IdentifierBinding))
-                    options.glbl_decl.add(id(bdg));
+                    state.glbl_decl.add(id(bdg));
 
             default:
                 if (node.type & JSNodeClass.STATEMENT) {
-                    compileMiscellaneous(options, node);
+                    compileMiscellaneous(state, node);
                     skip();
                 }
                 break;
@@ -196,25 +177,9 @@ function walkJSNodeTree(options: CompileRawTestRigsOptions, LEAVE_ASSERTION_SITE
     }
 }
 
-function createCompilerOptions(AST: JSNode, Report: Reporter, Sequence_Offset: number, Imports: ImportModule[]): CompileRawTestRigsOptions {
-    return {
-        ast: AST,
-        report: Report,
-        sequence_offset: Sequence_Offset,
-        glbl_decl: new Set,
-        glbl_ref: new Set,
-        test_sites: [],
-        imports: Imports,
-        statements: [],
-        declarations: [],
-        AWAIT: false,
-        FORCE_USE: false
-    };
-}
+function captureFunctionParameterNames(state: CompilerState) {
 
-function captureFunctionParameterNames(options: CompileRawTestRigsOptions) {
-
-    const { ast } = options;
+    const { ast } = state;
 
     if (ast.type == JSNodeType.FunctionDeclaration
         ||
@@ -226,13 +191,13 @@ function captureFunctionParameterNames(options: CompileRawTestRigsOptions) {
             const [id_node] = ast.nodes;
 
             if (id_node)
-                options.glbl_decl.add(id(id_node));
+                state.glbl_decl.add(id(id_node));
         }
     }
 }
 
 function compileExpressionStatement(
-    options: CompileRawTestRigsOptions,
+    state: CompilerState,
     node: JSNode,
     LEAVE_ASSERTION_SITE: boolean,
     OUTER_SEQUENCED: boolean,
@@ -240,16 +205,14 @@ function compileExpressionStatement(
 ) {
     const {
         imports,
-        test_sites,
-        report,
+        tests,
         statements,
-        sequence_offset,
-    } = options;
+    } = state;
 
     let [expr] = node.nodes;
 
     if (node.nodes[0].type == JSNodeType.AwaitExpression) {
-        options.AWAIT = true;
+        state.AWAIT = true;
         expr = expr.nodes[0];
     }
 
@@ -258,19 +221,18 @@ function compileExpressionStatement(
         expr.nodes[0].value = ""; // Forcefully delete assert name
 
         const
-            rig = compileAssertionSite(expr, report, test_sites.length + sequence_offset),
+            assertion_site = compileAssertionSite(state, expr),
             data = compileTestsFromSourceAST(
+                state.globals,
                 expr,
-                report,
-                imports,
-                false,
+                imports
             );
 
         if (LEAVE_ASSERTION_SITE) {
             for (const ref of data.required_references.values())
-                options.glbl_ref.add(ref);
+                state.glbl_ref.add(ref);
 
-            mutate(rig.ast);
+            mutate(assertion_site.ast);
         } else
             mutate(null);
 
@@ -278,9 +240,9 @@ function compileExpressionStatement(
         // as a reference lookup
         expr.nodes[0].value = "";
 
-        const pending = { rig, data, offset: statements.length };
+        const pending = <TestSite>{ assertion_site, data, offset: statements.length };
 
-        test_sites.push(pending);
+        tests.push(pending);
 
     } else if (expr.type == JSNodeType.CallExpression) {
 
@@ -288,17 +250,17 @@ function compileExpressionStatement(
 
         if (val == "assert_group") {
 
-            const mutate_node = compileAssertionGroupSite(expr, OUTER_SEQUENCED, options);
+            const mutate_node = compileAssertionGroupSite(state, expr, OUTER_SEQUENCED);
 
             mutate(mutate_node);
 
         } else {
 
-            const prop = compileTestsFromSourceAST(node, report, imports, false);
+            const prop = compileTestsFromSourceAST(state.globals, node, state.imports);
 
             prop.FORCE_USE = true;
 
-            combinePropRefsAndDecl(options, prop);
+            combinePropRefsAndDecl(state, prop);
 
             statements.push(prop);
 
@@ -306,65 +268,61 @@ function compileExpressionStatement(
 
     } else {
 
-        const prop = compileTestsFromSourceAST(node, report, imports, false);
+        const prop = compileTestsFromSourceAST(state.globals, node, imports);
 
-        options.glbl_ref = setGlobalRef(prop, options.glbl_ref);
+        state.glbl_ref = setGlobalRef(prop, state.glbl_ref);
 
         statements.push(prop);
     }
 
-    options.AWAIT;
+    state.AWAIT;
+}
+export function combinePropRefsAndDecl(state: CompilerState, prop: StatementProp) {
+    state.glbl_ref = setGlobalRef(prop, state.glbl_ref);
+    state.glbl_decl = setGlobalDecl(prop, state.glbl_decl);
 }
 
+function compileMiscellaneous(state: CompilerState, node: JSNode) {
 
-
-function combinePropRefsAndDecl(options: CompileRawTestRigsOptions, prop: StatementProp) {
-    options.glbl_ref = setGlobalRef(prop, options.glbl_ref);
-    options.glbl_decl = setGlobalDecl(prop, options.glbl_decl);
-}
-
-function compileMiscellaneous(options: CompileRawTestRigsOptions, node: JSNode) {
-
-    const { imports, test_sites: tests, report, statements } = options;
+    const { tests: tests, statements } = state;
 
     if (node.type == JSNodeType.LabeledStatement && node.nodes[0].value == "keep")
-        options.FORCE_USE = true;
+        state.FORCE_USE = true;
 
     if (node.type & JSNodeClass.STATEMENT) {
         // Extract IdentifierReferences and IdentifierAssignments 
         // and append to the statement scope.
         const
-            prop = compileTestsFromSourceAST(node, report, imports),
-            pending_test = prop.raw_rigs
-                .map(r => repackageRawTestRig(r, prop, statements.length));
+
+            prop = compileTestsFromSourceAST(state.globals, node, state.imports),
+
+            pending_test = prop.assertion_sites
+                .map(r => repackageAssertionSite(r, prop, statements.length));
 
         tests.push(...pending_test);
 
-        options.AWAIT = prop.AWAIT || options.AWAIT;
+        state.AWAIT = prop.AWAIT || state.AWAIT;
 
-        combinePropRefsAndDecl(options, prop);
+        combinePropRefsAndDecl(state, prop);
 
-        prop.FORCE_USE = options.FORCE_USE || prop.FORCE_USE;
+        prop.FORCE_USE = state.FORCE_USE || prop.FORCE_USE;
 
         if (prop.stmt?.nodes?.length >= 0)
             statements.push(prop);
     }
 }
 
+function compileArrowFunction(state: CompilerState, node: JSNode) {
 
+    const prop = compileTestsFromSourceAST(state.globals, node, state.imports);
 
-function compileArrowFunction(options: CompileRawTestRigsOptions, node: JSNode) {
-    const
-        { imports, report } = options,
-        prop = compileTestsFromSourceAST(node, report, imports);
+    combinePropRefsAndDecl(state, prop);
 
-    options.glbl_ref = setGlobalRef(prop, options.glbl_ref);
-    options.glbl_decl = setGlobalDecl(prop, options.glbl_decl);
-    options.AWAIT = prop.AWAIT || options.AWAIT;
+    state.AWAIT = prop.AWAIT || state.AWAIT;
 }
 
 export function compileLoopingStatement(
-    options: CompileRawTestRigsOptions,
+    state: CompilerState,
     node: JSNode,
     LEAVE_ASSERTION_SITE = false,
     OUT_SEQUENCED = false,
@@ -372,28 +330,26 @@ export function compileLoopingStatement(
 ) {
 
     const
-        { imports, test_sites: tests, report, statements } = options,
+        { tests: tests, statements } = state,
         block = getFirstBlockStatement(node);
-
-    console.log({ block });
 
     if (block) {
 
-        const prop = compileTestsFromSourceAST(block, report, imports, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
+        const prop = compileTestsFromSourceAST(state.globals, block, state.imports, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
 
         if (RETURN_PROPS_ONLY) return prop;
 
-        combinePropRefsAndDecl(options, prop);
+        combinePropRefsAndDecl(state, prop);
 
-        for (const rig of prop.raw_rigs) {
+        for (const assertion_site of prop.assertion_sites) {
 
-            rig.ast = replaceFirstBlockContentWithNodes(node, rig.ast);
+            assertion_site.ast = replaceFirstBlockContentWithNodes(node, assertion_site.ast);
 
-            tests.push(repackageRawTestRig(rig, prop, statements.length));
+            tests.push(repackageAssertionSite(assertion_site, prop, statements.length));
         }
 
         if (prop.stmt.nodes.length > 0) {
-            options.AWAIT = prop.AWAIT || options.AWAIT;
+            state.AWAIT = prop.AWAIT || state.AWAIT;
             statements.push(prop);
         }
     }
@@ -401,20 +357,20 @@ export function compileLoopingStatement(
     return null;
 }
 
-function compileClosureStatement(options: CompileRawTestRigsOptions, node: JSNode) {
+function compileClosureStatement(state: CompilerState, node: JSNode) {
 
     const
-        { imports, test_sites: tests, report, statements, declarations } = options,
-        prop = compileTestsFromSourceAST(node, report, imports);
+        { tests: tests, statements, declarations } = state,
+        prop = compileTestsFromSourceAST(state.globals, node, state.imports);
 
-    combinePropRefsAndDecl(options, prop);
+    combinePropRefsAndDecl(state, prop);
 
-    for (const rig of prop.raw_rigs)
-        tests.push(repackageRawTestRig(rig, prop, statements.length));
+    for (const rig of prop.assertion_sites)
+        tests.push(repackageAssertionSite(rig, prop, statements.length));
 
     if (prop.stmt.nodes.length > 0) {
 
-        options.AWAIT = prop.AWAIT || options.AWAIT;
+        state.AWAIT = prop.AWAIT || state.AWAIT;
 
         if (node.type != JSNodeType.BlockStatement)
             declarations.push(prop);
@@ -423,8 +379,20 @@ function compileClosureStatement(options: CompileRawTestRigsOptions, node: JSNod
     }
 }
 
-function repackageRawTestRig(rig: AssertionSite, s: StatementProp, offset: number): { rig: AssertionSite; data: StatementProp; offset: number; } {
-    return <TestSite>{ rig, data: Object.assign(s, { b: true, required_references: new setUnion(s.required_references, rig.import_names) }), offset };
+export function repackageAssertionSite(assertion_site: AssertionSite,
+    s: StatementProp,
+    offset: number
+): TestSite {
+    return <TestSite>{
+        assertion_site,
+        data: Object.assign(s,
+            {
+                b: true,
+                required_references: new setUnion(s.required_references,
+                    assertion_site.import_names)
+            }),
+        offset
+    };
 }
 
 function setGlobalDecl(prop: StatementProp, glbl_decl: closureSet | Set<string> | setUnion) {

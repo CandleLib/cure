@@ -11,7 +11,7 @@ function sanitizeTemplate(string) {
 const
     $ = sanitizeTemplate,
 
-    default_assertions_site_compilers: Array<ExpressionHandler> = [
+    default_expression_handlers: Array<ExpressionHandler> = [
 
         /**
          * Relational and Equality Expressions
@@ -376,4 +376,4 @@ const
         },
     ];
 
-export default default_assertions_site_compilers;
+export default default_expression_handlers;

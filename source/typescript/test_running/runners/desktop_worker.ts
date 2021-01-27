@@ -7,9 +7,7 @@ import { Test } from "../../types/test.js";
 import { fail, pass, rst } from "../../reporting/utilities/colors.js";
 import { createTestFunctionFromTestSource } from "../utilities/create_test_function.js";
 import { TestError } from "../../utilities/test_error.js";
-import { harnessConstructor } from "../utilities/test_harness.js";
-
-
+import { constructHarness } from "../utilities/test_harness.js";
 export const ImportedModules: Map<string, any> = new Map();
 
 //@ts-ignore
@@ -19,7 +17,7 @@ const { harness,
     harness_getResults,
     harness_overrideLog,
     harness_restoreLog,
-} = harnessConstructor(equal, util, <Performance><any>performance, rst, TestError, false);
+} = constructHarness(equal, util, <Performance><any>performance, rst, TestError);
 
 export { harness };
 

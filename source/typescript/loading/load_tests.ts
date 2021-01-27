@@ -1,21 +1,21 @@
-import path from "path";
-
-import URL from "@candlefw/url";
-import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlefw/conflagrate";
-
-import { Test } from "../types/test.js";
-import { compileTest } from "../compile/compile.js";
-import { TestSuite } from "../types/test_suite.js";
-import { Globals } from "../types/globals.js";
-import { format_rules } from "../reporting/utilities/format_rules.js";
-import { TestError } from "../utilities/test_error.js";
-import { ImportModule, ImportName, ImportSource, ModuleSpecifier } from "../types/imports.js";
+import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
+import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/wind";
+import path from "path";
+import { compileTests } from "../compile/compile.js";
+import { format_rules } from "../reporting/utilities/format_rules.js";
 import { AssertionSite } from "../types/assertion_site.js";
+import { Globals } from "../types/globals.js";
+import { ImportModule, ImportRequirement, ImportSource, ModuleSpecifier } from "../types/imports.js";
+import { Test } from "../types/test.js";
+import { TestSuite } from "../types/test_suite.js";
+import { TestError } from "../utilities/test_error.js";
+
+
 
 /**
- * Create TestRigs from a test filepath and add to suite.
+ * Create Tests from a test filepath and add to suite.
  * 
  * @param {string} url_string - A path to the test file.
  * @param {TestSuite} suite - A TestSuite that the TestRigs will be added to.
@@ -27,44 +27,44 @@ export async function loadTests(text_data: string, suite: TestSuite, globals: Gl
 
         lex.source = suite.origin;
 
-        const
-            { ast } = parser(lex),
-            { raw_tests } = await compileTest(ast, globals.reporter, "");
+        const { assertion_sites } = await compileTests(parser(lex).ast, globals, "");
 
-        suite.tests = mapRawTestsToTests(raw_tests, suite, globals);
+        suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
 
     } catch (e) {
+
+        if (e === 0) return;
+
+        console.log({ e });
+
         suite.tests.length = 0;
+
         suite.error = new TestError(e, suite.origin, 0, 0, "", "");
     }
 }
 
-function mapRawTestsToTests(raw_rigs: AssertionSite[], suite: TestSuite, globals: Globals): Test[] {
+function mapAssertionSitesToTests(assertion_sites: AssertionSite[], suite: TestSuite, globals: Globals): Test[] {
 
     const test_rigs: Test[] = [];
 
-    for (const raw_rig of raw_rigs) {
+    for (const assertion_site of assertion_sites) {
 
-        let
-            source = "",
-            mappings = [],
-            args = [],
-            import_module_sources: ImportSource[] = [],
-            import_arg_specifiers: ModuleSpecifier[] = [],
-            error = raw_rig.error;
+        const
+            {
+                source,
+                import_arg_specifiers,
+                import_module_sources,
+                args,
+                mappings
+            } = createTestRigFunctionSourceCode(suite, assertion_site),
 
-        if (!error) {
-            ({ error, source, import_arg_specifiers, import_module_sources, args, mappings } = createTestRigFunctionSourceCode(suite, raw_rig));
-        }
-
-        const sm = createSourceMap(mappings, "", "", [], [], []);
+            sm = createSourceMap(mappings, "", "", [], [], []);
 
         test_rigs.push(
             createTestRig(
-                raw_rig,
+                assertion_site,
                 suite,
                 globals,
-                error,
                 import_module_sources,
                 import_arg_specifiers,
                 source,
@@ -78,10 +78,9 @@ function mapRawTestsToTests(raw_rigs: AssertionSite[], suite: TestSuite, globals
 }
 
 function createTestRig(
-    raw_rig: AssertionSite,
+    assertion_site: AssertionSite,
     suite: TestSuite,
     globals: Globals,
-    error: Error,
     import_module_sources: ImportSource[],
     import_arg_specifiers: ModuleSpecifier[],
     test_function_source: string,
@@ -90,30 +89,25 @@ function createTestRig(
 ): Test {
     const
         {
-            name,
+            static_name,
             pos,
             index,
-            type,
-            test_maps,
             IS_ASYNC,
             SOLO,
             RUN,
             INSPECT,
             BROWSER,
             timeout_limit
-        } = raw_rig;
+        } = assertion_site;
 
     return {
         cwd: new URL(suite.origin).dir,
 
-        name,
+        name: static_name,
         suite_index: suite.index,
-        type,
         index,
         timeout_limit: timeout_limit > 0 ? timeout_limit : globals.max_timeout,
         retries: globals.default_retries,
-
-        error,
 
         import_module_sources,
         import_arg_specifiers,
@@ -122,7 +116,6 @@ function createTestRig(
         test_function_object_args: test_function_arguments,
         pos,
         map: createSourceMapJSON(source_map),
-        test_maps,
 
         IS_ASYNC,
         SOLO,
@@ -132,14 +125,11 @@ function createTestRig(
     };
 }
 
-function createTestRigFunctionSourceCode(suite: TestSuite, raw_rig: AssertionSite) {
+function createTestRigFunctionSourceCode(suite: TestSuite, assertion_site: AssertionSite) {
 
     const
-        {
-            ast,
-            imports,
-        } = raw_rig,
-        test_function_arguments: [] = [],
+        { ast, imports } = assertion_site,
+        test_function_arguments: string[] = [],
         import_arg_names: any[] = [],
         import_module_sources: ImportSource[] = [],
         import_arg_specifiers: ModuleSpecifier[] = [];
@@ -147,28 +137,38 @@ function createTestRigFunctionSourceCode(suite: TestSuite, raw_rig: AssertionSit
     let error = null, mappings = <Array<number[]>>[];
 
     try {
-        collectImports(imports, suite, import_module_sources, import_arg_names, import_arg_specifiers);
+        collectImports(suite, imports, import_module_sources, import_arg_names, import_arg_specifiers);
+
+        test_function_arguments.push("$harness", "AssertionError", ...import_arg_names);
+
+        const source = renderWithFormattingAndSourceMap(ast, <any>format_rules, null, mappings, 0, null);
+
+        return {
+            error, source,
+            import_module_sources,
+            import_arg_specifiers,
+            args: test_function_arguments,
+            mappings
+        };
+
     } catch (e) {
+
         error = new TestError(e, "");
+
+        throw 0;
     }
-
-    test_function_arguments.push("$harness", "AssertionError", ...import_arg_names);
-
-    const source = renderWithFormattingAndSourceMap(ast, <any>format_rules, null, mappings, 0, null);
-
-    return {
-        error, source,
-        import_module_sources,
-        import_arg_specifiers,
-        args: test_function_arguments,
-        mappings
-    };
 }
 
-function collectImports(imports: { module: ImportModule; name: ImportName; }[], suite: TestSuite, import_module_sources: ImportSource[], import_arg_names: any[], import_arg_specifiers: ModuleSpecifier[]) {
+function collectImports(
+    suite: TestSuite,
+    import_links: ImportRequirement[],
+    import_module_sources: ImportSource[],
+    import_arg_names: any[],
+    import_arg_specifiers: ModuleSpecifier[]
+) {
     const ImportMap: Map<ImportModule, string> = new Map();
     // Load imports into args
-    for (const { module: import_module, name: { import_name, module_name, pos } } of imports) {
+    for (const { module: import_module, name: { import_name, module_name, pos } } of import_links) {
 
         let source = "";
 
@@ -183,6 +183,7 @@ function collectImports(imports: { module: ImportModule; name: ImportName; }[], 
             ImportMap.set(import_module, source);
 
             import_module_sources.push(<ImportSource>{ module_specifier: source, source, IS_RELATIVE, });
+
         } else {
             source = ImportMap.get(import_module);
         }

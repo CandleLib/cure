@@ -11,6 +11,10 @@ import * as colors from "../reporting/utilities/colors.js";
 import { TestError } from "./test_error.js";
 import { getPackageJsonObject } from "@candlefw/wax";
 import { TestSuite } from "../types/test_suite.js";
+import { constructHarness } from "../test_running/utilities/test_harness.js";
+import { TestHarness } from "../types/test_harness.js";
+import { loadExpressionHandler } from "../compile/expression_handler/expression_handler_manager.js";
+import default_expression_handlers from "../compile/expression_handler/expression_handlers.js";
 
 
 const DefaultOptions: TestFrameOptions = {
@@ -20,7 +24,6 @@ const DefaultOptions: TestFrameOptions = {
     number_of_workers: 1,
     assertion_compilers: [],
     max_timeout: 2000
-    //test_globs: [path.resolve(process.cwd(), "test/**/*")],
 };
 
 type Resolver = (value: Outcome | PromiseLike<Outcome>) => void;
@@ -36,27 +39,40 @@ export function createTestFrame(
     ...test_suite_url_strings: string[]
 ): TestFrame {
 
-    const {
-        PRELOAD_IMPORTS = false,
-        WATCH = false,
-        number_of_workers = 2,
-        test_dir,
-        max_timeout,
-        BROWSER_HEADLESS
-    } = Object.assign(<TestFrameOptions>{}, DefaultOptions, config_options);
 
 
-    let
-        resolution: Resolver = null,
+    const
 
+        { harness,
+            harness_init,
+            harness_getResults,
+            harness_clearClipboard
+        } = constructHarness(
+            (a, b) => a == b,
+            { performance: () => 0 },
+            <Performance>{ now: () => 0 },
+            {},
+            TestError
+        ),
+        {
+            PRELOAD_IMPORTS = false,
+            WATCH = false,
+            number_of_workers = 2,
+            test_dir,
+            max_timeout,
+            BROWSER_HEADLESS
+        } = Object.assign(<TestFrameOptions>{}, DefaultOptions, config_options),
         globals = createGlobals(
+            harness,
             max_timeout,
             test_dir,
             WATCH,
             PRELOAD_IMPORTS,
             BROWSER_HEADLESS,
-            resolution
+            null
         );
+
+    let resolution: Resolver = null;
 
     function initializeResolver(res: Resolver) {
 
@@ -82,6 +98,8 @@ export function createTestFrame(
             await URL.server();
 
             initializeResolver(resolver);
+
+            globals.expression_handlers;
 
             await initializeGlobals(globals, number_of_workers);
 
@@ -110,6 +128,10 @@ async function loadAndRunTestSuites(globals: Globals, test_suite_url_strings: st
 }
 
 async function initializeGlobals(globals: Globals, number_of_workers: number) {
+
+
+    for (const expression_handler of default_expression_handlers)
+        loadExpressionHandler(globals, expression_handler);
 
     if (!globals.reporter) globals.reporter = initializeReporterColors(new BasicReporter());
 
@@ -167,6 +189,7 @@ function watchTestsOrExit(globals: Globals, resolution: any) {
 }
 
 export function createGlobals(
+    harness: TestHarness,
     max_timeout: number = 1000,
     test_dir: string = "",
     WATCH: boolean = false,
@@ -174,7 +197,13 @@ export function createGlobals(
     BROWSER_HEADLESS: boolean = false,
     resolution: any = null
 ): Globals {
+
     const globals: Globals = {
+
+        expression_handlers: [],
+
+        harness,
+
         default_retries: 1,
 
         max_timeout,
