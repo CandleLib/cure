@@ -1,16 +1,14 @@
 import equal from "deep-equal";
 import { performance } from "perf_hooks";
 import util from "util";
-
-//Types
 import { parentPort } from "worker_threads";
-import { TestRig, ImportSource } from "../types/test_rig.js";
-import { rst } from "../utilities/colors.js";
+import { ImportSource, TestRig } from "../types/test_rig.js";
+import { fail, pass, rst } from "../utilities/colors.js";
+import { createHierarchalName } from "../utilities/name_hierarchy.js";
+import { constructTestFunction } from "./construct_test_function.js";
 import { TestError } from "./test_error.js";
 import { harnessConstructor } from "./test_harness.js";
-import { constructTestFunction } from "./construct_test_function.js";
-import { fail, pass } from "../utilities/colors.js";
-import { createHierarchalName } from "../utilities/name_hierarchy.js";
+
 
 export const ImportedModules: Map<string, any> = new Map();
 
@@ -78,7 +76,7 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         harness_restoreLog();
 
-        results = harness_getResults().slice(0, -1);
+        results = harness_getResults().slice(1, -1);
 
     } catch (e) {
 
