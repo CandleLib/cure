@@ -93,8 +93,6 @@ export function createTestFrame(
     };
 };
 
-
-
 async function loadAndRunTestSuites(globals: Globals, test_suite_url_strings: string[]) {
 
     globals.flags.PENDING = true;

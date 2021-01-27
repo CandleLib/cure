@@ -1,7 +1,7 @@
 import path from "path";
 
 import URL from "@candlefw/url";
-import { JSNode, parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
+import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlefw/conflagrate";
 
 import { TestRig, ModuleSpecifier, ImportSource } from "../types/test_rig.js";

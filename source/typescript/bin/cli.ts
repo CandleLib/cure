@@ -150,6 +150,7 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
 
 README: https://github.com/CandleFW/test/blob/master/readme.md
 `;
+
 let files: string[] = args.trailing_arguments || [];
 
 const HELP = !!(args.help || args["?"]) || files.length == 0;
