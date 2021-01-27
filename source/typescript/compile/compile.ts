@@ -6,7 +6,7 @@
 import { JSNode } from "@candlefw/js";
 import { ImportModule } from "../types/imports.js";
 import { AssertionSite } from "../types/assertion_site.js";
-import { compileRawTestRigs } from "./compile_statements.js";
+import { compileTestsFromSourceAST } from "./compile_statements.js";
 import { Reporter } from "../test.js";
 
 
@@ -26,7 +26,7 @@ export async function compileTest(ast: JSNode, reporter: Reporter, origin: strin
     const
         imports: Array<ImportModule> = [],
         rigs = [],
-        ast_prop = compileRawTestRigs(ast, reporter, imports);
+        ast_prop = compileTestsFromSourceAST(ast, reporter, imports);
 
     let index = 0;
 
@@ -38,7 +38,6 @@ export async function compileTest(ast: JSNode, reporter: Reporter, origin: strin
             rig.index = index++;
         else {
             rig.index = index;
-            index += rig.test_maps.length;
         }
 
         for (const $import of imports)

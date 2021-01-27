@@ -1,6 +1,6 @@
 import { JSNode, JSNodeClass, JSNodeType, renderCompressed } from "@candlefw/js";
-import { jst } from "../../utilities/jst.js";
 import { CompilerOptions } from "../../types/compiler_options";
+import { jst } from "../utilities/traverse_js_node.js";
 
 export function parseAssertionSiteArguments(call_node: JSNode): CompilerOptions {
 

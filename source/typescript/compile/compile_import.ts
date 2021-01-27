@@ -1,8 +1,8 @@
-import { JSNodeType, JSNode } from "@candlefw/js";
 import { traverse } from "@candlefw/conflagrate";
+import { JSNode, JSNodeType } from "@candlefw/js";
 import URL from "@candlefw/url";
 import { ImportModule } from "../types/imports";
-import { CompileRawTestRigsOptions } from "./compile_statements";
+import { CompileRawTestRigsOptions } from "./compile_statements.js";
 
 export function compileImport(node: JSNode, { imports }: CompileRawTestRigsOptions) {
 

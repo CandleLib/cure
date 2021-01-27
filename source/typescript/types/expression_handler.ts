@@ -6,14 +6,20 @@ import { Reporter } from "../test";
  * expression.
  */
 export interface ExpressionHandler {
+    /**
+     * Internal use
+     * 
+     * Used to identify tests that use this ExpressionHandler
+     */
+    identifier: number;
 
     /**
      * The signature of the first JSNode in the double parenthesis expression.
      * 
      * Can either be a JSNodeType value or bitwise OR flag of JSNodeClasses values.
      * 
-     * Uses a bitwise AND test against the node's type to determine whether this
-     * particular binding should advanced to the next stage.
+     * Used to perform a bitwise AND test against the expressions type to determine whether this
+     * particular binding should advanced to the next stage of selection.
      */
     signature: JSNodeType | JSNodeClass,
 

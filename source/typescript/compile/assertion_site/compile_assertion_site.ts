@@ -1,10 +1,14 @@
-import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
-import { AssertionSite } from "../../types/assertion_site.js";
-import { Reporter } from "../../test.js";
-import { jst } from "../../utilities/jst.js";
-import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
-import { selectBindingCompiler } from "../expression_handler/expression_handler_manager.js";
 import { traverse } from "@candlefw/conflagrate";
+import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, renderWithFormatting, stmt } from "@candlefw/js";
+import { Reporter } from "../../test.js";
+import { AssertionSite } from "../../types/assertion_site.js";
+import { setUnion } from "../../utilities/sets.js";
+import { compileLoopingStatement, CompileRawTestRigsOptions, compileTestsFromSourceAST } from "../compile_statements.js";
+import { selectBindingCompiler } from "../expression_handler/expression_handler_manager.js";
+import { getFirstBlockStatement } from "../utilities/get_first_block_statement.js";
+import { replaceFirstBlockContentWithNodes } from "../utilities/replace_block_statement_contents.js";
+import { jst } from "../utilities/traverse_js_node.js";
+import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
 
 export function compileAssertionSite(
     call_expression: JSNode,
@@ -121,4 +125,101 @@ export function compileAssertionSiteTestExpression(expr: JSNode, reporter: Repor
 
     //Bypass the test
     return { ast: expr, optional_name: `Could not find a AssertionSiteCompiler for JSNode [${JSNodeTypeLU[expr.type]}]`, };
+}
+
+export function compileAssertionGroupSite(
+    node: JSNode,
+    OUTER_SEQUENCED: boolean,
+    options: CompileRawTestRigsOptions
+): JSNode {
+    console.log(renderWithFormatting(node));
+    const
+        { statements, test_sites, report, imports }
+            = options,
+
+        block = getFirstBlockStatement(node),
+
+        { SEQUENCED, BROWSER, SOLO, timeout_limit, assertion_expr: assert_expr, name }
+            = parseAssertionSiteArguments(node), group_name = name,
+
+        RETURN_PROPS_ONLY = true,
+
+        LEAVE_ASSERTION_SITE = SEQUENCED || OUTER_SEQUENCED,
+
+        OUT_SEQUENCED = true,
+
+        prop = compileLoopingStatement(options,
+            block,
+            LEAVE_ASSERTION_SITE,
+            OUT_SEQUENCED,
+            RETURN_PROPS_ONLY
+        );
+
+
+    console.log({ prop });
+    if (prop) {
+
+        console.log(renderWithFormatting(node), LEAVE_ASSERTION_SITE);
+
+        if (LEAVE_ASSERTION_SITE) {
+            process.exit();
+            const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
+
+            prop.required_references = new setUnion(imports_, prop.required_references);
+
+            for (const rig of prop.raw_rigs) {
+
+                if (group_name)
+                    rig.name = group_name + "-->" + rig.name;
+
+                rig.BROWSER = BROWSER || rig.BROWSER;
+
+                rig.SOLO = SOLO || rig.SOLO;
+
+                rig.ast = replaceFirstBlockContentWithNodes(assert_expr, rig.ast);
+
+                test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+            }
+
+            statements.push(prop);
+
+            return prop.stmt;
+
+        } else {
+
+            process.exit();
+
+
+            const prop = compileTestsFromSourceAST(
+                fn_stmt.type == JSNodeType.ArrowFunction ? fn_stmt.nodes[1] : fn_stmt,
+                report,
+                imports,
+                false
+            );
+
+            for (const rig of prop.raw_rigs) {
+
+                rig.ast = replaceFirstBlockContentWithNodes(node, rig.ast);
+
+                test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+            }
+            /*
+
+            for (const rig of prop.raw_rigs) {
+
+                if (group_name)
+                    rig.name = group_name + "-->" + rig.name;
+
+                rig.BROWSER = BROWSER || rig.BROWSER;
+
+                rig.ast = replaceFirstBlockContentWithNodes(assert_expr, rig.ast);
+
+                test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+            }
+            */
+
+
+        }
+    }
+    return null;
 }
