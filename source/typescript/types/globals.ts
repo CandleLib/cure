@@ -1,17 +1,17 @@
 import { FSWatcher } from "fs";
-import { RunnerBoss } from "../test_running/runner_boss.js";
+import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
 import { TestSuite } from "./test_suite";
-import { TestResult } from "./test_result.js";
+import { TestInfo } from "./test_info.js";
 import { Reporter } from "./reporter.js";
-import { TestRig } from "./test_rig.js";
-import { TestError } from "../test_running/test_error.js";
+import { Test } from "./test.js";
+import { TestError } from "../utilities/test_error.js";
 import URL from "@candlefw/url";
 
 export interface Outcome {
     errors?: TestError[],
     FAILED: boolean,
-    results: TestResult[];
-    rigs?: TestRig[];
+    results: TestInfo[];
+    rigs?: Test[];
 }
 
 export interface Globals {
@@ -20,7 +20,7 @@ export interface Globals {
 
     reporter: Reporter;
 
-    runner?: RunnerBoss;
+    runner?: DesktopRunner;
 
     watchers: FSWatcher[];
 

@@ -4,10 +4,10 @@
  */
 
 import { JSNode } from "@candlefw/js";
-import { ImportModule } from "../types/import_module.js";
-import { RawTestRig } from "../types/raw_test.js";
+import { ImportModule } from "../types/imports.js";
+import { AssertionSite } from "../types/assertion_site.js";
 import { compileRawTestRigs } from "./compile_statements.js";
-import { Reporter } from "../main.js";
+import { Reporter } from "../test.js";
 
 
 /**
@@ -19,7 +19,7 @@ import { Reporter } from "../main.js";
  */
 export async function compileTest(ast: JSNode, reporter: Reporter, origin: string):
 
-    Promise<{ raw_tests: RawTestRig[], imports: ImportModule[]; }> {
+    Promise<{ raw_tests: AssertionSite[], imports: ImportModule[]; }> {
 
     ast.pos.source = origin;
 

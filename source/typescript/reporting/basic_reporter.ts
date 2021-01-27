@@ -2,23 +2,21 @@ import { bidirectionalTraverse, traverse } from "@candlefw/conflagrate";
 import { performance } from "perf_hooks";
 import { Globals } from "../types/globals.js";
 import { Reporter } from "../types/reporter.js";
-import { TestResult } from "../types/test_result.js";
-import { TestRig } from "../types/test_rig.js";
+import { TestInfo } from "../types/test_info.js";
+import { Test } from "../types/test.js";
 
-import { CLITextDraw } from "../utilities/cli_text_console.js";
-import { rst, symD } from "../utilities/colors.js";
-import { createHierarchalName, name_delimiter, splitHierarchalName } from "../utilities/name_hierarchy.js";
-import { createInspectionMessage } from "./create_inspection_message.js";
+import { CLITextDraw } from "./utilities/cli_text_console.js";
+import { rst } from "./utilities/colors.js";
+import { createHierarchalName, splitHierarchalName } from "../utilities/name_hierarchy.js";
 
-
-function Object_Is_TestResult(o: any): o is TestResult {
+function Object_Is_TestResult(o: any): o is TestInfo {
     return !!o.test;
 }
 
-function getNameData(result: TestResult | TestRig, globals: Globals) {
+function getNameData(result: TestInfo | Test, globals: Globals) {
 
     const
-        test: TestRig = Object_Is_TestResult(result) ? result.test : result,
+        test: Test = Object_Is_TestResult(result) ? result.test : result,
         name = Object_Is_TestResult(result) ? result.name : createHierarchalName(result.name),
         suite = [...globals.suites.values()][test.suite_index],
         name_split = splitHierarchalName(name),
@@ -41,7 +39,7 @@ function getNameData(result: TestResult | TestRig, globals: Globals) {
 
 interface TestSuite {
     name: string,
-    tests: Map<string, TestResult>;
+    tests: Map<string, TestInfo>;
     suites: Map<string, TestSuite>;
 
     strings: string[];
@@ -164,7 +162,7 @@ export class BasicReporter implements Reporter {
 
     async prestart(global: Globals, terminal) { }
 
-    async start(pending_tests: TestRig[], global: Globals, terminal: CLITextDraw) {
+    async start(pending_tests: Test[], global: Globals, terminal: CLITextDraw) {
 
         //Each test is its own suite.
 
@@ -218,7 +216,7 @@ export class BasicReporter implements Reporter {
     }
 
 
-    async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
+    async update(results: Array<TestInfo>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
 
         for (const result of results) {
 
@@ -237,7 +235,7 @@ export class BasicReporter implements Reporter {
         return out;
     }
 
-    async complete(results: TestResult[], global: Globals, terminal: CLITextDraw): Promise<boolean> {
+    async complete(results: TestInfo[], global: Globals, terminal: CLITextDraw): Promise<boolean> {
 
         const
             time_end = performance.now(),

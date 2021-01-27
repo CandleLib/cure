@@ -4,13 +4,12 @@ import { completedRun, updateRun, startRun } from "../reporting/report.js";
 
 import { Globals } from "../types/globals.js";
 
-import { TestRig } from "../types/test_rig.js";
 import { TestSuite } from "../types/test_suite";
-import { TestResult } from "../types/test_result.js";
-import { TestMap } from "../types/test_map.js";
+import { Test } from "../types/test.js";
+import { TestInfo } from "../types/test_info.js";
 
 
-function TestRigFromTestMap(test_map: TestMap, test_rig: TestRig): TestRig {
+function TestRigFromTestMap(test_map: any, test_rig: Test): Test {
     const {
         index,
         map,
@@ -44,10 +43,10 @@ function TestRigFromTestMap(test_map: TestMap, test_rig: TestRig): TestRig {
 
     o.index = index + o.index;
 
-    return <TestRig>o;
+    return <Test>o;
 }
 
-function mapResults(rst: TestResult) {
+function mapResults(rst: TestInfo) {
 
     return rst;
 
@@ -55,8 +54,8 @@ function mapResults(rst: TestResult) {
 
     if (test.type == "SEQUENCE") {
 
-        const results: TestResult[] =
-            test.test_maps.map(tm => (<TestResult>{
+        const results: TestInfo[] =
+            test.test_maps.map(tm => (<TestInfo>{
                 TIMED_OUT: rst.TIMED_OUT,
                 PASSED: true,
                 duration: rst.duration,
@@ -84,7 +83,7 @@ function mapResults(rst: TestResult) {
     }
     return rst;
 }
-export async function runTests(tests: TestRig[],
+export async function runTests(tests: Test[],
     suites: TestSuite[],
     globals: Globals,
     RELOAD_DEPENDS: boolean = false) {

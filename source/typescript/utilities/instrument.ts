@@ -9,14 +9,11 @@ import {
     stmt, renderWithFormatting
 } from "@candlefw/js";
 import { traverse, skip_root } from "@candlefw/conflagrate";
-import { format_rules } from "./format_rules.js";
+import { format_rules } from "../reporting/utilities/format_rules.js";
 import { getPackageJsonObject } from "@candlefw/wax";
 import { PackageJSONData } from "@candlefw/wax/build/types/types/package";
 
 const fsp = fs.promises;
-
-
-
 export const test = null;
 
 export async function createSpecFile(pkg_name: string, source_file_path: string, pwd: string = process.cwd())

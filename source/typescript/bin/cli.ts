@@ -2,11 +2,9 @@
 
 import { getPackageJsonObject, getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
 
-import { createTestFrame, NullReporter, BasicReporter } from "../main.js";
+import { createTestFrame, NullReporter, BasicReporter } from "../test.js";
 import { instrument } from "../utilities/instrument.js";
 import URL from "@candlefw/url";
-
-
 import fs from "fs";
 
 import node_path from "path";

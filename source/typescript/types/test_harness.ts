@@ -1,7 +1,6 @@
-import { TestError } from "../test_running/test_error.js";
-import { TestResult } from "./test_result.js";
-import { ImportSource } from "./test_rig.js";
-
+import { createHierarchalName } from "../utilities/name_hierarchy.js";
+import { TestError } from "../utilities/test_error.js";
+import { ImportSource } from "./imports.js";
 /**
  * Provides methods and properties that are used during test execution.
  */
@@ -169,3 +168,4 @@ export interface TestHarness {
      */
     setResultName(name: string): void;
 }
+

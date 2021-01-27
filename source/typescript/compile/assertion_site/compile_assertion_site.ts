@@ -1,15 +1,79 @@
-import { JSNode, stmt, parser, JSNodeTypeLU } from "@candlefw/js";
+import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
+import { AssertionSite } from "../../types/assertion_site.js";
+import { Reporter } from "../../test.js";
+import { jst } from "../../utilities/jst.js";
+import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
+import { selectBindingCompiler } from "../expression_handler/expression_handler_manager.js";
 import { traverse } from "@candlefw/conflagrate";
 
-import CompilerBindings from "./assertion_compilers.js";
-import { selectBindingCompiler, loadBindingCompiler } from "./assertion_compiler_manager.js";
-import { Reporter } from "../../main.js";
+export function compileAssertionSite(
+    call_expression: JSNode,
+    reporter: Reporter,
+    index = 0
+): AssertionSite {
 
-/**
- * Preload Default AssertionSite Compilers
- */
-CompilerBindings.map(loadBindingCompiler);
+    const {
+        assertion_expr,
+        name_expression,
+        BROWSER,
+        INSPECT,
+        SKIP,
+        SOLO,
+        name,
+        timeout_limit
+    } = parseAssertionSiteArguments(call_expression);
 
+    let AWAIT = false;
+
+    const assert_site_inputs: Set<string> = new Set();
+
+    for (const { node: { type, value } } of jst(assertion_expr)
+        .filter("type",
+            JSNodeType.AwaitExpression,
+            JSNodeType.IdentifierReference,
+            JSNodeType.IdentifierName,
+            JSNodeType.IdentifierBinding,
+            JSNodeType.Identifier,
+            JSNodeType.Identifier))
+        if (type == JSNodeType.AwaitExpression)
+            AWAIT = true;
+        else
+            assert_site_inputs.add(<string>value);
+
+    if (!assertion_expr)
+        throw call_expression.pos.throw(`Could not find an expression for assertion site [${call_expression.pos.slice()}]`);
+
+    const { ast } = compileAssertionSiteTestExpression(assertion_expr, reporter),
+        { pos } = assertion_expr,
+        rig_name = name || renderCompressed(assertion_expr);
+    return <AssertionSite><any>{
+        type: "DISCRETE",
+        index,
+        name: rig_name,
+        RUN: !SKIP,
+        SOLO,
+        INSPECT,
+        IS_ASYNC: AWAIT,
+        BROWSER,
+        error: null,
+        imports: [],
+        pos: assertion_expr.pos,
+        ast: {
+            type: JSNodeType.Script,
+            nodes: [
+                stmt(`$harness.pushTestResult(${index});`),
+                ast,
+                stmt(`$harness.setSourceLocation(${[pos.off, pos.line + 1, pos.column].join(",")});`),
+                name_expression
+                    ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`)
+                    : stmt(`$harness.setResultName("${rig_name}")`),
+                stmt(`$harness.popTestResult(${index});`),
+            ]
+        },
+        expression: assertion_expr,
+        timeout_limit
+    };
+}
 
 /**
  * Compiles an Assertion Site. 
@@ -18,7 +82,7 @@ CompilerBindings.map(loadBindingCompiler);
  * @param reporter - A Reporter for color data.
  * @param origin File path of the source test file.
  */
-export function compileAssertionSite(expr: JSNode, reporter: Reporter)
+export function compileAssertionSiteTestExpression(expr: JSNode, reporter: Reporter)
     : { ast: JSNode, optional_name: string; } {
 
 

@@ -1,5 +1,5 @@
-import { TestError } from "../test_running/test_error";
-import { TestRig } from "./test_rig";
+import { TestError } from "../utilities/test_error";
+import { Test } from "./test";
 
 
 /**
@@ -14,7 +14,7 @@ export interface TestSuite {
     /**
      * An array of TestRigs this suite can run.
      */
-    rigs: TestRig[];
+    tests: Test[];
 
     /**
      * The original URL of the test file this suite is built from.

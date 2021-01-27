@@ -3,8 +3,8 @@
 	"version": "0.4.3",
 	"description": "CandleFW Testing System",
 	"type": "module",
-	"types": "./build/types/main.d.ts",
-	"main": "./build/library/main.js",
+	"types": "./build/types/test.d.ts",
+	"main": "./build/library/test.js",
 	"bin": {
 		"cfw.test": "./build/library/bin/cli.js"
 	},

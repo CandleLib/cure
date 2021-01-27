@@ -2,10 +2,9 @@
  * @namespace Reporter
  */
 
-import { CLITextDraw } from "../utilities/cli_text_console.js";
-import { TestResult } from "./test_result.js";
-import { TestSuite } from "./test_suite.js";
-import { TestRig } from "./test_rig.js";
+import { CLITextDraw } from "../reporting/utilities/cli_text_console.js";
+import { TestInfo } from "./test_info.js";
+import { Test } from "./test.js";
 import { Globals } from "./globals.js";
 
 /**
@@ -42,27 +41,27 @@ export interface Reporter {
     /**
      * Called before tests a run.
      * 
-     * @param {TestRig[]} pending_tests - All tests that will be run.
+     * @param {Test[]} pending_tests - All tests that will be run.
      * @param {Suites[]} suites - An array of test suites.
      * @param {CLITextDraw | Console} terminal - An output terminal to write test messages to.
      * 
      */
-    start: (pending_tests: TestRig[], globals: Globals, terminal: CLITextDraw | Console) => void;
+    start: (pending_tests: Test[], globals: Globals, terminal: CLITextDraw | Console) => void;
 
     /**
      * Called periodically if the TestFrame is in watch mode.
      * 
-     * @param {TestResult[]} results - An array of test results.
+     * @param {TestInfo[]} results - An array of test results.
      * @param {Suites[]} suites - An array of test suites.
      * @param {CLITextDraw | Console} terminal - An output terminal to write test messages to.
      * 
      */
-    update: (results: TestResult[], globals: Globals, terminal: CLITextDraw | Console) => void;
+    update: (results: TestInfo[], globals: Globals, terminal: CLITextDraw | Console) => void;
 
     /**
      * Called when all tests have completed their runs. 
      * 
-     * @param {TestResult[]} results - An array of test results.
+     * @param {TestInfo[]} results - An array of test results.
      * @param {Suites[]} suites - An array of test suites.
      * @param {CLITextDraw | Console} terminal - An output terminal to write test messages to.
      * 
@@ -70,7 +69,7 @@ export interface Reporter {
      *
      * @async
      */
-    complete: (results: TestResult[], globals: Globals, terminal: CLITextDraw | Console) => Promise<boolean>;
+    complete: (results: TestInfo[], globals: Globals, terminal: CLITextDraw | Console) => Promise<boolean>;
 
     /**
      * An object of terminal color strings to override the default coloring scheme.

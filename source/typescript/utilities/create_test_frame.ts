@@ -1,15 +1,14 @@
 import URL from "@candlefw/url";
 
-import { RunnerBoss } from "../test_running/runner_boss.js";
+import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
 import { BasicReporter } from "../reporting/basic_reporter.js";
 import { Globals, Outcome } from "../types/globals";
-import { TestFrame } from "../types/test_frame";
+import { TestFrame, TestFrameOptions } from "../types/test_frame";
 import { runTests } from "../test_running/run_tests.js";
-import { loadSuite } from "./load_suite.js";
+import { loadSuite } from "../loading/load_suite.js";
 import { Reporter } from "../types/reporter.js";
-import * as colors from "./colors.js";
-import { TestFrameOptions } from "../types/test_frame_options";
-import { TestError } from "../test_running/test_error.js";
+import * as colors from "../reporting/utilities/colors.js";
+import { TestError } from "./test_error.js";
 import { getPackageJsonObject } from "@candlefw/wax";
 import { TestSuite } from "../types/test_suite.js";
 
@@ -101,7 +100,7 @@ async function loadAndRunTestSuites(globals: Globals, test_suite_url_strings: st
 
         const st = await loadTestSuites(test_suite_url_strings, globals);
 
-        await runTests(st.flatMap(suite => suite.rigs), st, globals);
+        await runTests(st.flatMap(suite => suite.tests), st, globals);
 
     } catch (e) {
         globals.outcome.errors.push(new TestError(e, "", 0, 0, "", "", undefined));
@@ -116,7 +115,7 @@ async function initializeGlobals(globals: Globals, number_of_workers: number) {
 
     await loadPackageJson(globals);
 
-    globals.runner = new RunnerBoss(Math.max(number_of_workers, 1));
+    globals.runner = new DesktopRunner(Math.max(number_of_workers, 1));
 
     globals.watchers.length = 0;
 
@@ -232,7 +231,7 @@ export function createGlobals(
 export function createTestSuite(url_string: string, index: number): TestSuite {
     return {
         origin: url_string,
-        rigs: [],
+        tests: [],
         index,
         data: "",
         name: ""
@@ -258,7 +257,7 @@ function endWatchedTests(globals: Globals, resolution: (arg: Outcome) => void) {
                 if (suite.error)
                     globals.outcome.errors.push(suite.error);
 
-                for (const test_rig of suite.rigs)
+                for (const test_rig of suite.tests)
                     globals.outcome.rigs.push(test_rig);
             }
 

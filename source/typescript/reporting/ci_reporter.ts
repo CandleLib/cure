@@ -1,7 +1,7 @@
-import { BasicReporter } from "../main.js";
-import { TestResult } from "../types/test_result.js";
+import { BasicReporter } from "../test.js";
+import { TestInfo } from "../types/test_info.js";
 import { Globals } from "../types/globals.js";
-import { CLITextDraw } from "../utilities/cli_text_console.js";
+import { CLITextDraw } from "./utilities/cli_text_console.js";
 
 /**
  * Version of basic reporter that does not output intermediate test information
@@ -9,7 +9,7 @@ import { CLITextDraw } from "../utilities/cli_text_console.js";
 export class CIReporter extends BasicReporter {
 
     constructor() { super(); }
-    async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
+    async update(results: Array<TestInfo>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
         if (!COMPLETE) return "";
         return await super.update(results, global, terminal, COMPLETE);
     }

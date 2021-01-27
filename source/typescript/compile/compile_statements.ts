@@ -1,19 +1,19 @@
 import { traverse } from "@candlefw/conflagrate";
 import { JSNode, JSNodeClass, JSNodeType, tools, stmt } from "@candlefw/js";
 
-import { ImportModule } from "../types/import_module.js";
-import { RawTestRig } from "../types/raw_test.js";
+import { ImportModule } from "../types/imports.js";
+import { AssertionSite } from "../types/assertion_site.js";
 
-import { Reporter } from "../main.js";
+import { Reporter } from "../test.js";
 import { compileImport } from "./compile_import.js";
-import { buildRawTestRig } from "./build_raw_test_rig.js";
-import { parseAssertionArguments } from "./parse_assertion_site_args.js";
-import { StatementProp } from "./statement_props";
-import { gatherStatementsAndDeclarations } from "./gather_statements_amd_declarations.js";
-import { cSet, cUnion, cDiff } from "./closure_set.js";
+import { compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
+import { parseAssertionSiteArguments } from "./assertion_site/parse_assertion_site_args.js";
+import { StatementProp } from "../types/statement_props";
+import { compileStatementsAndDeclarations } from "./compile_statements_and_declarations.js";
+import { closureSet, setUnion, setDiff } from "../utilities/sets.js";
 
 type TestSite = {
-    rig: RawTestRig;
+    rig: AssertionSite;
     data: StatementProp;
     offset: number;
 };
@@ -22,8 +22,8 @@ export type CompileRawTestRigsOptions = {
     ast: JSNode;
     report: Reporter;
     sequence_offset: number;
-    glbl_decl: cSet | cUnion | cDiff | Set<string>;
-    glbl_ref: cSet | cUnion | Set<string>;
+    glbl_decl: closureSet | setUnion | setDiff | Set<string>;
+    glbl_ref: closureSet | setUnion | Set<string>;
     test_sites: TestSite[],
     imports: ImportModule[],
     statements: StatementProp[];
@@ -31,7 +31,7 @@ export type CompileRawTestRigsOptions = {
     AWAIT: boolean;
     FORCE_USE: boolean;
 };
-export type RawRigs = Array<{ rig: RawTestRig, import_names: Set<string>; }>;
+export type RawRigs = Array<{ rig: AssertionSite, import_names: Set<string>; }>;
 export const jst = (node: JSNode, depth?: number) => traverse(node, "nodes", depth);
 
 /**[API]
@@ -83,20 +83,20 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
     for (const decl of declarations) {
         if (decl.required_references.size > 0) {
             if (decl.declared_variables.size > 0)
-                glbl_ref = new cDiff(new cUnion(glbl_ref, decl.required_references), decl.declared_variables);
+                glbl_ref = new setDiff(new setUnion(glbl_ref, decl.required_references), decl.declared_variables);
             else
-                glbl_ref = new cUnion(glbl_ref, decl.required_references);
+                glbl_ref = new setUnion(glbl_ref, decl.required_references);
         }
     }
 
     const
         declared_variables = <Set<string>>glbl_decl,
-        required_references = new cDiff(glbl_ref, glbl_decl),
+        required_references = new setDiff(glbl_ref, glbl_decl),
         rigs = [];
 
     for (const { rig, offset, data } of tests) {
 
-        const { stmts, imports } = gatherStatementsAndDeclarations(data, offset, statements, declarations);
+        const { stmts, imports } = compileStatementsAndDeclarations(data, offset, statements, declarations);
         //*
         rig.ast = <JSNode>{
             type: JSNodeType.Script,
@@ -257,7 +257,7 @@ function compileExpressionStatement(
         expr.nodes[0].value = ""; // Forcefully delete assert name
 
         const
-            rig = buildRawTestRig(expr, report, test_sites.length + sequence_offset),
+            rig = compileAssertionSite(expr, report, test_sites.length + sequence_offset),
             data = compileRawTestRigs(
                 expr,
                 report,
@@ -290,7 +290,7 @@ function compileExpressionStatement(
             let fn_stmt: JSNode = null;
 
             let { SEQUENCED, BROWSER, SOLO, timeout_limit, assertion_expr: node, name }
-                = parseAssertionArguments(expr),
+                = parseAssertionSiteArguments(expr),
                 group_name = name;
 
             if (node.type == JSNodeType.FunctionExpression || node.type == JSNodeType.ArrowFunction) {
@@ -309,7 +309,7 @@ function compileExpressionStatement(
                         const prop = compileRawTestRigs(fn_stmt.nodes.slice().pop(), report, imports, true, true, test_sites.length + sequence_offset);
                         const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
 
-                        prop.required_references = new cUnion(imports_, prop.required_references);
+                        prop.required_references = new setUnion(imports_, prop.required_references);
 
                         for (const rig of prop.raw_rigs) {
 
@@ -345,11 +345,11 @@ function compileExpressionStatement(
 
                         const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
 
-                        prop.required_references = new cUnion(imports_, prop.required_references);
+                        prop.required_references = new setUnion(imports_, prop.required_references);
 
-                        const pending = <{ rig: RawTestRig, data: StatementProp, offset: number; }>{
+                        const pending = <{ rig: AssertionSite, data: StatementProp, offset: number; }>{
 
-                            rig: <RawTestRig>{
+                            rig: <AssertionSite>{
                                 type: "SEQUENCE",
                                 name: group_name,
                                 index: 0,
@@ -520,25 +520,25 @@ function compileClosureStatement(options: CompileRawTestRigsOptions, node: JSNod
     }
 }
 
-function repackageRawTestRig(rig: RawTestRig, s: StatementProp, offset: number): { rig: RawTestRig; data: StatementProp; offset: number; } {
-    return <TestSite>{ rig, data: Object.assign(s, { b: true, required_references: new cUnion(s.required_references, rig.import_names) }), offset };
+function repackageRawTestRig(rig: AssertionSite, s: StatementProp, offset: number): { rig: AssertionSite; data: StatementProp; offset: number; } {
+    return <TestSite>{ rig, data: Object.assign(s, { b: true, required_references: new setUnion(s.required_references, rig.import_names) }), offset };
 }
 
-function setGlobalDecl(prop: StatementProp, glbl_decl: cSet | Set<string> | cUnion) {
+function setGlobalDecl(prop: StatementProp, glbl_decl: closureSet | Set<string> | setUnion) {
     if (prop.declared_variables.size > 0)
-        glbl_decl = new cUnion(glbl_decl, prop.declared_variables);
+        glbl_decl = new setUnion(glbl_decl, prop.declared_variables);
     return glbl_decl;
 }
 
-function setGlobalRef(prop: StatementProp, glbl_ref: cSet | Set<string> | cUnion) {
+function setGlobalRef(prop: StatementProp, glbl_ref: closureSet | Set<string> | setUnion) {
 
     if (prop.required_references.size > 0) {
 
         const ref = (prop.declared_variables.size > 0)
-            ? new cDiff(prop.required_references, prop.declared_variables)
+            ? new setDiff(prop.required_references, prop.declared_variables)
             : prop.required_references;
 
-        return new cUnion(glbl_ref, ref);
+        return new setUnion(glbl_ref, ref);
     }
 
     return glbl_ref;
