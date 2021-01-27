@@ -12,12 +12,14 @@ import { createInspectionMessage } from "./create_inspection_message.js";
 
 
 function getNameData(test: TestRig, globals: Globals) {
-    const name = test.name;
-    const suite = [...globals.suites.values()][test.suite_index];
+    const
+        name = test.name,
+        suite = [...globals.suites.values()][test.suite_index];
+
     const
         name_split = name.split(/-->/g),
         test_name = name_split.pop(),
-        suite_name = suite.name
+        suite_name = (suite.name ?? "undefined")
             .replace(/[_-]/g, " ")
             .split(" ")
             .map(d => d[0].toLocaleUpperCase() + d.slice(1).toLocaleLowerCase())
@@ -173,7 +175,9 @@ export class BasicReporter implements Reporter {
 
     async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
 
-        for (const { test, duration, PASSED } of results) {
+        for (const { test, previous_clipboard_end, clipboard_end, PASSED } of results) {
+
+            const duration = clipboard_end - previous_clipboard_end;
 
             let suites_ = this.suites.suites, target_suite = this.suites;
 
@@ -239,21 +243,23 @@ export class BasicReporter implements Reporter {
 
 
                     for (let error of test_errors) {
-                        //FAILED = true;
 
+                        errors.push(error);
+                        //FAILED = true;
+                        /*
                         if (error.WORKER) {
                             error = Object.assign(new TestError(error), error);
                         }
 
-                        const message = await error.toAsyncBlameString(watched_files, suites[test.suite_index].origin);
+                        const message = error.toString();//await error.toAsyncBlameString(watched_files, suites[test.suite_index].origin);
 
-                        errors.push(`${rst}${msgA}[  ${name} ]${rst} ${error.INSPECTION_ERROR ? "" : "failed"}:\n\n    ${
-                            fail
+                        errors.push(`${rst}${msgA}[  ${name} ]${rst} ${error.INSPECTION_ERROR ? "" : "failed"}:\n\n    ${fail
                             + message
                                 .replace(error.match_source, error.replace_source)
                                 .split("\n")
                                 .join("\n    ")
                             }\n${rst}`);
+                            */
                     }
                 }
 
@@ -274,22 +280,25 @@ export class BasicReporter implements Reporter {
                 const { error } = suite;
 
                 if (error) {
+                    errors.push(error);
+                    /*
 
                     failed++;
 
                     const message = await error.toAsyncBlameString(watched_files, suite.origin);
 
-                    errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${
-                        fail + message
-                            .replace(error.match_source, error.replace_source)
-                            .split("\n")
-                            .join("\n    ")}\n${rst}`, "");
+                    errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${fail + message
+                        .replace(error.match_source, error.replace_source)
+                        .split("\n")
+                        .join("\n    ")}\n${rst}`, "");
+
+                        */
                 }
             }
         } catch (e) {
             failed++;
-            errors.push(`${rst}Reporter failed:\n\n    ${
-                fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
+            errors.push(e);
+            //  errors.push(`${rst}Reporter failed:\n\n    ${fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
         }
 
         strings.push(`${total} test${total !== 1 ? "s" : ""} ran. ${total > 0 ? (failed > 0

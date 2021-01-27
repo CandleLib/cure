@@ -7,6 +7,8 @@ import { TestResult } from "../types/test_result";
 import { Globals } from "../types/globals.js";
 import { TestError } from "./test_error.js";
 import { prepareTestServer } from "./browser_runner.js";
+import { createHierarchalName } from "../utilities/name_hierarchy.js";
+import { test } from "../compile/assertion_site/assertion_compiler_manager.js";
 
 let nonce = 0;
 
@@ -174,11 +176,16 @@ export class RunnerBoss {
                     if (test.error) {
                         finished.push([{
                             name: wkr.test.name,
-                            start: 0,
-                            end: 0,
-                            duration: 0,
-                            //@ts-ignore
-                            errors: [test.error],
+                            clipboard_start: 0,
+                            clipboard_write_start: 0,
+                            previous_clipboard_end: 0,
+                            clipboard_end: 0,
+                            location: {
+                                compiled: { column: wkr.test.pos.column, line: wkr.test.pos.line, offset: wkr.test.pos.off, },
+                                source: { column: wkr.test.pos.column, line: wkr.test.pos.line, offset: wkr.test.pos.off, }
+                            },
+                            logs: [],
+                            errors: [test.error.toString()],
                             test: test,
                             TIMED_OUT: true,
                             PASSED: false
@@ -206,13 +213,20 @@ export class RunnerBoss {
                             wkr.test.retries--;
                             tests.push(wkr.test);
                         } else {
-                            finished.push([{
-                                name: wkr.test.name,
-                                start: wkr.start,
-                                end: wkr.start + dur,
-                                duration: dur,
+                            finished.push([<TestResult>{
+                                name: createHierarchalName(wkr.test.name, "Did Not Time Out"),
+                                clipboard_start: wkr.start,
+                                clipboard_write_start: wkr.start,
+                                previous_clipboard_end: wkr.start + dur,
+                                clipboard_end: wkr.start,
+                                location: {
+                                    compiled: { column: wkr.test.pos.column, line: wkr.test.pos.line, offset: wkr.test.pos.off, },
+                                    source: { column: wkr.test.pos.column, line: wkr.test.pos.line, offset: wkr.test.pos.off, }
+                                },
+                                logs: [],
+                                message: "",
                                 //@ts-ignore
-                                errors: [new TestError("Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1)],
+                                errors: ["Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1],
                                 test: wkr.test,
                                 TIMED_OUT: true,
                                 PASSED: false

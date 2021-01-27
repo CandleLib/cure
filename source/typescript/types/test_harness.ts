@@ -163,4 +163,9 @@ export interface TestHarness {
     start: number,
 
     map: any;
+
+    /**
+     * Set the name of the test frame if it has not already been assigned
+     */
+    setResultName(name: string): void;
 }

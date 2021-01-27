@@ -4,13 +4,13 @@ import util from "util";
 
 //Types
 import { parentPort } from "worker_threads";
-import { TestResult } from "../types/test_result.js";
 import { TestRig, ImportSource } from "../types/test_rig.js";
 import { rst } from "../utilities/colors.js";
 import { TestError } from "./test_error.js";
 import { harnessConstructor } from "./test_harness.js";
 import { constructTestFunction } from "./construct_test_function.js";
 import { fail, pass } from "../utilities/colors.js";
+import { createHierarchalName } from "../utilities/name_hierarchy.js";
 
 export const ImportedModules: Map<string, any> = new Map();
 
@@ -21,7 +21,7 @@ const { harness,
     harness_getResults,
     harness_overrideLog,
     harness_restoreLog,
-} = harnessConstructor(equal, util, performance, rst, TestError, false);
+} = harnessConstructor(equal, util, <Performance><any>performance, rst, TestError, false);
 
 export { harness };
 
@@ -37,14 +37,23 @@ export function createAddendum(sources: ImportSource[], test: TestRig) {
     return "";
 }
 
-
 async function RunTest({ test }: { test: TestRig; }) {
+
     let results = [];
+
     try {
         //@ts-ignore
         harness.map = test.map;
         //@ts-ignore
         global.harness = harness;
+
+        harness_init();
+
+        harness_overrideLog();
+
+        harness.pushTestResult();
+
+        harness.setResultName(createHierarchalName(test.name, "Load Modules and create test function"));
 
         const fn = (await constructTestFunction(
             test,
@@ -57,9 +66,8 @@ async function RunTest({ test }: { test: TestRig; }) {
             fail
         ));
 
-        harness_overrideLog();
+        harness.popTestResult();
 
-        harness_init();
 
         //Global Test Result
         harness.pushTestResult();
@@ -112,11 +120,11 @@ async function RunTest({ test }: { test: TestRig; }) {
         results = harness_getResults();
     }
 
-    results.forEach((r, i) => {
-        if (!r.name) r.name = test.name + "_" + i;
-    });
+    results.forEach((r, i) => { if (!r.name) r.name = test.name + "_" + i; });
 
     parentPort.postMessage(results);
 }
 
 parentPort.on("message", RunTest);
+
+
