@@ -1,5 +1,5 @@
-import { copy, filter, traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeClass, JSNodeType, tools, renderCompressed, stmt as parse_statement, stmt } from "@candlefw/js";
+import { traverse } from "@candlefw/conflagrate";
+import { JSNode, JSNodeClass, JSNodeType, tools, stmt } from "@candlefw/js";
 
 import { ImportModule } from "../types/import_module.js";
 import { RawTestRig } from "../types/raw_test.js";
@@ -239,7 +239,7 @@ function compileExpressionStatement(
 ) {
     const {
         imports,
-        test_sites: tests,
+        test_sites,
         report,
         statements,
         sequence_offset,
@@ -257,7 +257,7 @@ function compileExpressionStatement(
         expr.nodes[0].value = ""; // Forcefully delete assert name
 
         const
-            rig = buildRawTestRig(expr, report, tests.length + sequence_offset),
+            rig = buildRawTestRig(expr, report, test_sites.length + sequence_offset),
             data = compileRawTestRigs(
                 expr,
                 report,
@@ -279,7 +279,7 @@ function compileExpressionStatement(
 
         const pending = { rig, data, offset: statements.length };
 
-        tests.push(pending);
+        test_sites.push(pending);
 
     } else if (expr.type == JSNodeType.CallExpression) {
 
@@ -306,23 +306,23 @@ function compileExpressionStatement(
                     //Create a sequenced test rig  
                     if (OUTER_SEQUENCED) {
 
-                        const prop = compileRawTestRigs(fn_stmt.nodes.slice().pop(), report, imports, true, true, tests.length + sequence_offset);
+                        const prop = compileRawTestRigs(fn_stmt.nodes.slice().pop(), report, imports, true, true, test_sites.length + sequence_offset);
                         const imports_ = new Set(prop.raw_rigs.flatMap(r => [...r.import_names.values()]));
 
                         prop.required_references = new cUnion(imports_, prop.required_references);
 
-                        const pending_test = prop.raw_rigs.map(r => {
-                            if (group_name)
-                                r.name = group_name + "-->" + r.name;
+                        for (const rig of prop.raw_rigs) {
 
-                            r.SOLO = SOLO || r.SOLO;
-                            r.BROWSER = BROWSER || r.BROWSER;
+                            if (group_name) rig.name = group_name + "-->" + rig.name;
 
-                            return r;
-                        }).map(r => repackageRawTestRig(r, prop, statements.length));
+                            rig.BROWSER = BROWSER || rig.BROWSER;
 
+                            rig.SOLO = SOLO || rig.SOLO;
 
-                        tests.push(...pending_test);
+                            rig.ast = replaceFirstBlockContentWithNodes(node, rig.ast);
+
+                            test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+                        }
 
                         statements.push(prop);
 
@@ -372,7 +372,7 @@ function compileExpressionStatement(
                             offset: statements.length
                         };
 
-                        tests.push(pending);
+                        test_sites.push(pending);
 
                         mutate(null);
 
@@ -387,17 +387,16 @@ function compileExpressionStatement(
                         false,
                     );
 
-                    const pending_test = prop.raw_rigs.map(r => {
-                        if (group_name)
-                            r.name = group_name + "-->" + r.name;
+                    for (const rig of prop.raw_rigs) {
 
-                        r.BROWSER = BROWSER || r.BROWSER;
+                        if (group_name) rig.name = group_name + "-->" + rig.name;
 
-                        return r;
-                    }).map(r => repackageRawTestRig(r, prop, statements.length));
+                        rig.BROWSER = BROWSER || rig.BROWSER;
 
-                    tests.push(...pending_test);
+                        rig.ast = replaceFirstBlockContentWithNodes(node, rig.ast);
 
+                        test_sites.push(repackageRawTestRig(rig, prop, statements.length));
+                    }
 
                     mutate(null);
 
@@ -483,14 +482,13 @@ function compileLoopingStatement(options: CompileRawTestRigsOptions, node: JSNod
 
         const prop = compileRawTestRigs(block, report, imports);
 
-        options.glbl_ref = setGlobalRef(prop, options.glbl_ref);
-        options.glbl_decl = setGlobalDecl(prop, options.glbl_decl);
+        combinePropRefsAndDecl(options, prop);
 
-        for (const pending_rig of prop.raw_rigs) {
+        for (const rig of prop.raw_rigs) {
 
-            pending_rig.ast = replaceFirstBlockContentWithNodes(node, pending_rig.ast);
+            rig.ast = replaceFirstBlockContentWithNodes(node, rig.ast);
 
-            tests.push(repackageRawTestRig(pending_rig, prop, statements.length));
+            tests.push(repackageRawTestRig(rig, prop, statements.length));
         }
 
         if (prop.stmt.nodes.length > 0) {
@@ -508,8 +506,8 @@ function compileClosureStatement(options: CompileRawTestRigsOptions, node: JSNod
 
     combinePropRefsAndDecl(options, prop);
 
-    for (const pending_rig of prop.raw_rigs)
-        tests.push(repackageRawTestRig(pending_rig, prop, statements.length));
+    for (const rig of prop.raw_rigs)
+        tests.push(repackageRawTestRig(rig, prop, statements.length));
 
     if (prop.stmt.nodes.length > 0) {
 
