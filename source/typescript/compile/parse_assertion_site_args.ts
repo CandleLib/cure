@@ -23,7 +23,7 @@ export function parseAssertionArguments(call_node: JSNode): AssertionSiteArgs {
         SOLO: false,
         SEQUENCED: false,
         name_expression: null,
-        name: "",
+        name: null,
         timeout_limit: 0
     };
 
@@ -82,7 +82,6 @@ function handleOtherExpressionTypes(result: AssertionSiteArgs, node: JSNode, mut
             &&
             first_argument.type | JSNodeClass.EXPRESSION
         ) {
-            //console.log(name, first_argument);
             result.name_expression = first_argument;
             mutate(null);
             return;
@@ -96,7 +95,7 @@ function handleOtherExpressionTypes(result: AssertionSiteArgs, node: JSNode, mut
 }
 
 function handleStringArgument(result: AssertionSiteArgs, node: JSNode) {
-    if (result.name == "") result.name = <string>node.value;
+    if (!result.name) result.name = <string>node.value;
 }
 
 function handleNumericArguments(result: AssertionSiteArgs, node: JSNode) {

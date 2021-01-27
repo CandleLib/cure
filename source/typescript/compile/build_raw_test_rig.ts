@@ -47,7 +47,7 @@ export function buildRawTestRig(
     return <RawTestRig><any>{
         type: "DISCRETE",
         index,
-        name,
+        name: name || renderCompressed(assertion_expr)
         RUN: !SKIP,
         SOLO,
         INSPECT,
