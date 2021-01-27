@@ -1,9 +1,6 @@
 import { TestRig } from "./test_rig.js";
-import { TestError } from "../test_running/test_error.js";
-
 
 export interface TestResult {
-
 
     /**
      * Human Friendly Unique name of test
@@ -12,21 +9,26 @@ export interface TestResult {
      * separating the name with the name delimiter? (<= specify where this delimiter is set )
      */
     name: string;
+    /**
+     * Millisecond timestamp for the fist call to a harness function after clipboard_start.
+     */
+    clipboard_write_start: number;
 
     /**
-     * Millisecond timestamp for start of test.
+     * Millisecond timestamp when this test result was created.
      */
-    start: number;
+    clipboard_start: number;
 
     /**
-     * Millisecond timestamp for end of test.
+     * Millisecond timestamp when this test result was popped from the clipboard stack.
      */
-    end: number;
+    clipboard_end: number;
 
     /**
-     * Number of milliseconds taken to run the test.
+     * Millisecond timestamp for when the last test result was pushed to the stack or popped from the stack,
+     * which ever comes first. 
      */
-    duration: number;
+    previous_clipboard_end: number;
 
     /**
      * Original test rig data. Assigned a value after
