@@ -49,9 +49,10 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         harness_overrideLog();
 
+        //Test Initialization TestResult
         harness.pushTestResult();
 
-        harness.setResultName(createHierarchalName(test.name, "Load Modules and create test function"));
+        harness.setResultName("Load modules and create test function");
 
         const fn = (await constructTestFunction(
             test,
@@ -67,8 +68,11 @@ async function RunTest({ test }: { test: TestRig; }) {
         harness.popTestResult();
 
 
-        //Global Test Result
+        // Global TestResult 
+        // - Catchall for any errors that lead to a hard crash of the test function
         harness.pushTestResult();
+
+        harness.setResultName("Test Rig Ran Without Critical Errors");
 
         await fn();
 
@@ -81,6 +85,7 @@ async function RunTest({ test }: { test: TestRig; }) {
     } catch (e) {
 
         harness_restoreLog();
+
 
         let error = null;
 
@@ -111,6 +116,8 @@ async function RunTest({ test }: { test: TestRig; }) {
 
         harness.pushTestResult();
 
+        harness.setResultName("No Critical Test Errors");
+
         harness.setException(new Error("No results generated from this test"));
 
         harness.popTestResult();
@@ -118,7 +125,9 @@ async function RunTest({ test }: { test: TestRig; }) {
         results = harness_getResults();
     }
 
-    results.forEach((r, i) => { if (!r.name) r.name = test.name + "_" + i; });
+    results.forEach((r, i) => {
+        if (r.name == "") r.name = "test_" + i;
+    });
 
     parentPort.postMessage(results);
 }

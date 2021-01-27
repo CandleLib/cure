@@ -1,6 +1,5 @@
+import { bidirectionalTraverse, traverse } from "@candlefw/conflagrate";
 import { performance } from "perf_hooks";
-
-import { TestError } from "../test_running/test_error.js";
 import { Globals } from "../types/globals.js";
 import { Reporter } from "../types/reporter.js";
 import { TestResult } from "../types/test_result.js";
@@ -8,16 +7,21 @@ import { TestRig } from "../types/test_rig.js";
 
 import { CLITextDraw } from "../utilities/cli_text_console.js";
 import { rst, symD } from "../utilities/colors.js";
+import { createHierarchalName, name_delimiter, splitHierarchalName } from "../utilities/name_hierarchy.js";
 import { createInspectionMessage } from "./create_inspection_message.js";
 
 
-function getNameData(test: TestRig, globals: Globals) {
-    const
-        name = test.name,
-        suite = [...globals.suites.values()][test.suite_index];
+function Object_Is_TestResult(o: any): o is TestResult {
+    return !!o.test;
+}
+
+function getNameData(result: TestResult | TestRig, globals: Globals) {
 
     const
-        name_split = name.split(/-->/g),
+        test: TestRig = Object_Is_TestResult(result) ? result.test : result,
+        name = Object_Is_TestResult(result) ? result.name : createHierarchalName(result.name),
+        suite = [...globals.suites.values()][test.suite_index],
+        name_split = splitHierarchalName(name),
         test_name = name_split.pop(),
         suite_name = (suite.name ?? "undefined")
             .replace(/[_-]/g, " ")
@@ -26,9 +30,46 @@ function getNameData(test: TestRig, globals: Globals) {
             .join(" "),
         suite_sub_names = name_split;
 
-    return { suites: [suite_name + "\n" + suite.origin, ...suite_sub_names], name: test_name };
+    if (!Object_Is_TestResult(result))
+        suite_sub_names.push(test_name);
+    else
+        suite_sub_names.push(splitHierarchalName(result.test.name).pop());
+
+    return { suites: [suite.origin, suite_name, ...suite_sub_names], name: test_name };
 }
 
+
+interface TestSuite {
+    name: string,
+    tests: Map<string, TestResult>;
+    suites: Map<string, TestSuite>;
+
+    strings: string[];
+}
+
+function createSuite(name: string): TestSuite {
+    return {
+        name: name.toString(),
+        tests: new Map(),
+        suites: new Map(),
+        strings: []
+    };
+}
+
+function getSuiteAtDirectory(suite: TestSuite, dir: string[]): TestSuite {
+
+    if (dir.length > 0) {
+
+        const name = dir.shift();
+
+        if (!suite.suites.has(name))
+            suite.suites.set(name, createSuite(name));
+
+        return getSuiteAtDirectory(suite.suites.get(name), dir);
+    }
+
+    return suite;
+}
 type Tests = Map<string, { INSPECT: boolean, name: string, complete: boolean, failed: boolean; duration: number; }>;
 type SuiteData = { tests: Tests, suites: Map<string, SuiteData>; };
 /**
@@ -38,7 +79,7 @@ export class BasicReporter implements Reporter {
 
     colors: Reporter["colors"];
 
-    suites: SuiteData;
+    root_suite: TestSuite;
 
     time_start: number;
 
@@ -49,7 +90,7 @@ export class BasicReporter implements Reporter {
     pending: string;
 
     constructor() {
-        this.suites = null;
+        this.root_suite = null;
         this.time_start = 0;
         this.notifications = [];
     }
@@ -59,40 +100,58 @@ export class BasicReporter implements Reporter {
         console.log(`${this.colors.symB + message + rst}`);
     }
 
-    render(suites = this.suites, prepend = "") {
+    render(globals: Globals) {
 
         const
             strings = [],
-            { fail, msgA, pass, msgB, symD } = this.colors;
+            { fail, msgA, pass, msgB, symD, msgC, bkgr, objA } = this.colors;
 
-        for (const [key, suite] of suites.suites.entries()) {
 
-            strings.push(prepend + key + ":");
+        for (const { node: suite, meta: { depth } } of traverse(this.root_suite, "suites").skipRoot()) {
 
-            for (const test of suite.tests.values()) {
+            const
+                { name, tests } = suite,
+                offsetA = (" ").repeat((depth - 1) * 2),
+                offsetB = (" ").repeat((depth + 0) * 2),
+                suite_strings = [];
 
-                const insp = test.INSPECT ? "" + symD + "i " + rst : "  ";
+            let suite_header = "", FAILURE;
 
-                if (test.complete) {
-                    const dur = ` - ${Math.round((test.duration * (test.duration < 1 ? 10000 : 10))) / 10}${test.duration < 1 ? "μs" : "ms"}`;
+            for (const test_result of tests.values()) {
+                const
+                    { test, PASSED } = test_result,
+                    { name: result_name } = getNameData(test_result, globals),
+                    duration = test_result.clipboard_end - test_result.previous_clipboard_end,
+                    dur_string = ` # ${Math.round((duration * (duration < 1 ? 10000 : 10))) / 10}${duration < 1 ? "μs" : "ms"}`;
 
-                    if (test.failed) {
+                FAILURE = FAILURE || !PASSED;
 
-                        strings.push(prepend + fail + " ✗ " + insp + msgA + test.name + dur + rst);
-                    }
-                    else {
-
-                        strings.push(prepend + pass + " ✓ " + insp + msgA + test.name + dur + rst);
-                    }
+                if (result_name.trim() == name.trim()) {
+                    if (PASSED)
+                        suite_header = offsetA + pass + "✓ " + msgA + result_name + dur_string + rst;
+                    else
+                        suite_header = offsetA + fail + "✗ " + msgA + result_name + dur_string + rst;
+                } else {
+                    if (PASSED)
+                        suite_strings.push(offsetB + pass + " ✓ " + msgA + result_name + dur_string + rst);
+                    else
+                        suite_strings.push(offsetB + fail + " ✗ " + msgA + result_name + dur_string + rst);
                 }
-                else
-                    strings.push(prepend + "   " + insp + msgB + test.name + rst);
             }
 
-            strings.push(this.render(suite, prepend + "  "));
+            if (!suite_header) {
+                if (tests.size == 0)
+                    suite_header = offsetA + bkgr + "" + name + ":" + rst;
+                else if (FAILURE) {
+                    suite_header = offsetA + objA + "" + name + ":" + rst;
+                } else
+                    suite_header = offsetA + symD + "" + name + ":" + rst;
+            }
+
+            strings.push(suite_header, ...suite_strings);
         }
 
-        return strings.join("\n");
+        return strings.join("\n") + "\n";
     }
 
     async loadingSuites(global: Globals, terminal) { }
@@ -107,7 +166,9 @@ export class BasicReporter implements Reporter {
 
     async start(pending_tests: TestRig[], global: Globals, terminal: CLITextDraw) {
 
-        const { suites } = global;
+        //Each test is its own suite.
+
+        this.root_suite = createSuite("/");
 
         pending_tests = pending_tests.slice()
             .sort((a, b) => a.index < b.index ? -1 : 1)
@@ -115,34 +176,18 @@ export class BasicReporter implements Reporter {
 
         this.time_start = performance.now();
 
-        //order tests according to suite
-        this.suites = { suites: new Map, tests: new Map };
-
         try {
-
-
             for (const test of pending_tests) {
-
-                let suites_ = this.suites.suites, target_suite = this.suites;
 
                 const { suites, name } = getNameData(test, global);
 
-                for (const suite of suites) {
-
-                    if (!suites_.has(suite))
-                        suites_.set(suite, { tests: <Tests>new Map(), suites: new Map() });
-
-                    target_suite = suites_.get(suite);
-
-                    suites_ = target_suite.suites;
-                };
-
-                target_suite.tests.set(name, { INSPECT: test.INSPECT, name, complete: false, failed: false, duration: 0 });
-
+                const suite = getSuiteAtDirectory(this.root_suite, suites);
             }
         } catch (e) {
             //console.log(e);
         }
+
+        this.render(global);
     }
 
     async renderToTerminal(output: string, terminal: CLITextDraw) {
@@ -175,28 +220,16 @@ export class BasicReporter implements Reporter {
 
     async update(results: Array<TestResult>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
 
-        for (const { test, previous_clipboard_end, clipboard_end, PASSED } of results) {
+        for (const result of results) {
 
-            const duration = clipboard_end - previous_clipboard_end;
+            const { suites, name } = getNameData(result, global);
 
-            let suites_ = this.suites.suites, target_suite = this.suites;
+            const suite = getSuiteAtDirectory(this.root_suite, suites);
 
-            const { suites, name } = getNameData(test, global);
-
-            for (const suite of suites) {
-
-                if (!suites_.has(suite))
-                    suites_.set(suite, { tests: <Tests>new Map(), suites: new Map() });
-
-                target_suite = suites_.get(suite);
-
-                suites_ = target_suite.suites;
-            };
-
-            target_suite.tests.set(name, { INSPECT: test.INSPECT, name, complete: true, failed: !PASSED, duration });
+            suite.tests.set(name, result);
         }
 
-        const out = this.render();
+        const out = this.render(global);
 
         if (!COMPLETE)
             this.renderToTerminal(out, terminal);
@@ -205,6 +238,7 @@ export class BasicReporter implements Reporter {
     }
 
     async complete(results: TestResult[], global: Globals, terminal: CLITextDraw): Promise<boolean> {
+
         const
             time_end = performance.now(),
 
@@ -216,9 +250,7 @@ export class BasicReporter implements Reporter {
 
             strings = [await this.update(results, global, terminal, true)],
 
-            { fail, msgA, pass, objB } = this.colors,
-
-            errors = [], inspections = [];
+            { fail, msgA, pass, objB } = this.colors;
 
         let
             HAS_FAILED = false,
@@ -228,51 +260,56 @@ export class BasicReporter implements Reporter {
             failed = 0;
 
         try {
-            for (const result of results) {
 
-                const { test, errors: test_errors, PASSED } = result;
+            for (const { node: suite, meta: { depth, parent } } of bidirectionalTraverse(this.root_suite, "suites", true).skipRoot()) {
 
-                if (!PASSED) {
-                    failed++;
-                    HAS_FAILED = true;
-                }
+                const
+                    { name, tests } = suite, offsetA = (" ").repeat((depth - 1) * 2), offsetB = (" ").repeat((depth + 1) * 2);
 
-                const { suites: suites_name, name } = getNameData(test, global);
+                if (tests.size > 0) {
 
-                if (test_errors && test_errors.length > 0) {
+                    for (const test_result of tests.values()) {
 
+                        const
+                            { test, PASSED } = test_result,
+                            { name: result_name } = getNameData(test_result, global);
 
-                    for (let error of test_errors) {
-
-                        errors.push(error);
-                        //FAILED = true;
-                        /*
-                        if (error.WORKER) {
-                            error = Object.assign(new TestError(error), error);
+                        if (!PASSED) {
+                            HAS_FAILED = true;
+                            failed++;
+                            for (const error of test_result.errors) {
+                                suite.strings.push(offsetB + result_name + ": " + error);;
+                                //FAILED = true;
+                                /*
+                                if (error.WORKER) {
+                                    error = Object.assign(new TestError(error), error);
+                                }
+            
+                                const message = error.toString();//await error.toAsyncBlameString(watched_files, suites[test.suite_index].origin);
+            
+                                errors.push(`${rst}${msgA}[  ${name} ]${rst} ${error.INSPECTION_ERROR ? "" : "failed"}:\n\n    ${fail
+                                    + message
+                                        .replace(error.match_source, error.replace_source)
+                                        .split("\n")
+                                        .join("\n    ")
+                                    }\n${rst}`);
+                                    */
+                            }
                         }
-
-                        const message = error.toString();//await error.toAsyncBlameString(watched_files, suites[test.suite_index].origin);
-
-                        errors.push(`${rst}${msgA}[  ${name} ]${rst} ${error.INSPECTION_ERROR ? "" : "failed"}:\n\n    ${fail
-                            + message
-                                .replace(error.match_source, error.replace_source)
-                                .split("\n")
-                                .join("\n    ")
-                            }\n${rst}`);
-                            */
                     }
                 }
 
-                if (test.INSPECT) {
 
-                    const suite = suites[test.suite_index];
+                if (suite.strings.length > 0) {
+                    const header = offsetA + name;
+                    if (depth > 1)
+                        parent.strings.push(header, ...suite.strings);
+                    else
+                        strings.push(header, ...suite.strings, "");
 
-                    errors.push(`${symD}#### inspection [ ${msgA + suites_name.join(" > ")} - ${rst + name + symD} ] inspection ####:${rst}`,
-                        "   " + (await createInspectionMessage(result, test, suite, this, watched_files))
-                            .split("\n")
-                            .join("\n    ")
-                    );
                 }
+
+                suite.strings.length = 0;
             }
 
             for (const suite of suites.values()) {
@@ -280,7 +317,7 @@ export class BasicReporter implements Reporter {
                 const { error } = suite;
 
                 if (error) {
-                    errors.push(error);
+                    strings.push(error.toString());
                     /*
 
                     failed++;
@@ -297,7 +334,7 @@ export class BasicReporter implements Reporter {
             }
         } catch (e) {
             failed++;
-            errors.push(e);
+            strings.push(e);
             //  errors.push(`${rst}Reporter failed:\n\n    ${fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
         }
 
@@ -305,7 +342,7 @@ export class BasicReporter implements Reporter {
             ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (total - failed)} test${total - failed !== 1 ? "s" : ""} passed`
             : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
 
-        await this.renderToTerminal([strings.join("\n"), errors.join("\n"), inspections.join("\n"), rst].join("\n"), terminal);
+        await this.renderToTerminal([strings.join("\n"), rst].join("\n"), terminal);
 
         return HAS_FAILED;
     }

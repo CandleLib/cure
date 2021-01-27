@@ -5,10 +5,8 @@ import { performance } from "perf_hooks";
 import { TestRig } from "../types/test_rig.js";
 import { TestResult } from "../types/test_result";
 import { Globals } from "../types/globals.js";
-import { TestError } from "./test_error.js";
 import { prepareTestServer } from "./browser_runner.js";
 import { createHierarchalName } from "../utilities/name_hierarchy.js";
-import { test } from "../compile/assertion_site/assertion_compiler_manager.js";
 
 let nonce = 0;
 
@@ -214,7 +212,7 @@ export class RunnerBoss {
                             tests.push(wkr.test);
                         } else {
                             finished.push([<TestResult>{
-                                name: createHierarchalName(wkr.test.name, "Did Not Time Out"),
+                                name: "Did Not Time Out",
                                 clipboard_start: wkr.start,
                                 clipboard_write_start: wkr.start,
                                 previous_clipboard_end: wkr.start + dur,
@@ -226,7 +224,7 @@ export class RunnerBoss {
                                 logs: [],
                                 message: "",
                                 //@ts-ignore
-                                errors: ["Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1],
+                                errors: [["Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1].toString()],
                                 test: wkr.test,
                                 TIMED_OUT: true,
                                 PASSED: false

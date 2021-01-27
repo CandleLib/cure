@@ -44,10 +44,11 @@ export function buildRawTestRig(
 
     const { ast } = compileAssertionSite(assertion_expr, reporter);
     const { pos } = assertion_expr;
+    const rig_name = name || renderCompressed(assertion_expr);
     return <RawTestRig><any>{
         type: "DISCRETE",
         index,
-        name: name || renderCompressed(assertion_expr)
+        name: rig_name,
         RUN: !SKIP,
         SOLO,
         INSPECT,
@@ -62,7 +63,9 @@ export function buildRawTestRig(
                 stmt(`$harness.pushTestResult(${index});`),
                 ast,
                 stmt(`$harness.setSourceLocation(${[pos.off, pos.line + 1, pos.column].join(",")});`),
-                name_expression ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`) : stmt(";"),
+                name_expression
+                    ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`)
+                    : stmt(`$harness.setResultName("${rig_name}")`),
                 stmt(`$harness.popTestResult(${index});`),
             ]
         },
