@@ -45,13 +45,13 @@ export async function createTestSuiteFromSource(source, globals = createGlobalsO
     return suite;
 }
 
-export async function getSuiteTestOutcomeFromSource(source) {
-
-    const test_frame = createTestFrame({});
+export async function getSuiteTestOutcomeFromSource(source, global_modifications = {}) {
 
     const globals = createGlobalsObject();
 
     globals.runner = new DesktopRunner(1);
+
+    Object.assign(globals, global_modifications);
 
     globals.suites = new Map([["dd", await createTestSuiteFromSource(source, globals)]]);
 
@@ -60,4 +60,14 @@ export async function getSuiteTestOutcomeFromSource(source) {
     await runTests(suites.flatMap(suite => suite.tests), globals);
 
     return globals.outcome;
+}
+
+export async function getSuiteTestOutcomeFromURL(url_string, global_modifications = {}) {
+
+    const url = URL.resolveRelative(url_string, import.meta.url);
+
+    const source = await url.fetchText();
+
+    return getSuiteTestOutcomeFromSource(source, global_modifications);
+
 }
