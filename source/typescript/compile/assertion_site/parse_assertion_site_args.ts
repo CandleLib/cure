@@ -1,10 +1,11 @@
 import { JSNode, JSNodeClass, JSNodeType, renderCompressed } from "@candlefw/js";
-import { CompilerOptions } from "../../types/compiler_options";
+import { AssertionSiteArguments } from "../../types/assertion_site_arguments.js";
 import { jst } from "../utilities/traverse_js_node.js";
 
-export function parseAssertionSiteArguments(call_node: JSNode): CompilerOptions {
 
-    const result: CompilerOptions = {
+export function parseAssertionSiteArguments(call_node: JSNode): AssertionSiteArguments {
+
+    const result = {
         assertion_expr: null,
         BROWSER: null,
         INSPECT: false,
@@ -61,7 +62,7 @@ function Node_Is_A_Number(node: JSNode) {
     return node.type == JSNodeType.NumericLiteral && Number.isInteger(parseFloat(<string>node.value));
 }
 
-function handleOtherExpressionTypes(result: CompilerOptions, node: JSNode, mutate: (replacement_node: JSNode) => void) {
+function handleOtherExpressionTypes(result: AssertionSiteArguments, node: JSNode, mutate: (replacement_node: JSNode) => void) {
 
     if (Node_Is_A_Call(node)) {
         const [name, first_argument] = node.nodes;
@@ -72,7 +73,7 @@ function handleOtherExpressionTypes(result: CompilerOptions, node: JSNode, mutat
             first_argument.type | JSNodeClass.EXPRESSION
         ) {
             result.name_expression = first_argument;
-            mutate(null);
+            //  mutate(null);
             return;
         }
     }
@@ -83,15 +84,15 @@ function handleOtherExpressionTypes(result: CompilerOptions, node: JSNode, mutat
     result.assertion_expr = node;
 }
 
-function handleStringArgument(result: CompilerOptions, node: JSNode) {
+function handleStringArgument(result: AssertionSiteArguments, node: JSNode) {
     if (!result.name) result.name = <string>node.value;
 }
 
-function handleNumericArguments(result: CompilerOptions, node: JSNode) {
+function handleNumericArguments(result: AssertionSiteArguments, node: JSNode) {
     result.timeout_limit = parseFloat(<string>node.value);
 }
 
-function handleIdentifierArguments(node: JSNode, result: CompilerOptions) {
+function handleIdentifierArguments(node: JSNode, result: AssertionSiteArguments) {
 
     const val = (<string>node.value).toLowerCase();
 
