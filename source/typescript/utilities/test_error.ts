@@ -7,19 +7,8 @@ import {
 } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import data from "../reporting/utilities/error_line_parser.js";
+import { StackTraceLocation } from "../types/stack_trace_location";
 
-
-type StackTraceLocation = {
-    type: "URL";
-    col: number;
-    line: number;
-    protocol: string;
-    url: string;
-} | {
-    type: "ANONYMOUS";
-    col: number;
-    line: number;
-};
 
 const blank: Set<string> = new Set();
 /**

@@ -19,7 +19,7 @@ export async function runTests(
 
     try {
 
-        const final_tests = tests
+        const active_tests = tests
             .map(test => {
                 if (test.SOLO || test.INSPECT)
                     SOLO_RUN = true;
@@ -27,13 +27,11 @@ export async function runTests(
             })
             .filter(test => test.RUN && (!SOLO_RUN || test.INSPECT || test.SOLO));
 
-        await startRun(final_tests.flat(), globals);
+        await startRun(active_tests.flat(), globals);
 
         outcome.results.length = 0;
 
-
-
-        for (const res of runner.run(final_tests, RELOAD_DEPENDS, globals)) {
+        for (const res of runner.run(active_tests, RELOAD_DEPENDS, globals)) {
             try {
 
                 if (res) {
@@ -61,6 +59,10 @@ export async function runTests(
 
     } catch (e) {
         FAILED = true;
+
+        throw e;
+
+
         globals.exit("Unrecoverable error encountered in run_tests.ts", e);
     }
 

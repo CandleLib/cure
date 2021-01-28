@@ -1,23 +1,23 @@
 import URL from "@candlefw/url";
 import { assert } from "console";
-import { createTestRigsFromStringSource, createTestSuiteFromSource, getSuiteTestOutcomeFromSource } from "./tools.js";
+import { createTestsFromStringSource, createTestSuiteFromSource, getSuiteTestOutcomeFromSource } from "./tools.js";
 
 await URL.server();
 
 const source = await (URL.resolveRelative("./data/dynamic_test.js")).fetchText();
 
-const raw_rigs = createTestRigsFromStringSource(source);
+const assertion_sites = createTestsFromStringSource(source);
 
-assert("Rigs object is not undefined", raw_rigs !== undefined);
-assert("One RawTestRig object created", raw_rigs.length == 8);
-assert("No import names", raw_rigs[0].import_names.size == 0);
+assert("Rigs object is not undefined", assertion_sites !== undefined);
+assert("One RawTestRig object created", assertion_sites.length == 8);
+assert("No import names", assertion_sites[0].import_names.size == 0);
 
 //Run the test
 const suite = await createTestSuiteFromSource(source);
 
 assert(suite != null);
 assert(suite.error == null);
-assert(suite.rigs.length == 8);
+assert(suite.tests.length == 8);
 
 const outcome = await getSuiteTestOutcomeFromSource(source);
 
