@@ -46,3 +46,15 @@ export function createGlobalError(globals: Globals, e: Error | number, error_mes
 
     throw 0;
 }
+
+export function assertionSiteSoftError(globals: Globals, e: Error | number, error_message: string) {
+
+    globals.harness.pushTestResult();
+
+    globals.harness.setResultName(createHierarchalName("Assertion Site Error", error_message));
+
+    globals.harness.setException(e);
+
+    globals.harness.popTestResult();
+
+}

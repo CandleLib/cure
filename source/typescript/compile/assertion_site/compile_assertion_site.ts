@@ -2,6 +2,7 @@ import { traverse } from "@candlefw/conflagrate";
 import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
+import { assertionSiteSoftError } from "../../utilities/library_errors.js";
 import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
 import { combinePropRefsAndDecl, compileLoopingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
@@ -9,8 +10,6 @@ import { selectExpressionHandler } from "../expression_handler/expression_handle
 import { empty_set } from "../utilities/empty_set.js";
 import { jst } from "../utilities/traverse_js_node.js";
 import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
-
-
 
 function createAssertSiteObject(
     static_name: string,
@@ -92,7 +91,7 @@ export function compileAssertionSite(
     state: CompilerState,
     node: JSNode,
     LEAVE_ASSERTION_SITE: boolean
-): JSNode {
+): JSNode | void {
 
     node.nodes[0].value = ""; // Forcefully delete assert name
 
@@ -107,8 +106,10 @@ export function compileAssertionSite(
         timeout_limit
     } = parseAssertionSiteArguments(node);
 
-    if (!assertion_expr)
-        throw node.pos.throw(`Could not find an expression for assertion site [${node.pos.slice()}]`);
+    if (!assertion_expr) {
+        assertionSiteSoftError(state.globals, node.pos.errorMessage(`Could not find an expression for assertion site [${node.pos.slice()}]`), "Could not find assertion site");
+        return;
+    }
 
     const
         AWAIT = jst(assertion_expr).filter("type", JSNodeType.AwaitExpression).run(true).length > 0,
