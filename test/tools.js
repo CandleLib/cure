@@ -1,27 +1,31 @@
 import URL from "@candlefw/url";
 import { parser } from "@candlefw/js";
 import { NullReporter } from "@candlefw/test";
-import { compileRawTestRigs } from "../build/library/compile/compile_statements.js";
-import { createGlobals, createTestSuite, initializeReporterColors } from "../build/library/utilities/create_test_frame.js";
-import { loadTests } from "../build/library/utilities/load_tests.js";
-import { runTests } from "../build/library/test_running/run_tests.js";
-import { RunnerBoss } from "../build/library/test_running/runner_boss.js";
+import { createGlobals, createTestSuite, initializeReporterColors } from "@candlefw/test/build/library/utilities/create_test_frame.js";
+import { compileTests } from "@candlefw/test/build/library/compile/compile.js";
+import { loadTests } from "@candlefw/test/build/library/loading/load_tests.js";
+import { runTests } from "@candlefw/test/build/library/test_running/run_tests.js";
+import { DesktopRunner } from "@candlefw/test/build/library/test_running/runners/desktop_runner.js";
+import default_expression_handlers from "../build/library/compile/expression_handler/expression_handlers.js";
+import { loadExpressionHandler } from "../build/library/compile/expression_handler/expression_handler_manager.js";
 
 await URL.server();
 
-export function createTestRigsFromStringSource(source) {
+export function createTestsFromStringSource(source) {
 
-    const reporter = new NullReporter;
+    const globals = createGlobalsObject();
 
-    initializeReporterColors(reporter);
+    const { assertion_sites } = compileTests(parser(source).ast, globals, []);
 
-    const { raw_rigs: rigs } = compileRawTestRigs(parser(source).ast, reporter, []);
-
-    return rigs;
+    return assertion_sites;
 }
 
 function createGlobalsObject(report_constructor = NullReporter) {
+
     const globals = createGlobals(1000, "internal", false, false, false);
+
+    for (const expression_handler of default_expression_handlers)
+        loadExpressionHandler(globals, expression_handler);
 
     globals.reporter = initializeReporterColors(new report_constructor());
 
@@ -43,7 +47,7 @@ export async function getSuiteTestOutcomeFromSource(source) {
 
     const globals = createGlobalsObject();
 
-    globals.runner = new RunnerBoss(1);
+    globals.runner = new DesktopRunner(1);
 
     globals.suites = new Map([["dd", await createTestSuiteFromSource(source, globals)]]);
 

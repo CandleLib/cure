@@ -11,24 +11,27 @@
  */
 
 
-import { compileRawTestRigs } from "@candlefw/test/build/library/compile/compile_statements.js";
-import { InitializeReporterColors } from "@candlefw/test/build/library/utilities/create_test_frame.js";
-
 import URL from "@candlefw/url";
-import { parser, renderWithFormatting } from "@candlefw/js";
-import { BasicReporter } from "@candlefw/test";
+import { createTestsFromStringSource } from "./tools.js";
 
-const reporter = new BasicReporter;
-
-InitializeReporterColors(reporter);
 
 //*
 const source = await (URL.resolveRelative("./data/advance_sequence_spec.js")).fetchText();
 
-const { raw_rigs: rigs } = compileRawTestRigs(parser(source).ast, reporter, []);
+const assertion_sites = createTestsFromStringSource(source);
 
 // compileStatementsNew expects a global object and  
-assert(rigs[0].test_maps.length == 4);
-assert(rigs[0].test_maps[1].SOLO == false);
-assert(rigs[0].test_maps[2].SOLO == true);
+assert(assertion_sites.length == 1);
+assert(assertion_sites[0].SOLO == false);
+
+// Test Sequence Directly
+
+assert_group(sequence, "These Sequenced Tests Should Pass", () => {
+    var name = "ABE";
+    assert(name(name), 1 == 1);
+    name = "ABED";
+    assert(name(name), 2 == 2);
+    name = "ABER";
+    assert(name(name), 3 == 3);
+});
 

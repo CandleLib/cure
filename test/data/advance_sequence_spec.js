@@ -1,12 +1,9 @@
 
-"CFW.test internal test";
-
-assert_group(sequence, () => {
+assert_group("CFW.test internal test", sequence, () => {
 
     let data = 2;
 
-    "0 Basic built in assertion should pass";
-    assert(data + 2 == 4);
+    assert("0 Basic built in assertion should pass", data + 2 == 4);
 
     assert_group("inner assert_group", () => {
         let data = 4;
