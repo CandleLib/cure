@@ -31,23 +31,19 @@ export async function compileTests(ast: JSNode, globals: Globals, origin: string
 
     let index = 0;
 
-    for (const rig of ast_prop.assertion_sites) {
+    for (const assertion_sites of ast_prop.assertion_sites) {
 
-        const { import_names } = rig;
+        const { import_names } = assertion_sites;
 
-        if (rig.type == "DISCRETE")
-            rig.index = index++;
-        else {
-            rig.index = index;
-        }
+        assertion_sites.index = index;
 
         for (const $import of imports)
             for (const id of $import.import_names)
                 if (import_names.has(id.import_name))
-                    rig.imports.push({ module: $import, name: id });
+                    assertion_sites.imports.push({ module: $import, name: id });
 
 
-        assertion_sites.push(rig);
+        assertion_sites.push(assertion_sites);
     }
 
     return { assertion_sites, imports };

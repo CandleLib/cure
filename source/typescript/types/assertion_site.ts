@@ -5,7 +5,6 @@ import { ImportRequirement, ImportModule, ImportName } from "./imports";
 
 
 export interface AssertionSite {
-    type: "SEQUENCE" | "DISCRETE",
 
     /**
      * Index of the assertion site within the source file. Top Down. 

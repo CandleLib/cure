@@ -24,7 +24,6 @@ function createAssertSiteObject(
     timeout_limit: number
 ): AssertionSite {
     return <AssertionSite>{
-        type: "DISCRETE",
         index: -1,
         static_name,
         RUN: !SKIP,
