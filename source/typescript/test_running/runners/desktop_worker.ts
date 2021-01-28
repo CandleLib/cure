@@ -6,12 +6,18 @@ import { ImportSource } from "../../types/imports.js";
 import { Test } from "../../types/test.js";
 import { rst } from "../../reporting/utilities/colors.js";
 import { createTestFunctionFromTestSource } from "../utilities/create_test_function.js";
+
 import { createTestHarnessEnvironmentInstance } from "../utilities/test_harness.js";
-export const ImportedModules: Map<string, any> = new Map();
 
 //@ts-ignore
 const harness_env = createTestHarnessEnvironmentInstance(equal, util, <Performance><any>performance, rst);
 export const harness = harness_env.harness;
+export const ImportedModules: Map<string, any> = new Map();
+
+import { splitHierarchalName } from "../../utilities/name_hierarchy.js";
+import { createNameErrorMessage } from "../../utilities/library_errors.js";
+
+
 
 export async function loadImport(source) {
     return await import(source);
@@ -40,7 +46,6 @@ async function RunTest({ test }: { test: Test; }) {
     } = harness_env;
 
     try {
-
         //@ts-ignore
         global.harness = harness;
 
@@ -118,10 +123,11 @@ async function RunTest({ test }: { test: Test; }) {
         results = harness_getResults();
     }
 
-
-    results.forEach((r, i) => {
-        if (r.name == "") r.name = "test_" + i;
-    });
+    for (let i = 0, result = null; (result = results[i], i++ < results.length);)
+        if (result.name == "") {
+            result.name = createNameErrorMessage(i);
+            result.PASSED = false;
+        }
 
     parentPort.postMessage(results);
 }

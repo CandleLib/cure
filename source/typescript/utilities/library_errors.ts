@@ -58,3 +58,8 @@ export function assertionSiteSoftError(globals: Globals, e: Error | number, erro
     globals.harness.popTestResult();
 
 }
+
+
+export function createNameErrorMessage(index): any {
+    return `Identity Error[${index}]: This is an internal error. See https://github.com/candlefw/test/library_errors.md`;
+}
