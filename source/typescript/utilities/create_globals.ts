@@ -7,6 +7,8 @@ import { TestHarness } from "../types/test_harness.js";
 import { completedRun } from "../reporting/report.js";
 import { TestInfo } from "../types/test_info.js";
 import { endWatchedTests } from "./end_watched_tests.js";
+import { NullReporter } from "../reporting/null_reporter.js";
+
 
 export function createGlobals(
     max_timeout: number = 1000,
@@ -34,7 +36,7 @@ export function createGlobals(
         {},
         TestError
     ),
-        globals: Globals = {
+    globals: Globals = {
 
             flags: {
 
@@ -61,7 +63,7 @@ export function createGlobals(
 
             suites: null,
 
-            reporter: null,
+            reporter: new NullReporter,
 
             runner: null,
 
@@ -69,7 +71,7 @@ export function createGlobals(
 
             watched_files_map: new Map(),
 
-            outcome: { FAILED: true, results: [], errors: [] },
+            outcome: { FAILED: true, results: [], fatal_errors: [] },
 
             expression_handlers: [],
 
@@ -84,7 +86,7 @@ export function createGlobals(
                 if (error) {
                     //Make sure this is printed no matter what.
                     console.error(error);
-                    globals.outcome.errors.push(new TestError(error));
+                    globals.outcome.fatal_errors.push(error);
                 }
 
                 endWatchedTests(globals, resolution);
@@ -119,6 +121,10 @@ export function createGlobals(
                 harness_flushClipboard();
 
                 const results = globals.getLibraryTestInfo();
+
+                globals.outcome.results.push(...results);
+
+                globals.outcome.fatal_errors.push(...results.flatMap(i => i.errors));
 
                 completedRun(results, globals);
 
