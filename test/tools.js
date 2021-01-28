@@ -1,13 +1,15 @@
 import URL from "@candlefw/url";
 import { parser } from "@candlefw/js";
 import { NullReporter } from "@candlefw/test";
-import { createGlobals, createTestSuite, initializeReporterColors } from "@candlefw/test/build/library/utilities/create_test_frame.js";
+import { createTestFrame, initializeReporterColors } from "@candlefw/test/build/library/utilities/create_test_frame.js";
 import { compileTests } from "@candlefw/test/build/library/compile/compile.js";
 import { loadTests } from "@candlefw/test/build/library/loading/load_tests.js";
 import { runTests } from "@candlefw/test/build/library/test_running/run_tests.js";
 import { DesktopRunner } from "@candlefw/test/build/library/test_running/runners/desktop_runner.js";
 import default_expression_handlers from "../build/library/compile/expression_handler/expression_handlers.js";
 import { loadExpressionHandler } from "../build/library/compile/expression_handler/expression_handler_manager.js";
+import { createGlobals } from "../build/library/utilities/create_globals.js";
+import { createTestSuite } from "../build/library/utilities/create_test_suite.js";
 
 await URL.server();
 
@@ -22,7 +24,7 @@ export function createTestsFromStringSource(source) {
 
 function createGlobalsObject(report_constructor = NullReporter) {
 
-    const globals = createGlobals(1000, "internal", false, false, false);
+    const { globals } = createGlobals(1000, "internal", false, false, false);
 
     for (const expression_handler of default_expression_handlers)
         loadExpressionHandler(globals, expression_handler);
@@ -45,6 +47,8 @@ export async function createTestSuiteFromSource(source, globals = createGlobalsO
 
 export async function getSuiteTestOutcomeFromSource(source) {
 
+    const test_frame = createTestFrame({});
+
     const globals = createGlobalsObject();
 
     globals.runner = new DesktopRunner(1);
@@ -53,7 +57,7 @@ export async function getSuiteTestOutcomeFromSource(source) {
 
     const suites = Array.from(globals.suites.values());
 
-    await runTests(suites.flatMap(suite => suite.rigs), Array.from(suites), globals);
+    await runTests(suites.flatMap(suite => suite.tests), globals);
 
     return globals.outcome;
 }
