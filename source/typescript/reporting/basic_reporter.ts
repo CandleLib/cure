@@ -18,22 +18,38 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
     const
         test: Test = Object_Is_TestResult(result) ? result.test : result,
         name = Object_Is_TestResult(result) ? result.name : createHierarchalName(result.name),
-        suite = [...globals.suites.values()][test.suite_index],
         name_split = splitHierarchalName(name),
-        test_name = name_split.pop(),
-        suite_name = (suite.name ?? "undefined")
-            .replace(/[_-]/g, " ")
-            .split(" ")
-            .map(d => d[0].toLocaleUpperCase() + d.slice(1).toLocaleLowerCase())
-            .join(" "),
-        suite_sub_names = name_split;
+        test_name = name_split.pop();
+
+    let
+        origin = "@candlefw",
+        suite_name = "test",
+        suite_sub_names = [];
+
+    if (globals.suites) {
+
+        const suite = [...globals.suites.values()][test.suite_index];
+
+        if (suite) {
+
+            origin = suite.origin;
+
+            suite_name = (suite.name ?? "undefined")
+                .replace(/[_-]/g, " ")
+                .split(" ")
+                .map(d => d[0].toLocaleUpperCase() + d.slice(1).toLocaleLowerCase())
+                .join(" ");
+
+            suite_sub_names = name_split;
+        }
+    }
 
     if (!Object_Is_TestResult(result))
         suite_sub_names.push(test_name);
     else
         suite_sub_names.push(splitHierarchalName(result.test.name).pop());
 
-    return { suites: [suite.origin, suite_name, ...suite_sub_names], name: test_name };
+    return { suites: [origin, suite_name, ...suite_sub_names], name: test_name };
 }
 
 
@@ -88,7 +104,7 @@ export class BasicReporter implements Reporter {
     pending: string;
 
     constructor() {
-        this.root_suite = null;
+        this.root_suite = createSuite("/");
         this.time_start = 0;
         this.notifications = [];
     }

@@ -1,15 +1,15 @@
 import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, renderWithFormatting, stmt } from "@candlefw/js";
-import { Reporter } from "../../test.js";
+import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
 import { AssertionSite } from "../../types/assertion_site.js";
+import { CompilerState } from "../../types/compiler_state";
 import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
-import { combinePropRefsAndDecl, compileLoopingStatement, repackageAssertionSite } from "../compile_statements.js";
-import { CompilerState } from "../../types/compiler_state";
+import { combinePropRefsAndDecl, compileLoopingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
 import { selectExpressionHandler } from "../expression_handler/expression_handler_manager.js";
-import { replaceFirstBlockContentWithNodes } from "../utilities/replace_block_statement_contents.js";
+import { empty_set } from "../utilities/empty_set.js";
 import { jst } from "../utilities/traverse_js_node.js";
 import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
+
 
 
 function createAssertSiteObject(
@@ -36,6 +36,7 @@ function createAssertSiteObject(
         pos: original_assertion_expression.pos,
         expression: original_assertion_expression,
         timeout_limit,
+        import_names: empty_set,
         ast,
     };
 }
@@ -89,8 +90,11 @@ export function compileAssertionSiteTestExpression(state: CompilerState, expr: J
 
 export function compileAssertionSite(
     state: CompilerState,
-    call_expression: JSNode,
-): AssertionSite {
+    node: JSNode,
+    LEAVE_ASSERTION_SITE: boolean
+): JSNode {
+
+    node.nodes[0].value = ""; // Forcefully delete assert name
 
     const {
         assertion_expr,
@@ -101,10 +105,10 @@ export function compileAssertionSite(
         SOLO,
         name,
         timeout_limit
-    } = parseAssertionSiteArguments(call_expression);
+    } = parseAssertionSiteArguments(node);
 
     if (!assertion_expr)
-        throw call_expression.pos.throw(`Could not find an expression for assertion site [${call_expression.pos.slice()}]`);
+        throw node.pos.throw(`Could not find an expression for assertion site [${node.pos.slice()}]`);
 
     const
         AWAIT = jst(assertion_expr).filter("type", JSNodeType.AwaitExpression).run(true).length > 0,
@@ -129,7 +133,7 @@ export function compileAssertionSite(
             ]
         };
 
-    return createAssertSiteObject(
+    const assertion_site = createAssertSiteObject(
         rig_name,
         SKIP, SOLO,
         INSPECT, AWAIT,
@@ -137,7 +141,20 @@ export function compileAssertionSite(
         assertion_expr,
         ast,
         timeout_limit
-    );
+    ),
+        prop = compileTestsFromSourceAST(
+            state.globals,
+            node,
+            state.imports
+        );
+
+    packageAssertionSites(state, prop, assertion_site);
+
+    if (LEAVE_ASSERTION_SITE)
+        for (const ref of prop.required_references.values())
+            state.global_references.add(ref);
+
+    return LEAVE_ASSERTION_SITE ? assertion_site.ast : null;
 }
 
 
@@ -190,27 +207,22 @@ export function compileAssertionGroupSite(
 
             if (imports_.size > 0)
                 prop.required_references = new setUnion(imports_, prop.required_references);
-            //
-            tests.push(repackageAssertionSite(assertion_site, prop, statements.length));
-            //
-            statements.push(prop);
-            //
-            return prop.stmt;
+
+            packageAssertionSites(state, prop, assertion_site);
 
         } else {
 
             combinePropRefsAndDecl(state, prop);
 
             for (const assertion_site of prop.assertion_sites) {
-
                 assertion_site.static_name = createHierarchalName(name, assertion_site.static_name);
                 assertion_site.BROWSER = assertion_site.BROWSER || BROWSER;
                 assertion_site.SOLO = assertion_site.SOLO || SOLO;
                 assertion_site.RUN = assertion_site.RUN || !SKIP;
                 assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
-
-                tests.push(repackageAssertionSite(assertion_site, prop, statements.length));
             }
+
+            packageAssertionSites(state, prop);
 
             if (prop.stmt.nodes.length > 0) {
                 state.AWAIT = prop.AWAIT || state.AWAIT;

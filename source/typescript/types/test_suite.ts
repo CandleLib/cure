@@ -1,3 +1,4 @@
+import URL from "@candlefw/url";
 import { TestError } from "../utilities/test_error";
 import { Test } from "./test";
 
@@ -20,12 +21,7 @@ export interface TestSuite {
      * The original URL of the test file this suite is built from.
      */
     origin: string;
-
-    /**
-     * An error object if an exception was thrown during TestRig compilation.
-     */
-    error?: TestError;
-
+    
     /**
      * The character data of the source test file.
      */
@@ -35,4 +31,6 @@ export interface TestSuite {
      * The file name of the suite 
      */
     name: string;
+
+    url: URL;
 };

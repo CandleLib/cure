@@ -9,41 +9,60 @@ export async function createTestFunctionFromTestSource(
     ImportedModules: Map<string, NodeModule>,
     TestError,
     ld: (arg: string) => Promise<NodeModule>,
-    createAddendum = (a, b) => "",
-    pass = "",
-    fail = ""
+    createAddendum = (a, b) => ""
 ) {
 
-    const { test_function_object_args: args, import_arg_specifiers: spec, import_module_sources: sources, source } = test,
-        addendum = createAddendum(sources, test);
+    harness.pushTestResult();
 
-    harness.imports = sources;
+    harness.setResultName("Could Not Load Imports");
 
-    harness.errors = [];
+    await loadModules(test, ImportedModules, ld);
 
-    harness.test_index = -1;
+    harness.popTestResult();
 
-    harness.origin = "";
 
-    harness.accessible_files = accessible_files;
+    harness.pushTestResult();
 
-    for (const { module_specifier: source } of sources) {
-        if (!ImportedModules.has(source))
-            ImportedModules.set(source, await ld(source));
+    harness.setResultName("Could Not Create Test Function");
+
+    const compiled_fn = createTest(test, createAddendum(test.import_module_sources, test), harness, TestError, ImportedModules);
+
+    harness.popTestResult();
+
+
+    return compiled_fn;
+}
+
+function createTest(test: Test, addendum: string, harness: TestHarness, TestError: any, ImportedModules: Map<string, NodeModule>) {
+
+    const
+        { test_function_object_args, import_arg_specifiers, source } = test,
+
+        test_args = [harness, TestError];
+
+    for (const e of import_arg_specifiers) {
+
+        const module = ImportedModules.get(e.module_specifier);
+
+        if (!module[e.module_name])
+            throw new Error(`Could not find object [${e.module_name}] export of ${e.module_specifier}`);
+
+        test_args.push(module[e.module_name]);
     }
 
-    const fn = (AsyncFunction)(...[...args, addendum + source]),
+    const
 
-        test_args = [harness, TestError, ...spec.map(e => {
-
-            const module = ImportedModules.get(e.module_specifier);
-
-            if (!module[e.module_name])
-                throw new TestError(`Could not find object [${e.module_name}] export of \n${pass} ${e.module_specifier} ${fail}\n`, "", e.pos.line + 1, e.pos.column + 1, e.module_name, pass + e.module_name + fail);
-
-            return module[e.module_name];
-        })];
+        fn = ((AsyncFunction)(...test_function_object_args, addendum + source));
 
     return () => fn.apply({}, test_args);
-
 }
+
+async function loadModules(test: Test, ImportedModules: Map<string, NodeModule>, ld: (arg: string) => Promise<NodeModule>) {
+
+    for (const { source, module_specifier } of test.import_module_sources)
+
+        if (!ImportedModules.has(module_specifier))
+
+            ImportedModules.set(module_specifier, await ld(source));
+}
+

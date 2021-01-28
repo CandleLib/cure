@@ -4,16 +4,17 @@ import util from "util";
 import { parentPort } from "worker_threads";
 import { ImportSource } from "../../types/imports.js";
 import { Test } from "../../types/test.js";
-import { fail, pass, rst } from "../../reporting/utilities/colors.js";
+import { rst } from "../../reporting/utilities/colors.js";
 import { createTestFunctionFromTestSource } from "../utilities/create_test_function.js";
 import { TestError } from "../../utilities/test_error.js";
 import { constructHarness } from "../utilities/test_harness.js";
+import { splitHierarchalName } from "../../utilities/name_hierarchy.js";
 export const ImportedModules: Map<string, any> = new Map();
 
 //@ts-ignore
 const { harness,
     harness_init,
-    harness_clearClipboard,
+    harness_flushClipboard,
     harness_getResults,
     harness_overrideLog,
     harness_restoreLog,
@@ -47,9 +48,6 @@ async function RunTest({ test }: { test: Test; }) {
         harness_overrideLog();
 
         //Test Initialization TestResult
-        harness.pushTestResult();
-
-        harness.setResultName("Load modules and create test function");
 
         const fn = (await createTestFunctionFromTestSource(
             test,
@@ -57,19 +55,17 @@ async function RunTest({ test }: { test: Test; }) {
             ImportedModules,
             TestError,
             loadImport,
-            createAddendum,
-            pass,
-            fail
+            createAddendum
         ));
 
-        harness.popTestResult();
-
+        // Clear any existing TestInfo created by [createTestFunctionFromTestSource]
+        harness_init();
 
         // Global TestResult 
         // - Catchall for any errors that lead to a hard crash of the test function
         harness.pushTestResult();
 
-        harness.setResultName("Test Rig Ran Without Critical Errors");
+        harness.setResultName(`Test [ ${splitHierarchalName(test.name).pop()} ] failed with a critical error`);
 
         await fn();
 
@@ -77,33 +73,20 @@ async function RunTest({ test }: { test: Test; }) {
 
         harness_restoreLog();
 
-        results = harness_getResults().slice(1, -1);
+        results = harness_getResults().slice(0, -1);
 
     } catch (e) {
 
         harness_restoreLog();
 
-        let error = null;
+        harness_flushClipboard();
 
-        if (e instanceof TestError) {
-            error = e;
-        } else {
-            try {
-                error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", test.map);
-            } catch (ee) {
-                error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
-            }
-        }
-
-        error.index = harness.test_index;
-
-        harness.setException(error);
+        harness.setException(e);
 
         harness.popTestResult();
 
-        harness_clearClipboard();
-
         results = harness_getResults().slice(-1); //Only return the worker test
+
     }
 
 
@@ -113,7 +96,7 @@ async function RunTest({ test }: { test: Test; }) {
 
         harness.pushTestResult();
 
-        harness.setResultName("No Critical Test Errors");
+        harness.setResultName("Critical Test Errors");
 
         harness.setException(new Error("No results generated from this test"));
 

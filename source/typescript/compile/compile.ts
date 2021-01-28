@@ -18,9 +18,7 @@ import { Globals } from "../types/globals.js";
  * 
  * @param {Reporter} reporter - Users reporter.color to add asrenderWithFormattingAndSourceMapsertion messaging syntax highlights.
  */
-export async function compileTests(ast: JSNode, globals: Globals, origin: string):
-
-    Promise<{ assertion_sites: AssertionSite[], imports: ImportModule[]; }> {
+export function compileTests(ast: JSNode, globals: Globals, origin: string): { assertion_sites: AssertionSite[], imports: ImportModule[]; } {
 
     ast.pos.source = origin;
 
@@ -31,19 +29,19 @@ export async function compileTests(ast: JSNode, globals: Globals, origin: string
 
     let index = 0;
 
-    for (const assertion_sites of ast_prop.assertion_sites) {
+    for (const assertion_site of ast_prop.assertion_sites) {
 
-        const { import_names } = assertion_sites;
+        const { import_names } = assertion_site;
 
-        assertion_sites.index = index;
+        assertion_site.index = index;
 
         for (const $import of imports)
             for (const id of $import.import_names)
                 if (import_names.has(id.import_name))
-                    assertion_sites.imports.push({ module: $import, name: id });
+                    assertion_site.imports.push({ module: $import, name: id });
 
 
-        assertion_sites.push(assertion_sites);
+        assertion_sites.push(assertion_site);
     }
 
     return { assertion_sites, imports };

@@ -9,24 +9,32 @@ import { TestSuite } from "../types/test_suite.js";
 import { runTests } from "../test_running/run_tests.js";
 import { loadTests } from "./load_tests.js";
 import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
+import { createSuiteError } from "../utilities/library_errors.js";
 
-export async function loadSuite(suite: TestSuite, globals: Globals) {
+async function initializeSuite(
+    globals: Globals,
+    suite: TestSuite,
+    url: URL = suite.url
+) {
+
+    suite.name = url.filename;
+
+    suite.url = url;
+
+    suite.data = await suite.url.fetchText();
+
+    suite.tests.length = 0;
+
+    loadTests(suite.data, suite, globals);
+}
+
+export type SuiteReloader = (suite: TestSuite) => Promise<void>;
+export async function loadSuite(suite: TestSuite, globals: Globals, reloadSuite: FN) {
     try {
 
+        const { flags: { WATCH, PRELOAD_IMPORTS } } = globals;
 
-        const { flags: { WATCH, PRELOAD_IMPORTS } } = globals,
-            url = new URL(path.resolve(process.cwd(), suite.origin)),
-            text = await url.fetchText();
-
-        suite.name = url.filename;
-
-        suite.data = text;
-
-        suite.tests.length = 0;
-
-        suite.error = null;
-
-        await loadTests(text, suite, globals);
+        await initializeSuite(globals, suite, new URL(path.resolve(process.cwd(), suite.origin)));
 
         if (PRELOAD_IMPORTS || WATCH)
             await handleWatchOfRelativeDependencies(suite, globals);
@@ -34,36 +42,45 @@ export async function loadSuite(suite: TestSuite, globals: Globals) {
         if (WATCH) {
 
             try {
+
                 const watcher = fs.watch(suite.origin + "", async function (a) {
 
-                    if (!globals.flags.PENDING) {
+                    await reloadSuite(suite);
 
-                        globals.flags.PENDING = true;
-
-                        suite.tests.length = 0;
-
-                        suite.error = null;
-
-                        suite.data = await url.fetchText();
-
-                        await loadTests(suite.data, suite, globals);
-
-                        handleWatchOfRelativeDependencies(suite, globals);
-
-                        await runTests(suite.tests.slice(), [suite], globals);
-
-                        globals.reporter.notify("Waiting for changes...");
-
-                        globals.flags.PENDING = false;
-                    }
                 });
 
                 globals.watchers.push(watcher);
+
             } catch (e) {
-                globals.exit("\nCannot continue in watch mode when a watched file cannot be found\n", e);
+
+                createSuiteError(globals, suite, e, `Error trying to work with watched file`);
             }
         }
     } catch (e) {
-        globals.exit("\nCannot continue due to the following error:\n", e);
+
+        createSuiteError(globals, suite, e, `Critical error encountered while compiling suite`);
     }
+}
+
+export function createSuiteReloaderFunction(globals: Globals, postInitialize: (suite: TestSuite) => Promise<void>): SuiteReloader {
+
+    return async function reloadTestSuite(suite: TestSuite) {
+
+        if (globals.lock()) {
+
+            globals.flags.PENDING = true;
+
+            initializeSuite(globals, suite);
+
+            loadTests(suite.data, suite, globals);
+
+            await handleWatchOfRelativeDependencies(suite, globals);
+
+            await postInitialize(suite);
+
+            globals.flags.PENDING = false;
+
+            globals.unlock();
+        }
+    };
 }

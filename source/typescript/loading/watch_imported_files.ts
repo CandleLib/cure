@@ -28,7 +28,7 @@ function createFileWatcher(path: URL, globals: Globals) {
 
                 const suites = Array.from(globals.watched_files_map.get(path_string).values());
 
-                await runTests(suites.flatMap(suite => suite.tests), Array.from(suites), globals, true);
+                await runTests(suites.flatMap(suite => suite.tests), globals, true);
 
                 globals.flags.PENDING = false;
 

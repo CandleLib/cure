@@ -183,16 +183,7 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
 
             setException: (e) => {
                 markWriteStart();
-                if (!(e instanceof te))
-                    e = new te(e);
-
-                if (harness.test_index > 0)
-                    e.index = harness.test_index;
-
                 addTestErrorToActiveResult(e);
-
-                if (harness.errors.length > MAX_ERROR_LIMIT)
-                    throw new Error("Maximum number of errors reached. Error count is. " + (MAX_ERROR_LIMIT + 1));
             },
 
             inspect: (...args) => {
@@ -332,17 +323,31 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
     function harness_init() {
         active_test_result = null;
         results.length = 0;
+        clipboard.length = 0;
         previous_start = pf_now();
     }
+    /**
+     Remove any TestInfo object with an index greater than 0 from the clipboard,
+     and place them in the results array.
+    */
+    function harness_flushClipboard() {
 
-    function harness_clearClipboard() {
-        for (const test of clipboard) {
-            const end = pf_now();
-            active_test_result.previous_clipboard_end = end;
-            active_test_result.clipboard_end = end;
-            test.PASSED = false;
-            test.message = "Could not complete test due to error from previous test";
-            results.push(test);
+        if (clipboard.length > 1) {
+
+            for (const test of clipboard.slice(1).reverse()) {
+                const end = pf_now();
+                active_test_result.previous_clipboard_end = end;
+                active_test_result.clipboard_end = end;
+                test.PASSED = false;
+                test.message = "Could not complete test due to error from previous test";
+                active_test_result = test;
+                results.push(test);
+            }
+
+
+            clipboard.length = 1;
+
+            active_test_result = clipboard[0];
         }
     }
 
@@ -360,7 +365,7 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
         console.log = log;
     }
 
-    return { harness, harness_init, harness_clearClipboard, harness_getResults, harness_overrideLog, harness_restoreLog };
+    return { harness, harness_init, harness_flushClipboard, harness_getResults, harness_overrideLog, harness_restoreLog };
 };
 
 

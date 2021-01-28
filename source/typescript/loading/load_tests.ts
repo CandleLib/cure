@@ -10,9 +10,7 @@ import { Globals } from "../types/globals.js";
 import { ImportModule, ImportRequirement, ImportSource, ModuleSpecifier } from "../types/imports.js";
 import { Test } from "../types/test.js";
 import { TestSuite } from "../types/test_suite.js";
-import { TestError } from "../utilities/test_error.js";
-
-
+import { createTestError } from "../utilities/library_errors.js";
 
 /**
  * Create Tests from a test filepath and add to suite.
@@ -20,26 +18,20 @@ import { TestError } from "../utilities/test_error.js";
  * @param {string} url_string - A path to the test file.
  * @param {TestSuite} suite - A TestSuite that the TestRigs will be added to.
  */
-export async function loadTests(text_data: string, suite: TestSuite, globals: Globals): Promise<void> {
+export function loadTests(text_data: string, suite: TestSuite, globals: Globals): void {
 
     try {
         const lex = new Lexer(text_data);
 
         lex.source = suite.origin;
 
-        const { assertion_sites } = await compileTests(parser(lex).ast, globals, "");
+        const { assertion_sites } = compileTests(parser(lex).ast, globals, "");
 
         suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
 
     } catch (e) {
 
-        if (e === 0) return;
-
-        console.log({ e });
-
-        suite.tests.length = 0;
-
-        suite.error = new TestError(e, suite.origin, 0, 0, "", "");
+        createTestError(globals, suite, e, `Critical error encountered when compiling tests`);
     }
 }
 
@@ -152,10 +144,6 @@ function createTestRigFunctionSourceCode(suite: TestSuite, assertion_site: Asser
         };
 
     } catch (e) {
-
-        error = new TestError(e, "");
-
-        throw 0;
     }
 }
 

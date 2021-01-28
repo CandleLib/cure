@@ -11,10 +11,10 @@ export function createCompilerState(
 ): CompilerState {
     return {
         globals,
-        ast: AST,
+        AST: AST,
         imports: Imports,
-        glbl_decl: new Set,
-        glbl_ref: new Set,
+        global_declarations: new Set,
+        global_references: new Set,
         tests: [],
         statements: [],
         declarations: [],

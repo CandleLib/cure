@@ -5,7 +5,7 @@ import { BasicReporter } from "../reporting/basic_reporter.js";
 import { Globals, Outcome } from "../types/globals";
 import { TestFrame, TestFrameOptions } from "../types/test_frame";
 import { runTests } from "../test_running/run_tests.js";
-import { loadSuite } from "../loading/load_suite.js";
+import { createSuiteReloaderFunction, loadSuite, SuiteReloader } from "../loading/load_suite.js";
 import { Reporter } from "../types/reporter.js";
 import * as colors from "../reporting/utilities/colors.js";
 import { TestError } from "./test_error.js";
@@ -15,6 +15,11 @@ import { constructHarness } from "../test_running/utilities/test_harness.js";
 import { TestHarness } from "../types/test_harness.js";
 import { loadExpressionHandler } from "../compile/expression_handler/expression_handler_manager.js";
 import default_expression_handlers from "../compile/expression_handler/expression_handlers.js";
+import { createGlobalError } from "./library_errors.js";
+import { loadTests } from "../loading/load_tests.js";
+import { handleWatchOfRelativeDependencies } from "../loading/watch_imported_files.js";
+import { completedRun } from "../reporting/report.js";
+import { TestInfo } from "../types/test_info.js";
 
 
 const DefaultOptions: TestFrameOptions = {
@@ -46,7 +51,7 @@ export function createTestFrame(
         { harness,
             harness_init,
             harness_getResults,
-            harness_clearClipboard
+            harness_flushClipboard
         } = constructHarness(
             (a, b) => a == b,
             { performance: () => 0 },
@@ -72,6 +77,7 @@ export function createTestFrame(
             null
         );
 
+
     let resolution: Resolver = null;
 
     function initializeResolver(res: Resolver) {
@@ -80,6 +86,29 @@ export function createTestFrame(
 
         resolution = res;
     }
+
+    globals.getLibraryTestInfo = function () {
+        harness_flushClipboard();
+
+        const results = harness_getResults();
+
+        results.forEach(r => r.test = { name: "Library Error" });
+
+        return results;
+    };
+
+    globals.reportErrors = function reportErrors() {
+
+        harness_flushClipboard();
+
+        const results = globals.getLibraryTestInfo();
+
+        completedRun(results, globals);
+
+        harness_init();
+
+        globals.unlock();
+    };
 
     return {
 
@@ -99,36 +128,76 @@ export function createTestFrame(
 
             initializeResolver(resolver);
 
-            globals.expression_handlers;
-
             await initializeGlobals(globals, number_of_workers);
 
-            await loadAndRunTestSuites(globals, test_suite_url_strings);
+            try {
 
-            watchTestsOrExit(globals, resolution);
+                harness_init();
+
+                await loadAndRunTestSuites(globals, test_suite_url_strings);
+
+                watchTestsOrExit(globals, resolution);
+
+            } catch (e) {
+                //Use this point to log any errors encountered during test loading
+                if (e == 0) {
+                    //Error successfully logged to the global harness. Proceed to report error
+
+                    globals.reportErrors();
+
+                    watchTestsOrExit(globals, resolution);
+
+                } else {
+                    //Some uncaught error has occured Exit completely
+                    globals.exit("Uncaught Exception", e);
+                    //Just to make sure
+                    process.exit(-1);
+                }
+            }
         })
     };
 };
 
 async function loadAndRunTestSuites(globals: Globals, test_suite_url_strings: string[]) {
 
-    globals.flags.PENDING = true;
+    if (globals.lock()) {
 
-    try {
+        try {
 
-        const st = await loadTestSuites(test_suite_url_strings, globals);
+            const reloader: SuiteReloader = createSuiteReloaderFunction(globals, async (suite) => {
 
-        await runTests(st.flatMap(suite => suite.tests), st, globals);
+                const tests = suite.tests.slice();
 
-    } catch (e) {
-        globals.outcome.errors.push(new TestError(e, "", 0, 0, "", "", undefined));
+                if (tests.length > 0)
+                    await runTests(tests, globals);
+                else
+                    globals.reportErrors();
+
+            });
+
+            const st = await loadTestSuites(test_suite_url_strings, globals, reloader);
+
+            const tests = st.flatMap(suite => suite.tests);
+
+            if (tests.length > 0)
+                await runTests(tests, globals);
+            else
+                globals.reportErrors();
+
+        } catch (e) {
+
+            createGlobalError(globals, e, "Critical Error Encountered");
+
+        }
+
+        globals.unlock();
+
+    } else {
+        createGlobalError(globals, new Error("Could Not Acquire Lock"), "Critical Error Encountered");
     }
-
-    globals.flags.PENDING = false;
 }
 
 async function initializeGlobals(globals: Globals, number_of_workers: number) {
-
 
     for (const expression_handler of default_expression_handlers)
         loadExpressionHandler(globals, expression_handler);
@@ -155,14 +224,20 @@ async function loadPackageJson(globals: Globals) {
     }
 }
 
-async function loadTestSuites(test_suite_url_strings: string[], globals: Globals) {
+async function loadTestSuites(test_suite_url_strings: string[], globals: Globals, suiteReloader: SuiteReloader) {
 
     globals.suites = new Map(test_suite_url_strings.map((url_string, index) => [
         url_string, createTestSuite(url_string, index)
     ]));
 
-    for (const suite of globals.suites.values())
-        await loadSuite(suite, globals);
+    try {
+
+        for (const suite of globals.suites.values())
+            await loadSuite(suite, globals, suiteReloader);
+
+    } catch (e) {
+        createGlobalError(globals, e, "Critical Error Encountered");
+    }
 
     const st = Array.from(globals.suites.values());
 
@@ -251,6 +326,20 @@ export function createGlobals(
             }
 
             endWatchedTests(globals, resolution);
+        },
+
+        lock: () => {
+            const PENDING = globals.flags.PENDING;
+            globals.flags.PENDING = true;
+            if (!PENDING) {
+                globals.flags.PENDING = true;
+                return true;
+            }
+            return false;
+        },
+
+        unlock: () => {
+            globals.flags.PENDING = false;
         }
     };
 
@@ -263,7 +352,8 @@ export function createTestSuite(url_string: string, index: number): TestSuite {
         tests: [],
         index,
         data: "",
-        name: ""
+        name: "",
+        url: null
     };
 }
 

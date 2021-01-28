@@ -103,4 +103,17 @@ export interface Globals {
      * Root directory for @candlefw/test
      */
     test_dir: string,
+
+    /**
+     * Aquire global lock. True if lock acquired successfully
+     */
+    lock(): boolean;
+    /**
+     * Release lock
+     */
+    unlock(): void;
+
+    reportErrors(): void;
+
+    getLibraryTestInfo(): TestInfo[];
 };
