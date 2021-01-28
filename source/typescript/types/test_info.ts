@@ -38,6 +38,12 @@ export interface TestInfo {
      * tests have been run.
      */
     test?: Test;
+    /**
+     * Identifer of the ExpressionHandler that generated the 
+     * test. May be -1 if the TestInfo object was created while
+     * reporting library errors.
+     */
+    expression_handler_identifier: number,
 
     /**
      * True if the test completed without throwing an
@@ -53,9 +59,9 @@ export interface TestInfo {
     TIMED_OUT: boolean;
 
     /**
-     * Optional test message to report if the test has failed.
+     * Stores test constants
      */
-    message?: string;
+    test_stack?: (string | number | boolean)[];
 
     /**
      * A list of error string generated during the execution of the test test.

@@ -1,13 +1,11 @@
-import { traverse } from "@candlefw/conflagrate";
-import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
-import { JSExpressionClass } from "@candlefw/js/build/types/types/JSNodeClasses";
+import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, JSNodeTypeLU, renderCompressed, stmt } from "@candlefw/js";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
 import { assertionSiteSoftError } from "../../utilities/library_errors.js";
 import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
 import { combinePropRefsAndDecl, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
-import { selectExpressionHandler } from "../expression_handler/expression_handler_manager.js";
+import { compileExpressionHandler, selectExpressionHandler } from "../expression_handler/expression_handler_functions.js";
 import { empty_set } from "../utilities/empty_set.js";
 import { jst, jstBreadth } from "../utilities/traverse_js_node.js";
 import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
@@ -33,61 +31,13 @@ function createAssertSiteObject(
         BROWSER,
         error: null,
         imports: [],
-        pos: original_assertion_expression.pos,
+        pos: <any>original_assertion_expression.pos,
         expression: original_assertion_expression,
         timeout_limit,
         import_names: empty_set,
         origin: null,
         ast,
     };
-}
-
-/**
- * Compiles an Assertion Site. 
- * 
- * @param node - An expression node within the double parenthesize Assertion Site. 
- * @param reporter - A Reporter for color data.
- * @param origin File path of the source test file.
- */
-export function compileAssertionSiteTestExpression(state: CompilerState, expr: JSNode)
-    : { ast: JSNode, optional_name: string; } {
-
-
-    for (const binding_compiler of selectExpressionHandler(expr, state.globals)) {
-
-        if (binding_compiler.test(expr)) {
-
-            const
-                js_string = binding_compiler.build(expr),
-
-                { highlight, message, match } = binding_compiler.getExceptionMessage(expr, state.globals.reporter),
-
-                error_data = [
-                    `\`${message}\``,
-                    `""`,
-                    expr.pos.line + 1,
-                    expr.pos.char,
-                    `\`${match.replace(/"/g, "\"")}\``,
-                    `\`${highlight.replace(/"/g, "\\\"")}\``
-                ];
-
-            const
-                thr =
-                    message ?
-                        parser(`if(${js_string}) $harness.addException(new Error(${error_data}));`).ast
-                        : parser(`if(${js_string});`).ast;
-
-
-            for (const { node, meta } of traverse(thr, "nodes")) {
-                node.pos = expr.pos;
-            }
-
-            return { ast: thr || stmt(";"), optional_name: match };
-        }
-    }
-
-    //Bypass the test
-    return { ast: expr, optional_name: `Could not find a AssertionSiteCompiler for JSNode [${JSNodeTypeLU[expr.type]}]`, };
 }
 
 export function compileAssertionSite(
@@ -106,7 +56,7 @@ export function compileAssertionSite(
         INSPECT,
         SKIP,
         SOLO,
-        name,
+        name: static_name,
         timeout_limit
     } = parseAssertionSiteArguments(node);
 
@@ -116,30 +66,43 @@ export function compileAssertionSite(
     }
 
     const
-        AWAIT = jst(assertion_expr).filter("type", JSNodeType.AwaitExpression).run(true).length > 0,
+        AWAIT = (jst(assertion_expr)
+            .filter("type", JSNodeType.AwaitExpression)
+            .run(true)
+            .length) > 0,
 
-        { ast: source_ast } = compileAssertionSiteTestExpression(state, assertion_expr),
-
-        rig_name = name || renderCompressed(assertion_expr),
-
-        { pos } = assertion_expr,
-
-        ast: JSNode = <JSNode><any>{
-            type: JSNodeType.Script,
-            nodes: [
-                stmt(`$harness.pushTestResult(${0});`),
-                source_ast,
-                stmt(`$harness.setSourceLocation(${[pos.off,
-                pos.line + 1, pos.column].join(",")});`),
-                name_expression
-                    ? stmt(`$harness.setResultName(${renderCompressed(name_expression)})`)
-                    : stmt(`$harness.setResultName("${rig_name}")`),
-                stmt(`$harness.popTestResult(${0});`),
-            ]
+        ast = <JSNode><any>{
+            type: JSNodeType.BlockStatement,
+            nodes: []
         };
 
+    let test_name = renderCompressed(assertion_expr);
+
+    for (const express_handler of selectExpressionHandler(assertion_expr, state.globals)) {
+
+        if (express_handler.confirmUse(assertion_expr)) {
+
+            const { nodes, name } = compileExpressionHandler(
+                assertion_expr,
+                express_handler,
+                [],
+                [],
+                state.globals,
+                name_expression ? renderCompressed(name_expression) : "",
+                static_name
+            );
+
+            test_name = name;
+
+            //@ts-ignore
+            ast.nodes = nodes;
+
+            break;
+        }
+    }
+
     const assertion_site = createAssertSiteObject(
-        rig_name,
+        test_name,
         SKIP, SOLO,
         INSPECT, AWAIT,
         BROWSER,

@@ -2,6 +2,68 @@ import { JSNodeClass, JSNodeType, JSNode } from "@candlefw/js";
 import { Reporter } from "../test";
 
 /**
+ * VM Stack used to create and report assertion expressions
+ */
+export interface TestStack {
+
+    /**
+     * Pushes an and increment identifier
+     * 
+     * @param node 
+     * 
+     * @returns returns a string for the pushed identifier: [$val##]
+     */
+    push(node: JSNode | string): string;
+
+    /**
+     * 
+     * @param expression_script 
+     * 
+     * @returns returns a string for the pushed identifier: [$exp##]
+     */
+    evaluate(expression_script: string): string;
+
+    /**
+     * Create a boolean expression form the results of EvaluationStack
+     * that determines whether the test has failed or not.
+     * 
+     * Multiple reports can be generated. If any report fails then the
+     * whole test will fail. 
+     * 
+     * Report variables can accessed with the $r## identifier;
+     * @param report_script 
+     * 
+     * @returns returns a string for the pushed identifier: [$rep##]
+     */
+    report(report_script: string): string;
+
+    /**
+     * Generate a name for the test based on the contents of
+     * the expression nodes. This will override the default
+     * stative name. If the assertion site specifies a dynamic
+     * then this function will have no effect.
+     */
+    name(generated_name: string): void;
+};
+
+/**
+ * VM Stack used to create and report assertion expressions
+ */
+export interface ReportStack {
+
+    /**
+     * Pops a value from the stack. If the value was originally
+     * a JSNode, the computed value of the expression is returned.
+     * 
+     * Otherwise, a string with the original string value is returned.
+     * 
+     * Order of popped arguments is in the same order as pushed values,
+     * FIFO
+     * 
+     */
+    pop(): Generator<string | number | boolean, void>;
+};
+/**
  * An object used to compile double parenthesis bindings into a testable and reportable
  * expression.
  */
@@ -10,8 +72,9 @@ export interface ExpressionHandler {
      * Internal use
      * 
      * Used to identify tests that use this ExpressionHandler
+     * 
      */
-    identifier: number;
+    identifier?: number;
 
     /**
      * The signature of the first JSNode in the double parenthesis expression.
@@ -21,7 +84,7 @@ export interface ExpressionHandler {
      * Used to perform a bitwise AND test against the expressions type to determine whether this
      * particular binding should advanced to the next stage of selection.
      */
-    signature: JSNodeType | JSNodeClass,
+    filter: JSNodeType | JSNodeClass,
 
     /**
      * Test to see if the node AST is in a form that should be handled by this compiler.
@@ -29,7 +92,7 @@ export interface ExpressionHandler {
      * If `true` is returned, this Binding compiler will be accepted as the handler for the
      * test.
      */
-    test: (node: JSNode) => boolean,
+    confirmUse: (node: JSNode) => boolean,
 
     /**
      * Return a JavaScript expression string that evaluates to `true` or `false`.
@@ -47,36 +110,11 @@ export interface ExpressionHandler {
      * 
      * @param {JSNode} node The first AST node within the double parenthesis AssertionSite.
      */
-    build: (node: JSNode) => string;
+    build: (node: JSNode, expression_vm: TestStack) => void;
 
     /**
      * Return an exception message that will be used as the report if the test fails.
      */
-    getExceptionMessage: (node: JSNode, reporter: Reporter) => {
+    print: (expression_vm: ReportStack, reporter: Reporter) => string[];
 
-        /**
-         * Syntax highlighting to add to source trace. 
-         */
-        highlight: string,
-
-        /**
-         * Error message 
-         */
-        message: string,
-
-        /**
-         * Match the string in the original source to be replaced by highlight.
-         */
-        match: string;
-
-        /**
-         * Original column number of the assertion site in the source code.
-         */
-        column: number,
-
-        /**
-         * Original line number of the assertion site in the source code.
-         */
-        line: number;
-    };
 };

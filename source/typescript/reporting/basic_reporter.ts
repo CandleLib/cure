@@ -8,7 +8,7 @@ import { createHierarchalName, splitHierarchalName } from "../utilities/name_hie
 import { blame } from "../utilities/test_error.js";
 import { CLITextDraw } from "./utilities/cli_text_console.js";
 import { rst } from "./utilities/colors.js";
-
+import { getExpressionHandlerReportLines } from "../compile/expression_handler/expression_handler_functions.js";
 
 function Object_Is_TestResult(o: any): o is TestInfo {
     return !!o.test;
@@ -288,6 +288,12 @@ export class BasicReporter implements Reporter {
 
                             suite.strings.push("", "");
                             HAS_FAILED = true; failed++;
+
+                            if (test_result.expression_handler_identifier >= 0)
+
+                                for (const line of getExpressionHandlerReportLines(test_result, globals))
+
+                                    suite.strings.push(offsetB + line);
 
                             for (const error of test_result.errors) {
 

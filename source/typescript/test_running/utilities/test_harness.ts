@@ -8,24 +8,22 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
     let
         active_test_result: TestInfo = null,
         previous_start = 0,
-        results: TestInfo[] = [],
         source_location = "",
         working_directory = "",
         source = "",
         source_map: SourceMap = null;
 
-    let regA, regB, regC, regD;
-
     const
-
 
         log = console.log,
 
         pf_now: () => number = performance.now,
 
-        MAX_ERROR_LIMIT = 10,
+        data_stack: any[] = [],
 
         clipboard: TestInfo[] = [],
+
+        results: TestInfo[] = [],
 
         /**
          * If the first argument is a number, let "n", then this function will only produce an error if
@@ -43,8 +41,8 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             let limit = 8;
 
             if (typeof first == "number" && args.length > 1) {
-                if (harness.inspect_count++ < first)
-                    return;
+                //if (harness.inspect_count++ < first)
+                //    return;
 
                 args = args.slice(1);
 
@@ -78,20 +76,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             time_points: [],
 
             caught_exception: null,
-            /////////////////////////////
-            get regA() {
-                return regA;
-            },
-            get regB() {
-                return regB;
-            },
-            get regC() {
-                return regC;
-            },
-            get regD() {
-                return regD;
-            },
-            /////////////////////////////
+
             async _import(url) {
                 return import(url);
             },
@@ -141,10 +126,6 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 switch (typeof (value)) {
 
-                    case "string":
-
-                        return `"${value}"`;
-
                     case "object":
 
                         if (value instanceof Error)
@@ -162,7 +143,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 if (async) {
                     return new Promise(async res => {
                         try {
-                            regA = await fn();
+                            await fn();
                             res(false);
                         } catch (e) {
                             addTestErrorToActiveResult(e);
@@ -171,7 +152,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     });
                 }
                 try {
-                    regA = fn();
+                    fn();
                 } catch (e) {
                     markWriteStart();
                     addTestErrorToActiveResult(e);
@@ -181,8 +162,6 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             },
 
             equal: (a: any, b: any): boolean => {
-                regA = a;
-                regB = b;
 
                 if (typeof a == "object" && typeof b == "object" && a != b)
                     return equal(a, b);
@@ -192,7 +171,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
             externAssertion: (fn: Function): boolean => {
                 try {
-                    regA = fn();
+                    fn();
                 } catch (e) {
                     markWriteStart();
                     addTestErrorToActiveResult(e);
@@ -277,10 +256,10 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 markWriteStart();
 
-                active_test_result.location.compiled = { column, line, offset };
+                //active_test_result.location.compiled = { column, line, offset };
             },
 
-            pushTestResult() {
+            pushTestResult(expression_handler_identifier: number = -1) {
                 const start = pf_now();
 
                 markWriteStart();
@@ -288,7 +267,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 active_test_result = <TestInfo>{
                     name: "",
                     message: "",
-                    PASSED: false,
+                    PASSED: true,
                     TIMED_OUT: false,
                     clipboard_write_start: -1,
                     clipboard_start: start,
@@ -296,6 +275,8 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     previous_clipboard_end: previous_start,
                     errors: [],
                     logs: [],
+                    test_stack: [],
+                    expression_handler_identifier,
                     location: {
                         compiled: { column: 0, line: 0, offset: 0 },
                         source: { column: 0, line: 0, offset: 0 }
@@ -314,12 +295,35 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 active_test_result = clipboard[clipboard.length - 1];
 
-                previous_active.PASSED = previous_active.errors.length == 0;
+                data_stack.length -= previous_active.test_stack.length;
+
+                previous_active.PASSED = previous_active.PASSED && previous_active.errors.length == 0;
 
                 results.push(previous_active);
 
                 previous_start = previous_active.clipboard_end = pf_now();
             },
+
+            pushValue(val: any) {
+                markWriteStart();
+                active_test_result.test_stack.push(harness.makeLiteral(val));
+                data_stack.push(val);
+            },
+
+            getValue(index: number) {
+                markWriteStart();
+                const pointer = data_stack.length - active_test_result.test_stack.length;
+                return data_stack[pointer + index];
+            },
+
+            pushAndAssertValue(SUCCESS: boolean) {
+                markWriteStart();
+
+                if (!SUCCESS)
+                    active_test_result.PASSED = false;
+
+                harness.pushValue(SUCCESS);
+            }
         };
 
     ////@ts-ignore Make harness available to all modules.
@@ -356,16 +360,17 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
             working_directory = test_working_directory;
             source_location = test_source_location;
+            source = "";
             active_test_result = null;
             results.length = 0;
             clipboard.length = 0;
-            previous_start = pf_now();
+            data_stack.length = 0;
             source_map = null;
-            source = "";
+            previous_start = pf_now();
         },
 
         harness_initialSourceCodeString(test_source_code: string) {
-            source = test_source_code;;
+            source = test_source_code;
         },
 
         harness_initSourceMapFromString(test_source_map_string: string) {
@@ -378,6 +383,10 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             }
         },
 
+        /**
+         Remove any TestInfo object with an index greater than 0 from the clipboard,
+         and place them in the results array.
+        */
         harness_flushClipboard() {
 
             if (clipboard.length > 1) {
@@ -387,11 +396,10 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     active_test_result.previous_clipboard_end = end;
                     active_test_result.clipboard_end = end;
                     test.PASSED = false;
-                    test.message = "Could not complete test due to error from previous test";
                     active_test_result = test;
+                    data_stack.length = 0;
                     results.push(test);
                 }
-
 
                 clipboard.length = 1;
 
@@ -411,6 +419,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             console.log = harness.inspect;
         }
     };
-};
+}
+
 
 
