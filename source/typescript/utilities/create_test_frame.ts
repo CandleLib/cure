@@ -12,8 +12,8 @@ import { Reporter } from "../types/reporter.js";
 import { TestFrame, TestFrameOptions } from "../types/test_frame";
 import { createGlobals } from "./create_globals.js";
 import { createTestSuite } from "./create_test_suite.js";
-import { DefaultOptions } from "./default_options";
-import { endWatchedTests } from "./end_watched_tests";
+import { DefaultOptions } from "./default_options.js";
+import { endWatchedTests } from "./end_watched_tests.js";
 import { createGlobalError } from "./library_errors.js";
 
 type Resolver = (value: Outcome | PromiseLike<Outcome>) => void;
@@ -73,6 +73,9 @@ export function createTestFrame(
 
         start: (): Promise<Outcome> => new Promise(async (resolver: Resolver) => {
 
+
+
+
             await URL.server();
 
             initializeResolver(resolver);
@@ -85,9 +88,13 @@ export function createTestFrame(
 
                 await loadAndRunTestSuites(globals, test_suite_url_strings);
 
+
+
+
                 watchTestsOrExit(globals, resolution);
 
             } catch (e) {
+
                 //Use this point to log any errors encountered during test loading
                 if (e == 0) {
                     //Error successfully logged to the global harness. Proceed to report error
@@ -165,15 +172,14 @@ async function loadAndRunTestSuites(globals: Globals, test_suite_url_strings: st
 
             const tests = st.flatMap(suite => suite.tests);
 
+
             if (tests.length > 0)
                 await runTests(tests, globals);
             else
                 globals.reportErrors();
 
         } catch (e) {
-
             createGlobalError(globals, e, "Critical Error Encountered");
-
         }
 
         globals.unlock();
@@ -195,6 +201,7 @@ async function loadTestSuites(test_suite_url_strings: string[], globals: Globals
             await loadSuite(suite, globals, suiteReloader);
 
     } catch (e) {
+
         createGlobalError(globals, e, "Critical Error Encountered");
     }
 
