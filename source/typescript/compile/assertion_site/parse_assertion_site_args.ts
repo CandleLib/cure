@@ -73,7 +73,7 @@ function handleOtherExpressionTypes(result: AssertionSiteArguments, node: JSNode
             first_argument.type | JSNodeClass.EXPRESSION
         ) {
             result.name_expression = first_argument;
-            //  mutate(null);
+            mutate(null);
             return;
         }
     }
