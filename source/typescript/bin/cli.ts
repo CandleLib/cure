@@ -223,8 +223,8 @@ async function start() {
 
             await frame.start().then(d => {
 
-                if (d.errors)
-                    d.errors.forEach(console.error);
+                if (d.fatal_errors)
+                    d.fatal_errors.forEach(console.error);
 
                 process.exit(d.FAILED ? 1 : 0);
             });

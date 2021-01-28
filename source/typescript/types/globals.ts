@@ -10,7 +10,7 @@ import { TestInfo } from "./test_info";
 import { TestSuite } from "./test_suite";
 
 export interface Outcome {
-    errors?: TestError[],
+    fatal_errors?: Error[],
     FAILED: boolean,
     results: TestInfo[];
     rigs?: Test[];

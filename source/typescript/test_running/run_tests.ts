@@ -6,7 +6,6 @@ import { Globals } from "../types/globals.js";
 
 import { Test } from "../types/test.js";
 
-
 export async function runTests(
     tests: Test[],
     globals: Globals,
@@ -30,6 +29,7 @@ export async function runTests(
         await startRun(active_tests.flat(), globals);
 
         outcome.results.length = 0;
+        outcome.fatal_errors.length = 0;
 
         for (const res of runner.run(active_tests, RELOAD_DEPENDS, globals)) {
             try {
@@ -58,10 +58,10 @@ export async function runTests(
         FAILED = await completedRun(outcome.results, globals);
 
     } catch (e) {
+
         FAILED = true;
 
-        throw e;
-
+        outcome.fatal_errors.push(e);
 
         globals.exit("Unrecoverable error encountered in run_tests.ts", e);
     }
