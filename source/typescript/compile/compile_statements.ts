@@ -380,16 +380,15 @@ function compileClosureStatement(state: CompilerState, node: JSNode) {
 }
 
 export function repackageAssertionSite(assertion_site: AssertionSite,
-    s: StatementProp,
+    prop: StatementProp,
     offset: number
 ): TestSite {
     return <TestSite>{
         assertion_site,
-        data: Object.assign(s,
+        data: Object.assign(prop,
             {
                 b: true,
-                required_references: new setUnion(s.required_references,
-                    assertion_site.import_names)
+                required_references: new setUnion(prop.required_references, assertion_site.import_names)
             }),
         offset
     };
