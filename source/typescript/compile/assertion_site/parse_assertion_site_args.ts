@@ -1,4 +1,4 @@
-import { JSNode, JSNodeClass, JSNodeType, renderCompressed } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeType, renderCompressed, tools } from "@candlefw/js";
 import { AssertionSiteArguments } from "../../types/assertion_site_arguments.js";
 import { jst } from "../utilities/traverse_js_node.js";
 
@@ -65,10 +65,11 @@ function Node_Is_A_Number(node: JSNode) {
 function handleOtherExpressionTypes(result: AssertionSiteArguments, node: JSNode, mutate: (replacement_node: JSNode) => void) {
 
     if (Node_Is_A_Call(node)) {
-        const [name, first_argument] = node.nodes;
+
+        const [first_argument] = node.nodes;
 
         if (
-            name.value.toString().toLowerCase() == "name"
+            tools.getIdentifierName(node).toLowerCase() == "name"
             &&
             first_argument.type | JSNodeClass.EXPRESSION
         ) {
