@@ -7,7 +7,7 @@ import { Lexer } from "@candlefw/wind";
 import { TransferableTestError } from "../types/test_error.js";
 import { TestHarness } from "../types/test_harness.js";
 import parser from "./parser.js";
-import { StackTraceCall, StackTraceLocation } from "../types/stack_trace";
+import { StackTraceCall, StackTraceLocation, StackTraceAst } from "../types/stack_trace";
 
 
 
@@ -16,7 +16,7 @@ import { StackTraceCall, StackTraceLocation } from "../types/stack_trace";
 export function testThrow() { /* ---------------- */ throw new Error("FOR TESTING"); };
 /* END -------------------------------------------------------------------------------------------- END */
 
-type StackTraceAst = StackTraceCall | StackTraceLocation;
+
 
 
 function Call_Originated_In_Test_Source(node: StackTraceAst) {

@@ -15,3 +15,5 @@ export interface StackTraceCall {
     call_id: string;
     sub_stack: (StackTraceCall | StackTraceLocation)[];
 }
+
+export type StackTraceAst = StackTraceCall | StackTraceLocation;
