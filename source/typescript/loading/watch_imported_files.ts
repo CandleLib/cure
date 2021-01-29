@@ -8,6 +8,7 @@ import URL from "@candlefw/url";
 import { parser, JSNodeType, ext } from "@candlefw/js";
 import { traverse, filter } from "@candlefw/conflagrate";
 import { Globals } from "../types/globals.js";
+import { createTestError } from "../utilities/library_errors.js";
 
 const fsp = fs.promises;
 

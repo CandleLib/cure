@@ -134,7 +134,7 @@ function createTestRigFunctionSourceCode(suite: TestSuite, assertion_site: Asser
     try {
         collectImports(suite, imports, import_module_sources, import_arg_names, import_arg_specifiers);
 
-        test_function_arguments.push("$harness", "AssertionError", ...import_arg_names);
+        test_function_arguments.push("$harness", ...import_arg_names);
 
         const source = renderWithFormattingAndSourceMap(ast, <any>format_rules, null, mappings, 0, null);
 

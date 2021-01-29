@@ -1,6 +1,60 @@
-import { createHierarchalName } from "../utilities/name_hierarchy.js";
-import { TestError } from "../utilities/test_error.js";
+import { SourceMap } from "@candlefw/conflagrate";
 import { ImportSource } from "./imports.js";
+/**
+ * Closure environment for privileged methods that operate on internal properties
+ * of TestHarness
+ */
+export interface TestHarnessEnvironment {
+
+    /**
+     * Initialize all stacks and variables to zero length or zero and 
+     * assign source file and working directory stings
+     * @param test_source_location 
+     * @param test_working_directory 
+     */
+    harness_init(test_source_location?: string, test_working_directory?): void;
+
+    /**
+     * Convert a source map string into a SourceMap object and assign
+     * to the harness source_map property. Should only be called when
+     * there is an active TestInfo through harness~pushTestResult
+     */
+    harness_initSourceMapFromString(test_source_map_string: string);
+
+    /**
+     * Convert a source map string into a SourceMap object and assign
+     * to the harness source_map property.
+     */
+    harness_initialSourceCodeString(test_source_code: string);
+
+    /**
+     * Remove any TestInfo object with an index greater than 0 from the clipboard,
+     * and place them in the results array.
+    */
+    harness_flushClipboard(): void;
+
+    /**
+     * Returns an array of completed TestInfo objects
+     */
+    harness_getResults();
+
+    /**
+     * Replace console.log with an internal logger that pushes
+     * messages to TestInfo~log array
+     */
+    harness_overrideLog(): void;
+
+    /**
+     * Restores console.log back to its original function
+     */
+    harness_restoreLog(): void;
+
+    /**
+     * Public TestHarness interface
+     */
+    harness: TestHarness;
+}
+
 /**
  * Provides methods and properties that are used during test execution.
  */
@@ -17,9 +71,20 @@ export interface TestHarness {
     readonly working_directory: string;
 
     /**
+     * Source file code of the active Test
+     */
+    readonly test_source_code: string;
+
+    /**
+    * String JSON
+    */
+    readonly test_source_map: SourceMap;
+
+    /**
      * Stack storing user registered time points;
      */
     time_points: number[];
+
     /**
      * Timestamp 
      */
@@ -34,37 +99,6 @@ export interface TestHarness {
     inspect_count: number;
 
     imports: ImportSource[];
-
-    /**
-     * File path of the source test file.
-     */
-    origin: string;
-
-    /**
-     * A temporary variable that can be used to hold assertion site object data.
-     */
-    regA: any;
-
-    /**
-     * A temporary variable that can be used to hold assertion site object data.
-     */
-    regB: any;
-
-    /**
-     * A temporary variable that can be used to hold assertion site object data.
-     */
-    regC: any;
-
-    /**
-     * A temporary variable that can be used to hold assertion site object data.
-     */
-    regD: any;
-
-    /**
-     * In a sequenced run of tests, gives the index of the last
-     * encountered AssertionSite.
-     */
-    test_index: number;
 
     /**
      * Converts a value into a reportable string.
@@ -156,13 +190,6 @@ export interface TestHarness {
      * and adds it to the completed TestResult array.
      */
     popTestResult: () => void;
-
-    /**
-     * Marks the start of the execution of the test code
-     */
-    start: number,
-
-    map: any;
 
     /**
      * Set the name of the test frame if it has not already been assigned

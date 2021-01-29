@@ -109,7 +109,7 @@ export function compileAssertionSite(
     } = parseAssertionSiteArguments(node);
 
     if (!assertion_expr) {
-        assertionSiteSoftError(state.globals, node.pos.errorMessage(`Could not find an expression for assertion site [${node.pos.slice()}]`), "Could not find assertion site");
+        assertionSiteSoftError(state.globals, 0, node.pos.errorMessage(`Could not find an expression for assertion site [${node.pos.slice()}]`));
         return;
     }
 

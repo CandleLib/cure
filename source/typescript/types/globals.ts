@@ -1,16 +1,16 @@
 import URL from "@candlefw/url";
 import { FSWatcher } from "fs";
 import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
-import { TestError } from "../utilities/test_error.js";
 import { ExpressionHandler } from "./expression_handler.js";
 import { Reporter } from "./reporter";
 import { Test } from "./test";
+import { TransferableTestError } from "./test_error.js";
 import { TestHarness } from "./test_harness";
 import { TestInfo } from "./test_info";
 import { TestSuite } from "./test_suite";
 
 export interface Outcome {
-    fatal_errors?: Error[],
+    fatal_errors?: TransferableTestError[],
     FAILED: boolean,
     results: TestInfo[];
     rigs?: Test[];
@@ -38,9 +38,9 @@ export interface Globals {
      * Forcefully exits the test frame.
      * 
      * @param reason A message explaining why the test frame is exiting.
-     * @param error An optional error object that will logged in the console.
+     * @param error An optional TransferableTestError object that will logged in the console.
      */
-    exit: (reason?: string, error?: Error) => void;
+    exit: (reason?: string, error?: TransferableTestError) => void;
 
     /**
      * Set of flags to enable and disable features.

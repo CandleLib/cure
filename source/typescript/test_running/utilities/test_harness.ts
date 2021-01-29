@@ -1,17 +1,25 @@
-import { TestHarness } from "../../types/test_harness";
+import { decodeJSONSourceMap, SourceMap } from "@candlefw/conflagrate";
+import { TestHarness, TestHarnessEnvironment } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
-import { TestError } from "../../utilities/test_error";
+import { createTestErrorFromErrorObject } from "../../utilities/test_error";
 
-const constructHarness = (equal, util, performance: Performance, rst) => {
+export function createTestHarnessEnvironmentInstance(equal, util, performance: Performance, rst): TestHarnessEnvironment {
 
     let
         active_test_result: TestInfo = null,
         previous_start = 0,
         results: TestInfo[] = [],
         source_location = "",
-        working_directory = "";
+        working_directory = "",
+        source = "",
+        source_map: SourceMap = null;
+
+    let regA, regB, regC, regD;
 
     const
+
+
+        log = console.log,
 
         pf_now: () => number = performance.now,
 
@@ -55,27 +63,7 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
             return e;
         },
 
-        harness = <TestHarness>{
-
-            async _import(url) {
-                return import(url);
-            },
-
-            get source_location(): string {
-                return source_location;
-            },
-
-            set source_location(str: string): void {
-
-            },
-
-            get working_directory(): string {
-                return working_directory;
-            },
-
-            set working_directory(str: string): void {
-
-            },
+        harness: TestHarness = <TestHarness>{
 
             accessible_files: null,
 
@@ -87,25 +75,29 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
 
             imports: null,
 
-            errors: [],
-
             time_points: [],
-
-            regA: null,
-
-            regB: null,
-
-            regC: null,
-
-            regD: null,
 
             caught_exception: null,
 
-            origin: "",
+            async _import(url) {
+                return import(url);
+            },
 
-            map: "",
+            get source_location(): string {
+                return source_location;
+            },
 
-            start: 0,
+            get working_directory(): string {
+                return working_directory;
+            },
+
+            get test_source_code(): string {
+                return source;
+            },
+
+            get test_source_map(): SourceMap {
+                return source_map;
+            },
 
             mark(index: number) {
                 //@ts-ignore
@@ -157,7 +149,7 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
                 if (async) {
                     return new Promise(async res => {
                         try {
-                            harness.regA = await fn();
+                            regA = await fn();
                             res(false);
                         } catch (e) {
                             addTestErrorToActiveResult(e);
@@ -166,7 +158,7 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
                     });
                 }
                 try {
-                    harness.regA = fn();
+                    regA = fn();
                 } catch (e) {
                     markWriteStart();
                     addTestErrorToActiveResult(e);
@@ -176,8 +168,8 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
             },
 
             equal: (a: any, b: any): boolean => {
-                harness.regA = a;
-                harness.regB = b;
+                regA = a;
+                regB = b;
 
                 if (typeof a == "object" && typeof b == "object" && a != b)
                     return equal(a, b);
@@ -187,7 +179,7 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
 
             externAssertion: (fn: Function): boolean => {
                 try {
-                    harness.regA = fn();
+                    regA = fn();
                 } catch (e) {
                     markWriteStart();
                     addTestErrorToActiveResult(e);
@@ -247,9 +239,9 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
                 markWriteStart();
 
                 if (strict && A === B) {
-                    return false
+                    return false;
                 } else if (A == B) {
-                    return false
+                    return false;
                 }
             },
 
@@ -328,7 +320,8 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
     }
 
     function addTestErrorToActiveResult(e: Error) {
-        active_test_result.errors.push(e?.stack?.toString() ?? e.toString());
+        const error = createTestErrorFromErrorObject(e, harness);
+        active_test_result.errors.push(error);
     }
 
     function markWriteStart() {
@@ -339,57 +332,72 @@ const constructHarness = (equal, util, performance: Performance, rst) => {
             active_test_result.clipboard_write_start = start;
     }
 
+    return <TestHarnessEnvironment>{
 
-    function harness_init(test_source_location: string = "", test_working_directory: string = "") {
-        working_directory = test_working_directory;
-        source_location = test_source_location;
-        active_test_result = null;
-        results.length = 0;
-        clipboard.length = 0;
-        previous_start = pf_now();
-    }
-    /**
-     Remove any TestInfo object with an index greater than 0 from the clipboard,
-     and place them in the results array.
-    */
-    function harness_flushClipboard() {
+        harness,
 
-        if (clipboard.length > 1) {
+        harness_init(
+            test_source_location: string = "",
+            test_working_directory: string = ""
+        ) {
 
-            for (const test of clipboard.slice(1).reverse()) {
-                const end = pf_now();
-                active_test_result.previous_clipboard_end = end;
-                active_test_result.clipboard_end = end;
-                test.PASSED = false;
-                test.message = "Could not complete test due to error from previous test";
-                active_test_result = test;
-                results.push(test);
+            working_directory = test_working_directory;
+            source_location = test_source_location;
+            active_test_result = null;
+            results.length = 0;
+            clipboard.length = 0;
+            previous_start = pf_now();
+            source_map = null;
+            source = "";
+        },
+
+        harness_initialSourceCodeString(test_source_code: string) {
+            source = test_source_code;;
+        },
+
+        harness_initSourceMapFromString(test_source_map_string: string) {
+            if (test_source_map_string) {
+                try {
+                    source_map = decodeJSONSourceMap(test_source_map_string);
+                } catch (e) {
+
+                }
             }
+        },
+
+        harness_flushClipboard() {
+
+            if (clipboard.length > 1) {
+
+                for (const test of clipboard.slice(1).reverse()) {
+                    const end = pf_now();
+                    active_test_result.previous_clipboard_end = end;
+                    active_test_result.clipboard_end = end;
+                    test.PASSED = false;
+                    test.message = "Could not complete test due to error from previous test";
+                    active_test_result = test;
+                    results.push(test);
+                }
 
 
-            clipboard.length = 1;
+                clipboard.length = 1;
 
-            active_test_result = clipboard[0];
+                active_test_result = clipboard[0];
+            }
+        },
+
+        harness_getResults() {
+            return results.slice();
+        },
+
+        harness_restoreLog() {
+            console.log = log;
+        },
+
+        harness_overrideLog() {
+            console.log = harness.inspect;
         }
-    }
-
-    function harness_getResults() {
-        return results.slice();
-    }
-
-    const log = console.log;
-
-    function harness_overrideLog() {
-        console.log = harness.inspect;
-    }
-
-    function harness_restoreLog() {
-        console.log = log;
-    }
-
-    return { harness, harness_init, harness_flushClipboard, harness_getResults, harness_overrideLog, harness_restoreLog };
+    };
 };
 
 
-
-export { constructHarness };

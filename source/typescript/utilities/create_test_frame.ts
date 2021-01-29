@@ -74,8 +74,6 @@ export function createTestFrame(
         start: (): Promise<Outcome> => new Promise(async (resolver: Resolver) => {
 
 
-
-
             await URL.server();
 
             initializeResolver(resolver);
@@ -84,12 +82,9 @@ export function createTestFrame(
 
             try {
 
-                harness_init();
+                harness_init(globals.package_dir.toString(), globals.package_dir.toString());
 
                 await loadAndRunTestSuites(globals, test_suite_url_strings);
-
-
-
 
                 watchTestsOrExit(globals, resolution);
 

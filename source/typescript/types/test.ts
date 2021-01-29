@@ -1,5 +1,4 @@
 import { Lexer } from "@candlefw/wind";
-import { TestError } from "../utilities/test_error";
 import { ImportSource, ModuleSpecifier } from "./imports";
 
 

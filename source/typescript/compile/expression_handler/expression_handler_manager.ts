@@ -6,6 +6,7 @@ import { Globals } from "../../types/globals.js";
 
 export function loadExpressionHandler(globals: Globals, obj: ExpressionHandler) {
 
+
     // Check for the presence of the expected 
     // properties of BindingExpressionCompiler
     if (!obj)
@@ -22,6 +23,8 @@ export function loadExpressionHandler(globals: Globals, obj: ExpressionHandler) 
 
     if (!obj.build || typeof obj.build !== "function")
         return false;
+
+
 
     globals.expression_handlers.push(obj);
 

@@ -251,18 +251,18 @@ export class BasicReporter implements Reporter {
         return out;
     }
 
-    async complete(results: TestInfo[], global: Globals, terminal: CLITextDraw): Promise<boolean> {
+    async complete(results: TestInfo[], globals: Globals, terminal: CLITextDraw): Promise<boolean> {
 
         const
             time_end = performance.now(),
 
-            { suites: suite_map, watched_files_map } = global,
+            { suites: suite_map, watched_files_map } = globals,
 
             suites = [...suite_map.values()],
 
             watched_files = new Set(watched_files_map.keys()),
 
-            strings = [await this.update(results, global, terminal, true)],
+            strings = [await this.update(results, globals, terminal, true)],
 
             { fail, msgA, pass, objB } = this.colors;
 
@@ -286,9 +286,10 @@ export class BasicReporter implements Reporter {
 
                         const
                             { test, PASSED } = test_result,
-                            { name: result_name } = getNameData(test_result, global);
+                            { name: result_name } = getNameData(test_result, globals);
 
                         if (!PASSED) {
+                            suite.strings.push("", "");
                             HAS_FAILED = true;
                             failed++;
                             for (const error of test_result.errors) {
@@ -326,26 +327,6 @@ export class BasicReporter implements Reporter {
                 suite.strings.length = 0;
             }
 
-            for (const suite of suites.values()) {
-
-                const { error } = suite;
-
-                if (error) {
-                    strings.push(error.toString());
-                    /*
-
-                    failed++;
-
-                    const message = await error.toAsyncBlameString(watched_files, suite.origin);
-
-                    errors.push(`${rst}Suite ${fail + suite.origin + rst} failed:\n\n    ${fail + message
-                        .replace(error.match_source, error.replace_source)
-                        .split("\n")
-                        .join("\n    ")}\n${rst}`, "");
-
-                        */
-                }
-            }
         } catch (e) {
             failed++;
             strings.push(e);

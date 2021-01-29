@@ -6,21 +6,12 @@ import { ImportSource } from "../../types/imports.js";
 import { Test } from "../../types/test.js";
 import { rst } from "../../reporting/utilities/colors.js";
 import { createTestFunctionFromTestSource } from "../utilities/create_test_function.js";
-import { TestError } from "../../utilities/test_error.js";
-import { constructHarness } from "../utilities/test_harness.js";
-import { splitHierarchalName } from "../../utilities/name_hierarchy.js";
+import { createTestHarnessEnvironmentInstance } from "../utilities/test_harness.js";
 export const ImportedModules: Map<string, any> = new Map();
 
 //@ts-ignore
-const { harness,
-    harness_init,
-    harness_flushClipboard,
-    harness_getResults,
-    harness_overrideLog,
-    harness_restoreLog,
-} = constructHarness(equal, util, <Performance><any>performance, rst);
-
-export { harness };
+const harness_env = createTestHarnessEnvironmentInstance(equal, util, <Performance><any>performance, rst);
+export const harness = harness_env.harness;
 
 export async function loadImport(source) {
     return await import(source);
@@ -37,15 +28,23 @@ export function createAddendum(sources: ImportSource[], test: Test) {
 async function RunTest({ test }: { test: Test; }) {
     let results = [];
 
+    const {
+        harness,
+        harness_flushClipboard,
+        harness_getResults,
+        harness_overrideLog,
+        harness_restoreLog,
+        harness_init,
+        harness_initSourceMapFromString,
+        harness_initialSourceCodeString
+    } = harness_env;
+
     try {
         //@ts-ignore
-        harness.map = test.map;
-        harness.source = test.source;
+        harness.test_source_map = test.map;
 
         //@ts-ignore
         global.harness = harness;
-
-
 
         harness_init(
             test.source_location,
@@ -60,7 +59,6 @@ async function RunTest({ test }: { test: Test; }) {
             test,
             harness,
             ImportedModules,
-            TestError,
             loadImport,
             createAddendum
         ));
@@ -71,9 +69,13 @@ async function RunTest({ test }: { test: Test; }) {
             test.working_directory
         );
 
+        harness_initialSourceCodeString(test.source);
+
         // Global TestResult 
         // - Catchall for any errors that lead to a hard crash of the test function
         harness.pushTestResult();
+
+        harness_initSourceMapFromString(test.map);
 
         harness.setResultName(`Test failed with a critical error`);
 

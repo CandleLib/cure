@@ -53,6 +53,8 @@ export async function runTests(
 
         outcome.results.push(...globals.getLibraryTestInfo());
 
+
+
         outcome.results = outcome.results.sort((a, b) => a.test.index < b.test.index ? -1 : 1);
 
         FAILED = await completedRun(outcome.results, globals);

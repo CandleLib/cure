@@ -1,15 +1,17 @@
 import URL from "@candlefw/url";
-import { Globals } from "../types/globals";
-import * as colors from "../reporting/utilities/colors.js";
-import { TestError } from "./test_error.js";
-import { constructHarness } from "../test_running/utilities/test_harness.js";
-import { TestHarness } from "../types/test_harness.js";
-import { completedRun } from "../reporting/report.js";
-import { TestInfo } from "../types/test_info.js";
-import { endWatchedTests } from "./end_watched_tests.js";
 import { NullReporter } from "../reporting/null_reporter.js";
+import { completedRun } from "../reporting/report.js";
+import * as colors from "../reporting/utilities/colors.js";
+import { createTestHarnessEnvironmentInstance } from "../test_running/utilities/test_harness.js";
+import { Globals } from "../types/globals";
+import { TransferableTestError } from "../types/test_error.js";
+import { TestHarnessEnvironment } from "../types/test_harness.js";
+import { endWatchedTests } from "./end_watched_tests.js";
 
 
+type createGlobalsReturn = {
+    [K in keyof TestHarnessEnvironment]: TestHarnessEnvironment[K];
+} & { globals: Globals; };
 export function createGlobals(
     max_timeout: number = 1000,
     test_dir: string = "",
@@ -17,24 +19,19 @@ export function createGlobals(
     PRELOAD_IMPORTS: boolean = false,
     BROWSER_HEADLESS: boolean = false,
     resolution: any = null
-): {
-    globals: Globals;
-    harness: TestHarness;
-    harness_init: () => void;
-    harness_getResults: () => TestInfo[];
-    harness_flushClipboard: () => void;
-} {
+): createGlobalsReturn {
 
-    const { harness,
-        harness_init,
-        harness_getResults,
-        harness_flushClipboard
-    } = constructHarness(
+    const env = createTestHarnessEnvironmentInstance(
         (a, b) => a == b,
         { performance: () => 0 },
         <Performance>{ now: () => 0 },
         {}
     ),
+        { harness,
+            harness_init,
+            harness_getResults,
+            harness_flushClipboard
+        } = env,
         globals: Globals = {
 
             flags: {
@@ -76,7 +73,7 @@ export function createGlobals(
 
             harness,
 
-            exit(reason = "Exiting for an unknown reason", error) {
+            exit(reason = "Exiting for an unknown reason", error: TransferableTestError) {
 
                 const { fail } = globals.reporter.colors;
 
@@ -127,17 +124,11 @@ export function createGlobals(
 
                 completedRun(results, globals);
 
-                harness_init();
+                harness_init(globals.package_dir.toString(), globals.package_dir.toString());
 
                 globals.unlock();
             },
         };
 
-    return {
-        globals,
-        harness,
-        harness_init,
-        harness_getResults,
-        harness_flushClipboard
-    };
+    return Object.assign({ globals }, env);
 }

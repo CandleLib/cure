@@ -1,4 +1,5 @@
 import { Test } from "./test.js";
+import { TransferableTestError } from "./test_error.js";
 /**
  * Information collected during testing
  */
@@ -60,7 +61,7 @@ export interface TestInfo {
      * A list of error string generated during the execution of the test test.
      * If this array contains data then the test has failed.
      */
-    errors: string[];
+    errors: TransferableTestError[];
 
     /**
      * A list of user generated logging information collect during the execution

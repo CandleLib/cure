@@ -6,7 +6,6 @@ import path from "path";
 import { Globals } from "../types/globals.js";
 import { TestSuite } from "../types/test_suite.js";
 
-import { runTests } from "../test_running/run_tests.js";
 import { loadTests } from "./load_tests.js";
 import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
 import { createSuiteError } from "../utilities/library_errors.js";
@@ -29,7 +28,7 @@ async function initializeSuite(
 }
 
 export type SuiteReloader = (suite: TestSuite) => Promise<void>;
-export async function loadSuite(suite: TestSuite, globals: Globals, reloadSuite: FN) {
+export async function loadSuite(suite: TestSuite, globals: Globals, reloadSuite: (suite: TestSuite) => Promise<void>) {
     try {
 
         const { flags: { WATCH, PRELOAD_IMPORTS } } = globals;

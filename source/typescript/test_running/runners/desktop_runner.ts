@@ -1,12 +1,13 @@
 import URL from "@candlefw/url";
-
-import { Worker } from "worker_threads";
 import { performance } from "perf_hooks";
+import { Worker } from "worker_threads";
+import { DesktopWorkerHandle } from "../../types/desktop_worker_handle";
+import { Globals } from "../../types/globals.js";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info";
-import { Globals } from "../../types/globals.js";
 import { TestRunner } from "../../types/test_runner";
-import { DesktopWorkerHandle } from "../../types/desktop_worker_handle";
+import { createTestErrorFromString } from "../../utilities/test_error.js";
+
 
 let nonce = 0;
 
@@ -91,7 +92,7 @@ export class DesktopRunner implements TestRunner {
      * @param RELOAD_DEPENDS - If `true`, reinitialize all workers.
      * @param globals - The Globals object.
      */
-    *  run(tests: Array<Test>, RELOAD_DEPENDS: boolean = false, globals: Globals): Generator<TestInfo[]> {
+    *  run(tests: Array<Test>, RELOAD_DEPENDS: boolean = false, globals: Globals): Generator<TestInfo[][]> {
 
         let completed = 0;
 
@@ -104,7 +105,7 @@ export class DesktopRunner implements TestRunner {
             server_workers = this.workers;
 
         const
-            finished: TestInfo[] = this.finished,
+            finished: TestInfo[][] = this.finished,
             number_of_tests = tests.length;
 
         finished.length = 0;
@@ -114,10 +115,10 @@ export class DesktopRunner implements TestRunner {
 
         while (completed < number_of_tests) {
 
-            let out: TestInfo[] = null;
+            let out: TestInfo[][] = null;
 
             //server tests
-            this.runWorkers(server_tests, server_workers, finished);
+            this.runWorkers(server_tests, server_workers, finished, globals);
 
             if (finished.length > 0) {
                 out = finished.slice();
@@ -150,36 +151,17 @@ export class DesktopRunner implements TestRunner {
         }
     }
 
-    private async runWorkers(tests: Test[], workers: DesktopWorkerHandle[], finished: TestInfo[][], module?) {
+    private async runWorkers(tests: Test[], workers: DesktopWorkerHandle[], finished: TestInfo[][], globals: Globals) {
 
         if (tests.length > 0 || workers.some(wkr => !wkr.READY)) {
             for (const wkr of workers) {
+
                 if (wkr.READY && tests.length > 0) {
                     const test = tests.shift();
-                    if (test.error) {
-                        finished.push([{
-                            name: wkr.test.name,
-                            clipboard_start: 0,
-                            clipboard_write_start: 0,
-                            previous_clipboard_end: 0,
-                            clipboard_end: 0,
-                            location: {
-                                compiled: { column: wkr.test.pos.column, line: wkr.test.pos.line, offset: wkr.test.pos.off, },
-                                source: { column: wkr.test.pos.column, line: wkr.test.pos.line, offset: wkr.test.pos.off, }
-                            },
-                            logs: [],
-                            errors: [test.error.toString()],
-                            test: test,
-                            TIMED_OUT: true,
-                            PASSED: false
-                        }]);
-                    }
-                    else {
-                        wkr.test = test;
-                        wkr.start = performance.now();
-                        wkr.target.postMessage({ test: wkr.test });
-                        wkr.READY = false;
-                    }
+                    wkr.test = test;
+                    wkr.start = performance.now();
+                    wkr.target.postMessage({ test: wkr.test });
+                    wkr.READY = false;
                 }
 
                 if (!wkr.READY) {
@@ -189,7 +171,7 @@ export class DesktopRunner implements TestRunner {
                     if (dur > wkr.test.timeout_limit) {
 
                         wkr.target.terminate();
-                        wkr.target = this.createWorker(wkr, module);
+                        wkr.target = this.createWorker(wkr);
                         wkr.READY = true;
 
                         if (wkr.test.retries > 0) {
@@ -209,7 +191,7 @@ export class DesktopRunner implements TestRunner {
                                 logs: [],
                                 message: "",
                                 //@ts-ignore
-                                errors: [["Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1].toString()],
+                                errors: [createTestErrorFromString(("Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1), globals.harness)],
                                 test: wkr.test,
                                 TIMED_OUT: true,
                                 PASSED: false
@@ -220,5 +202,7 @@ export class DesktopRunner implements TestRunner {
             }
         }
     }
-};
+}
+
+
 
