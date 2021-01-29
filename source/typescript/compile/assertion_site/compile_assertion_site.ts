@@ -5,10 +5,10 @@ import { CompilerState } from "../../types/compiler_state";
 import { assertionSiteSoftError } from "../../utilities/library_errors.js";
 import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
-import { combinePropRefsAndDecl, compileLoopingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
+import { combinePropRefsAndDecl, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
 import { selectExpressionHandler } from "../expression_handler/expression_handler_manager.js";
 import { empty_set } from "../utilities/empty_set.js";
-import { jst } from "../utilities/traverse_js_node.js";
+import { jst, jstBreadth } from "../utilities/traverse_js_node.js";
 import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
 
 function createAssertSiteObject(
@@ -36,6 +36,7 @@ function createAssertSiteObject(
         expression: original_assertion_expression,
         timeout_limit,
         import_names: empty_set,
+        origin: null,
         ast,
     };
 }
@@ -90,7 +91,8 @@ export function compileAssertionSiteTestExpression(state: CompilerState, expr: J
 export function compileAssertionSite(
     state: CompilerState,
     node: JSNode,
-    LEAVE_ASSERTION_SITE: boolean
+    LEAVE_ASSERTION_SITE: boolean,
+    index: number
 ): JSNode | void {
 
     node.nodes[0].value = ""; // Forcefully delete assert name
@@ -155,6 +157,8 @@ export function compileAssertionSite(
         for (const ref of prop.required_references.values())
             state.global_references.add(ref);
 
+    assertion_site.origin = state.AST;
+
     return LEAVE_ASSERTION_SITE ? assertion_site.ast : null;
 }
 
@@ -178,13 +182,15 @@ export function compileAssertionGroupSite(
 
         OUT_SEQUENCED = true,
 
-        prop = compileLoopingStatement(
+        block: JSNode = <JSNode>jstBreadth(node, 4).filter("type", JSNodeType.BlockStatement, JSNodeType.FunctionBody).run(true)[0],
+
+        prop = block ? compileEnclosingStatement(
             state,
-            node,
+            block,
             LEAVE_ASSERTION_SITE,
             OUT_SEQUENCED,
             RETURN_PROPS_ONLY
-        );
+        ) : null;
 
     if (prop) {
 
@@ -206,6 +212,8 @@ export function compileAssertionGroupSite(
                         timeout_limit
                     );
 
+            //assertion_site.origin = state.AST;
+
             if (imports_.size > 0)
                 prop.required_references = new setUnion(imports_, prop.required_references);
 
@@ -221,6 +229,7 @@ export function compileAssertionGroupSite(
                 assertion_site.SOLO = assertion_site.SOLO || SOLO;
                 assertion_site.RUN = assertion_site.RUN || !SKIP;
                 assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
+                assertion_site.origin = state.AST;
             }
 
             packageAssertionSites(state, prop);

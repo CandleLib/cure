@@ -34,5 +34,7 @@ export interface AssertionSite {
      */
     expression: JSNode;
 
+    origin: JSNode;
+
     timeout_limit?: number;
 };

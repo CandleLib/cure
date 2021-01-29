@@ -136,8 +136,9 @@ function watchTestsOrExit(globals: Globals, resolution: any) {
 
 async function initializeGlobals(globals: Globals, number_of_workers: number) {
 
-    for (const expression_handler of default_expression_handlers)
+    for (const expression_handler of default_expression_handlers) {
         loadExpressionHandler(globals, expression_handler);
+    }
 
     if (!globals.reporter) globals.reporter = initializeReporterColors(new BasicReporter());
 

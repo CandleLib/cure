@@ -1,5 +1,5 @@
-import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeClass, JSNodeType, tools } from "@candlefw/js";
+import { copy, traverse } from "@candlefw/conflagrate";
+import { JSNode, JSNodeClass, JSNodeType, renderWithFormatting, tools } from "@candlefw/js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
@@ -11,9 +11,7 @@ import { compileAssertionGroupSite, compileAssertionSite } from "./assertion_sit
 import { compileImport } from "./compile_import.js";
 import { compileStatementsAndDeclarations } from "./compile_statements_and_declarations.js";
 import { createCompilerState as createCompilerState } from "./create_compiler_state.js";
-import { getFirstBlockStatement } from "./utilities/get_first_block_statement.js";
 import { Expression_Is_An_Assertion_Group_Site, Expression_Is_An_Assertion_Site } from "./utilities/is_expression_assertion_site.js";
-import { replaceFirstBlockContentWithNodes } from "./utilities/replace_block_statement_contents.js";
 import { jst } from "./utilities/traverse_js_node.js";
 
 
@@ -109,7 +107,7 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
 
 function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUTER_SEQUENCED: boolean) {
 
-    for (let { node, meta: { skip, mutate } } of jst(state.AST)
+    for (let { node, meta: { skip, mutate, index } } of jst(state.AST)
         .skipRoot()
         .makeSkippable()
         .makeMutable()) {
@@ -134,26 +132,28 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
 
             case JSNodeType.ExpressionStatement:
 
-                const mutation = compileExpressionStatement(state, node, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED);
-
+                const mutation = compileExpressionStatement(state, node, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED, index);
                 if (mutation !== undefined) mutate(mutation);
-
                 skip();
                 break;
 
+            case JSNodeType.TryStatement:
             case JSNodeType.ForOfStatement:
             case JSNodeType.ForInStatement:
             case JSNodeType.DoStatement:
             case JSNodeType.ForStatement:
             case JSNodeType.WhileStatement:
-                compileLoopingStatement(state, node); skip(); break;
+            case JSNodeType.BlockStatement:
+            case JSNodeType.ArrowFunction:
+                compileEnclosingStatement(state, node, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED);
+                skip();
+                break;
 
             case JSNodeType.FunctionDeclaration:
             case JSNodeType.FunctionExpression:
-            case JSNodeType.BlockStatement:
                 compileMiscellaneous(state, node); skip(); break;
 
-            case JSNodeType.ArrowFunction: compileArrowFunction(state, node); skip(); break;
+            //case JSNodeType.ArrowFunction: compileArrowFunction(state, node); skip(); break;
 
             case JSNodeType.LexicalDeclaration:
                 for (const { node: bdg } of traverse(node, "nodes", 2)
@@ -162,6 +162,7 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
                     state.global_declarations.add(id(bdg));
 
             default:
+
                 if (node.type & JSNodeClass.STATEMENT) {
 
                     if (node.type == JSNodeType.LabeledStatement && node.nodes[0].value == "keep")
@@ -173,6 +174,57 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
                 break;
         }
     }
+}
+export function compileEnclosingStatement(
+    state: CompilerState,
+    node_containing_block: JSNode,
+    LEAVE_ASSERTION_SITE = false,
+    OUT_SEQUENCED = false,
+    RETURN_PROPS_ONLY = false
+): StatementProp {
+
+
+    const receiver = { ast: null };
+
+    const prop = compileTestsFromSourceAST(state.globals, node_containing_block, state.imports, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
+
+    if (RETURN_PROPS_ONLY) return prop;
+
+    combinePropRefsAndDecl(state, prop);
+
+    for (const assertion_site of prop.assertion_sites) {
+
+        if (assertion_site.origin == node_containing_block) {
+            //const c = copy(node_containing_block);
+            //c.nodes.length = 0;
+            //c.nodes.push(assertion_site.ast);
+            //assertion_site.ast = c;
+        } else {
+
+            for (const { node, meta: { replace } } of jst(node_containing_block).makeReplaceable().extract(receiver)) {
+                if (node == assertion_site.origin) {
+                    const c = copy(node);
+                    c.nodes.length = 0;
+                    c.nodes.push(assertion_site.ast);
+                    replace(c);
+                }
+            }
+
+            assertion_site.ast = receiver.ast;
+        }
+
+        assertion_site.origin = node_containing_block;
+    }
+
+    packageAssertionSites(state, prop);
+
+    if (prop.stmt.nodes.length > 0) {
+        state.AWAIT = prop.AWAIT || state.AWAIT;
+        //    state.statements.push(prop);
+    }
+
+
+    return null;
 }
 
 export function combinePropRefsAndDecl(
@@ -205,7 +257,8 @@ function compileExpressionStatement(
     state: CompilerState,
     node: JSNode,
     LEAVE_ASSERTION_SITE: boolean,
-    OUTER_SEQUENCED: boolean
+    OUTER_SEQUENCED: boolean,
+    index: number
 ) {
 
     let [expr] = node.nodes;
@@ -217,7 +270,7 @@ function compileExpressionStatement(
 
     if (Expression_Is_An_Assertion_Site(node))
 
-        return compileAssertionSite(state, node.nodes[0], LEAVE_ASSERTION_SITE);
+        return compileAssertionSite(state, node.nodes[0], LEAVE_ASSERTION_SITE, index);
 
     else if (Expression_Is_An_Assertion_Group_Site(node))
 
@@ -238,8 +291,7 @@ function compileMiscellaneous(
     FORCE_USE: boolean = false
 ) {
 
-    const prop
-        = compileTestsFromSourceAST(state.globals, node, state.imports);
+    const prop = compileTestsFromSourceAST(state.globals, node, state.imports);
 
     combinePropRefsAndDecl(state, prop);
 
@@ -260,6 +312,8 @@ function compileMiscellaneous(
         else
             state.statements.push(prop);
     }
+
+    return prop;
 }
 
 function compileArrowFunction(state: CompilerState, node: JSNode) {
@@ -271,39 +325,6 @@ function compileArrowFunction(state: CompilerState, node: JSNode) {
     state.AWAIT = prop.AWAIT || state.AWAIT;
 }
 
-export function compileLoopingStatement(
-    state: CompilerState,
-    node: JSNode,
-    LEAVE_ASSERTION_SITE = false,
-    OUT_SEQUENCED = false,
-    RETURN_PROPS_ONLY = false
-) {
-
-    const
-        { tests: tests, statements } = state,
-        block = getFirstBlockStatement(node);
-
-    if (block) {
-
-        const prop = compileTestsFromSourceAST(state.globals, block, state.imports, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
-
-        if (RETURN_PROPS_ONLY) return prop;
-
-        combinePropRefsAndDecl(state, prop);
-
-        for (const assertion_site of prop.assertion_sites)
-            assertion_site.ast = replaceFirstBlockContentWithNodes(node, assertion_site.ast);
-
-        packageAssertionSites(state, prop);
-
-        if (prop.stmt.nodes.length > 0) {
-            state.AWAIT = prop.AWAIT || state.AWAIT;
-            statements.push(prop);
-        }
-    }
-
-    return null;
-}
 
 export function packageAssertionSites(state: CompilerState, prop: StatementProp, assertion_sites: AssertionSite | AssertionSite[] = prop.assertion_sites) {
 
