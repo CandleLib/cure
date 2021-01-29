@@ -18,7 +18,7 @@ const { harness,
     harness_getResults,
     harness_overrideLog,
     harness_restoreLog,
-} = constructHarness(equal, util, <Performance><any>performance, rst, TestError);
+} = constructHarness(equal, util, <Performance><any>performance, rst);
 
 export { harness };
 
@@ -28,9 +28,9 @@ export async function loadImport(source) {
 
 export function createAddendum(sources: ImportSource[], test: Test) {
     if (sources.findIndex(s => s.module_specifier == "@candlefw/wick") >= 0)
-        return `await cfw.wick.server(); cfw.url.GLOBAL = new cfw.url("${test.cwd + "/"}")`;
+        return `await cfw.wick.server(); cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
     if (sources.findIndex(s => s.module_specifier == "@candlefw/url") >= 0)
-        return `await cfw.url.server(); cfw.url.GLOBAL = new cfw.url("${test.cwd + "/"}")`;
+        return `await cfw.url.server(); cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
     return "";
 }
 
@@ -40,10 +40,17 @@ async function RunTest({ test }: { test: Test; }) {
     try {
         //@ts-ignore
         harness.map = test.map;
+        harness.source = test.source;
+
         //@ts-ignore
         global.harness = harness;
 
-        harness_init();
+
+
+        harness_init(
+            test.source_location,
+            test.working_directory
+        );
 
         harness_overrideLog();
 
@@ -59,13 +66,16 @@ async function RunTest({ test }: { test: Test; }) {
         ));
 
         // Clear any existing TestInfo created by [createTestFunctionFromTestSource]
-        harness_init();
+        harness_init(
+            test.source_location,
+            test.working_directory
+        );
 
         // Global TestResult 
         // - Catchall for any errors that lead to a hard crash of the test function
         harness.pushTestResult();
 
-        harness.setResultName(`Test [ ${splitHierarchalName(test.name).pop()} ] failed with a critical error`);
+        harness.setResultName(`Test failed with a critical error`);
 
         await fn();
 
@@ -92,7 +102,10 @@ async function RunTest({ test }: { test: Test; }) {
 
     if (results.length == 0) {
 
-        harness_init();
+        harness_init(
+            test.source_location,
+            test.working_directory
+        );
 
         harness.pushTestResult();
 

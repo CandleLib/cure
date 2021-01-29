@@ -1,14 +1,172 @@
-
-import { lrParse, ParserData } from "@candlefw/hydrocarbon";
 import { Lexer } from "@candlefw/wind";
 import {
     getSourceLineColumn,
     decodeJSONSourceMap,
+    traverse,
 } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import data from "../reporting/utilities/error_line_parser.js";
-import { StackTraceLocation } from "../types/stack_trace_location";
+import { TransferableTestError } from "../types/test_error.js";
+import { TestHarness } from "../types/test_harness.js";
+import parser from "./parser.js";
 
+export function testThrow() { /* ---------------- */ throw new Error("FOR TESTING"); };
+
+interface StackTraceLocation {
+    type: "location";
+
+    url: URL | "anonymous";
+
+    pos: [number, number, number?];
+
+    sub_stack: undefined;
+}
+interface StackTraceCall {
+    type: "call";
+    call_id: string;
+    sub_stack: (StackTraceCall | StackTraceLocation)[];
+}
+
+type StackTraceAst = StackTraceCall | StackTraceLocation;
+
+
+function Call_Originated_In_Test_Source(node: StackTraceAst) {
+    return node.type == "call"
+        && node.call_id == "Object.eval"
+        && node.sub_stack[0].type == "call"
+        && node.sub_stack[0].call_id == "eval"
+        && node.sub_stack[0]?.sub_stack?.[0]?.type == "call"
+        && node.sub_stack[0]?.sub_stack?.[0]?.call_id == "createTest__cfwtest"
+        && node.sub_stack[1].type == "location"
+        && node.sub_stack[1].url == "anonymous";
+}
+export function compileTestErrorFromExceptionObject(error: Error, harness: TestHarness, error_location: string = "unknown"): TransferableTestError {
+    if (error instanceof Error) {
+
+        const { stack, message } = error;
+
+        //only dig into files that are at the same root directory
+
+        const { FAILED, result } = parser(stack.trim(), { URL: URL });
+
+        const [stack_ast] = <StackTraceAst[][]>result;
+
+        //Walk stack trace until we find a file that we can access.
+        let results = [stack_ast];
+
+        const cwd = new URL(harness.working_directory);
+
+        let column = 0, line = 0, offset = 0, src = harness.source_location, source_map, CAN_RESOLVE_TO_SOURCE = false;
+
+        if (!FAILED)
+            for (const { node, meta } of traverse(<StackTraceAst>{ sub_stack: stack_ast }, "sub_stack").skipRoot()) {
+
+                if (Call_Originated_In_Test_Source(node)) {
+
+                    ([line, column] = (<StackTraceLocation>node.sub_stack[1]).pos);
+
+                    source_map = decodeJSONSourceMap(harness.map);
+
+                    ({ column, line } = getSourceLineColumn(line - 2, column, source_map));
+
+                    column++;
+                    line++;
+
+                    CAN_RESOLVE_TO_SOURCE = true;
+
+                    break;
+                } else if (node.type == "location" && node.url !== "anonymous" && node.url.isSUBDIRECTORY_OF(cwd)) {
+                    results = node;
+                    ([line, column] = (node).pos);
+
+                    src = node.url + "";
+
+                    CAN_RESOLVE_TO_SOURCE = true;
+
+                    //Load the test file and check for a source map
+
+
+                    break;
+                }
+            }
+
+        return {
+            column,
+            line,
+            offset,
+            source: src,
+            summary: message,
+            detail:
+                [
+                    `The object ${error} was passed to compileTestErrorFromExceptionObject.`,
+                    `This object is not an instance of Error and cannot be parsed.`,
+                ],
+            CAN_RESOLVE_TO_SOURCE: false,
+        };
+    } else {
+        return {
+            column: 0,
+            line: 0,
+            offset: 0,
+            source: error_location,
+            summary: `An object that is not an instance of Error was passed to compileTestErrorFromExceptionObject`,
+            detail:
+                [
+                    `The object ${error} was passed to compileTestErrorFromExceptionObject.`,
+                    `This object is not an instance of Error and cannot be parsed.`,
+                ],
+            CAN_RESOLVE_TO_SOURCE: false,
+        };
+    }
+}
+
+export async function seekSourceFile(test_error: TransferableTestError, harness: TestHarness) {
+
+    let { line, column, source } = test_error, origin = source;
+    let
+        source_url = new URL(source),
+        active_url = source_url,
+        map_source_url = null,
+        source_text = "";
+
+    const cwd = new URL(harness.working_directory);
+
+    //Check for source map.
+    //* 
+    outer:
+    while (true) {
+        if (!active_url.isSUBDIRECTORY_OF(cwd)) break;
+        source_text = (await active_url.fetchText());
+        if (active_url.ext == "map") {
+            let source_map = decodeJSONSourceMap(source_text);
+            let sources = "";
+            ({ column, line, source } = getSourceLineColumn(line, column, source_map));
+            column++;
+            line++;
+            source_url = URL.resolveRelative(source, active_url);
+            active_url = source_url;
+        } else if (active_url.ext == "js" || active_url.ext == "ts") {
+            for (const [, loc] of source_text.matchAll(/\/\/#\s*sourceMappingURL=(.+)/g)) {
+                map_source_url = URL.resolveRelative(`./${loc}`, origin);
+                active_url = map_source_url;
+                continue outer;
+            }
+            break;
+        }
+    }
+    source_text = (await source_url.fetchText());
+
+    return { line, column, source_text, source: source_url };
+}
+
+export async function blame(test_error: TransferableTestError, harness: TestHarness) {
+
+    const { source_text, line, column } = await seekSourceFile(test_error, harness);
+
+    const string = new Lexer(source_text).seek(line - 1, column - 1).blame();
+
+    return string.split("\n");
+}
 
 const blank: Set<string> = new Set();
 /**
@@ -204,7 +362,6 @@ class TestError {
     }
 }
 
-
 export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
     const source_map = decodeJSONSourceMap(sourcemap_json_string);
     return getSourceLineColumn(line, column, source_map);
@@ -225,5 +382,6 @@ export function getLexerFromLineColumnString(line, column, string, origin = ""):
 
     return lex;
 }
+
 
 export { TestError };

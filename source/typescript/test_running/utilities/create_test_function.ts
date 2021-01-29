@@ -25,7 +25,7 @@ export async function createTestFunctionFromTestSource(
 
     harness.setResultName("Could Not Create Test Function");
 
-    const compiled_fn = createTest(test, createAddendum(test.import_module_sources, test), harness, TestError, ImportedModules);
+    const compiled_fn = createTest__cfwtest(test, createAddendum(test.import_module_sources, test), harness, TestError, ImportedModules);
 
     harness.popTestResult();
 
@@ -33,7 +33,7 @@ export async function createTestFunctionFromTestSource(
     return compiled_fn;
 }
 
-function createTest(test: Test, addendum: string, harness: TestHarness, TestError: any, ImportedModules: Map<string, NodeModule>) {
+function createTest__cfwtest(test: Test, addendum: string, harness: TestHarness, TestError: any, ImportedModules: Map<string, NodeModule>) {
 
     const
         { test_function_object_args, import_arg_specifiers, source } = test,

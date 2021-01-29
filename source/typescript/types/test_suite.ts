@@ -21,7 +21,7 @@ export interface TestSuite {
      * The original URL of the test file this suite is built from.
      */
     origin: string;
-    
+
     /**
      * The character data of the source test file.
      */
@@ -32,5 +32,8 @@ export interface TestSuite {
      */
     name: string;
 
+    /**
+     * Resolved URL to the source file
+     */
     url: URL;
 };

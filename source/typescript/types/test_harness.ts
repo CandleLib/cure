@@ -6,6 +6,17 @@ import { ImportSource } from "./imports.js";
  */
 export interface TestHarness {
     /**
+     * Absolute URL string of the source file of the active test
+     */
+    readonly source_location: string;
+
+    /**
+     * The root directory for source files. Files outside this location should
+     * not be accessed for reporting
+     */
+    readonly working_directory: string;
+
+    /**
      * Stack storing user registered time points;
      */
     time_points: number[];
@@ -30,11 +41,6 @@ export interface TestHarness {
     origin: string;
 
     /**
-     * Array of Error objects that were generated during the test run.
-     */
-    errors: TestError[];
-
-    /**
      * A temporary variable that can be used to hold assertion site object data.
      */
     regA: any;
@@ -53,11 +59,6 @@ export interface TestHarness {
      * A temporary variable that can be used to hold assertion site object data.
      */
     regD: any;
-
-    /**
-     * Stores an exception caught within an assertion site.
-     */
-    caught_exception: Error | TestError;
 
     /**
      * In a sequenced run of tests, gives the index of the last

@@ -2,9 +2,14 @@ import { TestHarness } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
 import { TestError } from "../../utilities/test_error";
 
-const constructHarness = (equal, util, performance: Performance, rst, te: typeof TestError) => {
+const constructHarness = (equal, util, performance: Performance, rst) => {
 
-    let active_test_result: TestInfo = null, previous_start = 0, results: TestInfo[] = [];
+    let
+        active_test_result: TestInfo = null,
+        previous_start = 0,
+        results: TestInfo[] = [],
+        source_location = "",
+        working_directory = "";
 
     const
 
@@ -56,6 +61,22 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
                 return import(url);
             },
 
+            get source_location(): string {
+                return source_location;
+            },
+
+            set source_location(str: string): void {
+
+            },
+
+            get working_directory(): string {
+                return working_directory;
+            },
+
+            set working_directory(str: string): void {
+
+            },
+
             accessible_files: null,
 
             last_time: -1,
@@ -88,7 +109,7 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
 
             mark(index: number) {
                 //@ts-ignore
-                harness.errors.push(new te(new Error("marked: " + index), "", 0, 0, "", ""));
+                //harness.errors.push(new te(new Error("marked: " + index), "", 0, 0, "", ""));
             },
 
             /**
@@ -191,10 +212,6 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
                 const e = createInspectionError(...args);
 
                 active_test_result.logs.push(e.stack.toString());
-
-                //const test_error = new te(e, "", 0, 0, "", harness.origin, harness.map);
-                //test_error.INSPECTION_ERROR = true;
-                //harness.errors.push(test_error);
             },
 
             inspectAndThrow: (...args) => {
@@ -207,8 +224,9 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
 
                 for (const prop of properties) {
                     if (typeof object[prop] == "undefined")
-                        harness.setException(new te(`Expected property ${prop} to be present on object ${util.inspect(object)}`));
+                        return false;
                 }
+                return true;
             },
 
             shouldEqual(A, B, strict?: boolean) {
@@ -216,10 +234,12 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
                 markWriteStart();
 
                 if (strict && A !== B) {
-                    harness.setException(new te(`Expected A->${A} to strictly equal B->${B}`));
+                    return false;
                 } else if (A != B) {
-                    harness.setException(new te(`Expected A->${A} to equal B->${B}`));
+                    return false;
                 }
+
+                return true;
             },
 
             shouldNotEqual(A, B, strict?: boolean) {
@@ -227,9 +247,9 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
                 markWriteStart();
 
                 if (strict && A === B) {
-                    harness.setException(new te(`Expected A->${A} to not strictly equal B->${B}`));
+                    return false
                 } else if (A == B) {
-                    harness.setException(new te(`Expected A->${A} to not equal B->${B}`));
+                    return false
                 }
             },
 
@@ -320,7 +340,9 @@ const constructHarness = (equal, util, performance: Performance, rst, te: typeof
     }
 
 
-    function harness_init() {
+    function harness_init(test_source_location: string = "", test_working_directory: string = "") {
+        working_directory = test_working_directory;
+        source_location = test_source_location;
         active_test_result = null;
         results.length = 0;
         clipboard.length = 0;

@@ -93,7 +93,6 @@ function createTestRig(
         } = assertion_site;
 
     return {
-        cwd: new URL(suite.origin).dir,
 
         name: static_name,
         suite_index: suite.index,
@@ -114,6 +113,10 @@ function createTestRig(
         RUN,
         INSPECT,
         BROWSER: BROWSER || false,
+
+        source_location: suite.url.toString(),
+        working_directory: globals.package_dir.toString(),
+
     };
 }
 

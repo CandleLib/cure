@@ -33,10 +33,9 @@ export function createGlobals(
         (a, b) => a == b,
         { performance: () => 0 },
         <Performance>{ now: () => 0 },
-        {},
-        TestError
+        {}
     ),
-    globals: Globals = {
+        globals: Globals = {
 
             flags: {
 

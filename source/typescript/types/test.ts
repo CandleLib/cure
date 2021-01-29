@@ -38,11 +38,6 @@ export interface Test {
     IS_ASYNC: boolean;
 
     /**
-    * An error object if an exception was thrown during test compilation.
-    */
-    error?: TestError;
-
-    /**
      * Position Lexer for mapping errors back to the source file.
      */
     pos?: Lexer;
@@ -102,12 +97,6 @@ export interface Test {
     INSPECT: boolean;
 
     /**
-     * The current directory of the test file. Tests are
-     * run from within their own directories. 
-     */
-    cwd: string;
-
-    /**
      * Run the test in a browser context if true.
      */
     BROWSER: boolean;
@@ -121,5 +110,17 @@ export interface Test {
      * Maximum number of times a timed out test can be retried before failing
      */
     retries: number;
+
+    /**
+     * Absolute URL string of the source file
+     */
+    source_location: string;
+
+
+    /**
+     * The current directory of the test file. Tests are
+     * run from within their own directories. 
+     */
+    working_directory: string;
 };
 
