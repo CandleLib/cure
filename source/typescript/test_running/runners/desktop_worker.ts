@@ -93,7 +93,7 @@ async function RunTest({ test }: { test: Test; }) {
 
         harness_flushClipboard();
 
-        harness.setException(e);
+        harness.addException(e);
 
         harness.popTestResult();
 
@@ -113,7 +113,7 @@ async function RunTest({ test }: { test: Test; }) {
 
         harness.setResultName("Critical Test Errors");
 
-        harness.setException(new Error("No results generated from this test"));
+        harness.addException(new Error("No results generated from this test"));
 
         harness.popTestResult();
 

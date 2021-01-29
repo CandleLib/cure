@@ -60,7 +60,7 @@ assert_group("Full Sequence", sequence, () => {
         await fsp.copyFile("./package.json", path.join(dir, "package.json"));
         await fsp.copyFile(path.join(build_dir, "main.js"), path.join(dir, build_dir, "main.js"));
     } catch (e) {
-        $harness.setException(e);
+        $harness.addException(e);
         /*  Don't really care if this fails. 
             Likely the directory and file 
             already exists */ }

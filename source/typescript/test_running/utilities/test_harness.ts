@@ -194,7 +194,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             },
 
 
-            setException: (e) => {
+            addException: (e) => {
                 markWriteStart();
                 addTestErrorToActiveResult(e);
             },
@@ -360,7 +360,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 try {
                     source_map = decodeJSONSourceMap(test_source_map_string);
                 } catch (e) {
-
+                    harness.addException(e);
                 }
             }
         },

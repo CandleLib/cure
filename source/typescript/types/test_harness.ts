@@ -157,7 +157,7 @@ export interface TestHarness {
     /**
      * Add error to test harness.
      */
-    setException: (e) => void;
+    addException: (e) => void;
 
     /**
      * Appends inspection error to the test errors array
