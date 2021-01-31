@@ -1,9 +1,11 @@
-import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, JSNodeTypeLU, renderCompressed, stmt } from "@candlefw/js";
+import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed } from "@candlefw/js";
+import URL from "@candlefw/url";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
-import { assertionSiteSoftError } from "../../utilities/library_errors.js";
 import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
+import { createTargetedTestError } from "../../utilities/test_error.js";
+import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum.js";
 import { combinePropRefsAndDecl, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
 import { compileExpressionHandler, selectExpressionHandler } from "../expression_handler/expression_handler_functions.js";
 import { empty_set } from "../utilities/empty_set.js";
@@ -16,12 +18,15 @@ function createAssertSiteObject(
     SOLO: boolean,
     INSPECT: boolean,
     AWAIT: boolean,
-    BROWSER: any,
+    BROWSER: boolean,
+    assertion_site_ast: JSNode,
     original_assertion_expression: JSNode,
     ast: JSNode,
-    timeout_limit: number
+    timeout_limit: number,
+    source: string
 ): AssertionSite {
     return <AssertionSite>{
+        throwable_id: THROWABLE_TEST_OBJECT_ID.ASSERTION_SITE,
         index: -1,
         static_name,
         RUN: !SKIP,
@@ -31,26 +36,25 @@ function createAssertSiteObject(
         BROWSER,
         error: null,
         imports: [],
-        pos: <any>original_assertion_expression.pos,
-        expression: original_assertion_expression,
+        pos: <any>(original_assertion_expression || assertion_site_ast).pos,
         timeout_limit,
         import_names: empty_set,
         origin: null,
         ast,
+        source_path: source
     };
 }
 
 export function compileAssertionSite(
     state: CompilerState,
-    node: JSCallExpression,
+    assertion_call_node: JSCallExpression,
     LEAVE_ASSERTION_SITE: boolean,
-    index: number
 ): JSNode | void {
 
-    (<JSIdentifierReference>node.nodes[0]).value = ""; // Forcefully delete assert name
+    (<JSIdentifierReference>assertion_call_node.nodes[0]).value = ""; // Forcefully delete assert name
 
     const {
-        assertion_expr,
+        assertion_expr: assertion_expression,
         name_expression,
         BROWSER,
         INSPECT,
@@ -58,15 +62,16 @@ export function compileAssertionSite(
         SOLO,
         name: static_name,
         timeout_limit
-    } = parseAssertionSiteArguments(node);
+    } = parseAssertionSiteArguments(assertion_call_node);
 
-    if (!assertion_expr) {
-        assertionSiteSoftError(state.globals, 0, node.pos.errorMessage(`Could not find an expression for assertion site [${node.pos.slice()}]`));
-        return;
-    }
+
+    let HAVE_EXPRESSION_HANDLER = false;
 
     const
-        AWAIT = (jst(assertion_expr)
+
+        HAVE_ASSERTION_EXPRESSION = !!assertion_expression,
+
+        AWAIT = (jst(assertion_expression)
             .filter("type", JSNodeType.AwaitExpression)
             .run(true)
             .length) > 0,
@@ -76,51 +81,79 @@ export function compileAssertionSite(
             nodes: []
         };
 
-    let test_name = renderCompressed(assertion_expr);
+    let test_name = renderCompressed(assertion_expression);
 
-    for (const express_handler of selectExpressionHandler(assertion_expr, state.globals)) {
+    if (HAVE_ASSERTION_EXPRESSION)
+        for (const express_handler of selectExpressionHandler(assertion_expression, state.globals)) {
 
-        if (express_handler.confirmUse(assertion_expr)) {
+            if (express_handler.confirmUse(assertion_expression)) {
 
-            const { nodes, name } = compileExpressionHandler(
-                assertion_expr,
-                express_handler,
-                [],
-                [],
-                state.globals,
-                name_expression ? renderCompressed(name_expression) : "",
-                static_name
-            );
+                const { nodes, name } = compileExpressionHandler(
+                    assertion_expression,
+                    express_handler,
+                    [],
+                    [],
+                    state.globals,
+                    name_expression ? renderCompressed(name_expression) : "",
+                    static_name
+                );
 
-            test_name = name;
+                test_name = name;
 
-            //@ts-ignore
-            ast.nodes = nodes;
+                //@ts-ignore
+                ast.nodes = nodes;
 
-            break;
+                HAVE_EXPRESSION_HANDLER = true;
+
+                break;
+            }
         }
-    }
 
     const assertion_site = createAssertSiteObject(
         test_name,
         SKIP, SOLO,
         INSPECT, AWAIT,
         BROWSER,
-        assertion_expr,
+        assertion_call_node,
+        assertion_expression,
         ast,
-        timeout_limit
+        timeout_limit,
+        state.globals.input_source
     ),
         prop = compileTestsFromSourceAST(
             state.globals,
-            node,
+            assertion_call_node,
             state.imports
         );
 
-    packageAssertionSites(state, prop, assertion_site);
 
     if (LEAVE_ASSERTION_SITE)
         for (const ref of prop.required_references.values())
             state.global_references.add(ref);
+
+    // Make sure the site is valid
+
+    if (!HAVE_ASSERTION_EXPRESSION) {
+        state.globals.harness.pushTestResult();
+        state.globals.harness.setResultName("Could not find an expression for assertion site");
+        state.globals.harness.addException(createTargetedTestError(assertion_site, "Could not find an expression for assertion site", state.globals.harness));
+        state.globals.harness.popTestResult();
+        return null;
+    }
+
+    if (!HAVE_EXPRESSION_HANDLER) {
+        const url = new URL(state.globals.input_source);
+        state.globals.harness.pushTestResult();
+        state.globals.harness.setResultName(createHierarchalName(
+            url.path,
+            `Could not find an ExpressionHandler for ${renderCompressed(assertion_expression)}`
+        ));
+        state.globals.harness.addException(createTargetedTestError(assertion_site, "Could not find an expression for assertion site", state.globals.harness));
+        state.globals.harness.popTestResult();
+        return null;
+    }
+
+    packageAssertionSites(state, prop, assertion_site);
 
     assertion_site.origin = state.AST;
 
@@ -173,8 +206,10 @@ export function compileAssertionGroupSite(
                         prop.assertion_sites.some(s => s.IS_ASYNC),
                         BROWSER,
                         node,
+                        node,
                         prop.stmt,
-                        timeout_limit
+                        timeout_limit,
+                        state.globals.input_source
                     );
 
             //assertion_site.origin = state.AST;

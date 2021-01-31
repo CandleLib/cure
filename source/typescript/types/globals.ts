@@ -1,6 +1,7 @@
 import URL from "@candlefw/url";
 import { FSWatcher } from "fs";
 import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
+import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum.js";
 import { ExpressionHandler } from "./expression_handler.js";
 import { Reporter } from "./reporter";
 import { Test } from "./test";
@@ -17,6 +18,8 @@ export interface Outcome {
 }
 
 export interface Globals {
+
+    throwable_id: THROWABLE_TEST_OBJECT_ID.GLOBALS,
 
     suites: Map<string, TestSuite>;
 
@@ -103,6 +106,11 @@ export interface Globals {
      * Root directory for @candlefw/test
      */
     test_dir: string,
+
+    /**
+     * Location of spec file that is being compiled
+     */
+    input_source?: string,
 
     /**
      * Aquire global lock. True if lock acquired successfully

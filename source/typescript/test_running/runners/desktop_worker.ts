@@ -14,7 +14,7 @@ const harness_env = createTestHarnessEnvironmentInstance(equal, util, <Performan
 export const harness = harness_env.harness;
 export const ImportedModules: Map<string, any> = new Map();
 
-import { splitHierarchalName } from "../../utilities/name_hierarchy.js";
+
 import { createNameErrorMessage } from "../../utilities/library_errors.js";
 
 
