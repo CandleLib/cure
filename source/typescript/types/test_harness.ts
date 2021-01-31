@@ -7,8 +7,8 @@ import { ImportSource } from "./imports.js";
 export interface TestHarnessEnvironment {
 
      /**
-      * Initialize all stacks and variables to zero length or zero and 
-      * assign source file and working directory stings
+      * Initialize all stacks, queues to zero length and variables to zero and 
+      * assign source file and working directory strings
       * @param test_source_location 
       * @param test_working_directory 
       */

@@ -1,4 +1,5 @@
 import { renderCompressed as $r, JSNodeType, JSNodeClass } from "@candlefw/js";
+import { ExpressionHandler } from "../../types/expression_handler";
 
 function sanitizeTemplate(string) {
     return string;
@@ -18,7 +19,7 @@ function sanitizeTemplate(string) {
 const
     $ = sanitizeTemplate,
 
-    default_expression_handlers = [
+    default_expression_handlers: ExpressionHandler[] = [
 
         /**
          * Relational and Equality Expressions
@@ -33,7 +34,7 @@ const
                 const [left, right] = node.nodes;
 
                 stack.push(`"${$r(left).replace(/\"/g, "\\\"")}"`);
-                const a = stack.push(left); // Push an expression to the evaluation stack
+                const a = stack.push(left); // Push an expression to the test queue
                 stack.push(`"${$r(right).replace(/\"/g, "\\\"")}"`);
                 const b = stack.push(right);
                 stack.push(`'${node.symbol.replace(/\"/g, "\\\"")}'`);
@@ -41,11 +42,11 @@ const
                 stack.report(e);
             },
 
-            print: (stack, reporter) => {
+            print: (queue, reporter) => {
 
                 const
 
-                    [left_code, left_val, right_code, right_val, symbol] = [...stack.pop()],
+                    [left_code, left_val, right_code, right_val, symbol] = [...queue.pop()],
 
                     symbol_to_phrase_map = {
                         "==": "to equal",

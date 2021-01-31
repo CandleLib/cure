@@ -19,7 +19,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
         pf_now: () => number = performance.now,
 
-        data_stack: any[] = [],
+        test_queue: any[] = [],
 
         clipboard: TestInfo[] = [],
 
@@ -295,7 +295,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 active_test_result = clipboard[clipboard.length - 1];
 
-                data_stack.length -= previous_active.test_stack.length;
+                test_queue.length -= previous_active.test_stack.length;
 
                 previous_active.PASSED = previous_active.PASSED && previous_active.errors.length == 0;
 
@@ -307,13 +307,13 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             pushValue(val: any) {
                 markWriteStart();
                 active_test_result.test_stack.push(harness.makeLiteral(val));
-                data_stack.push(val);
+                test_queue.push(val);
             },
 
             getValue(index: number) {
                 markWriteStart();
-                const pointer = data_stack.length - active_test_result.test_stack.length;
-                return data_stack[pointer + index];
+                const pointer = test_queue.length - active_test_result.test_stack.length;
+                return test_queue[pointer + index];
             },
 
             pushAndAssertValue(SUCCESS: boolean) {
@@ -364,7 +364,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             active_test_result = null;
             results.length = 0;
             clipboard.length = 0;
-            data_stack.length = 0;
+            test_queue.length = 0;
             source_map = null;
             previous_start = pf_now();
         },
@@ -397,7 +397,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     active_test_result.clipboard_end = end;
                     test.PASSED = false;
                     active_test_result = test;
-                    data_stack.length = 0;
+                    test_queue.length = 0;
                     results.push(test);
                 }
 
