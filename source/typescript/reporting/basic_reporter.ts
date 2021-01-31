@@ -2,12 +2,13 @@ import { bidirectionalTraverse, traverse } from "@candlefw/conflagrate";
 import { performance } from "perf_hooks";
 import { Globals } from "../types/globals.js";
 import { Reporter } from "../types/reporter.js";
-import { TestInfo } from "../types/test_info.js";
 import { Test } from "../types/test.js";
-
+import { TestInfo } from "../types/test_info.js";
+import { createHierarchalName, splitHierarchalName } from "../utilities/name_hierarchy.js";
+import { blame } from "../utilities/test_error.js";
 import { CLITextDraw } from "./utilities/cli_text_console.js";
 import { rst } from "./utilities/colors.js";
-import { createHierarchalName, splitHierarchalName } from "../utilities/name_hierarchy.js";
+
 
 function Object_Is_TestResult(o: any): o is TestInfo {
     return !!o.test;
@@ -255,12 +256,6 @@ export class BasicReporter implements Reporter {
 
         const
             time_end = performance.now(),
-
-            { suites: suite_map, watched_files_map } = globals,
-
-            suites = [...suite_map.values()],
-
-            watched_files = new Set(watched_files_map.keys()),
 
             strings = [await this.update(results, globals, terminal, true)],
 
