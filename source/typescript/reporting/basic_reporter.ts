@@ -289,26 +289,20 @@ export class BasicReporter implements Reporter {
                             { name: result_name } = getNameData(test_result, globals);
 
                         if (!PASSED) {
+
                             suite.strings.push("", "");
-                            HAS_FAILED = true;
-                            failed++;
+                            HAS_FAILED = true; failed++;
+
                             for (const error of test_result.errors) {
-                                suite.strings.push(offsetB + result_name + ": " + error);;
-                                //FAILED = true;
-                                /*
-                                if (error.WORKER) {
-                                    error = Object.assign(new TestError(error), error);
+
+                                suite.strings.push(offsetB + result_name + ":");
+
+                                if (error.CAN_RESOLVE_TO_SOURCE) {
+                                    const blame_string = await blame(error, globals.harness);
+                                    suite.strings.push(...blame_string.map(s => offsetB + s));
                                 }
-            
-                                const message = error.toString();//await error.toAsyncBlameString(watched_files, suites[test.suite_index].origin);
-            
-                                errors.push(`${rst}${msgA}[  ${name} ]${rst} ${error.INSPECTION_ERROR ? "" : "failed"}:\n\n    ${fail
-                                    + message
-                                        .replace(error.match_source, error.replace_source)
-                                        .split("\n")
-                                        .join("\n    ")
-                                    }\n${rst}`);
-                                    */
+
+                                suite.strings.push(offsetB + error.summary, ...error.detail.map(s => offsetB + s));
                             }
                         }
                     }

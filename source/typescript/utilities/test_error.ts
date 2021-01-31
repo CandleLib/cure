@@ -16,8 +16,10 @@ import { StackTraceCall, StackTraceLocation, StackTraceAst } from "../types/stac
 export function testThrow() { /* ---------------- */ throw new Error("FOR TESTING"); };
 /* END -------------------------------------------------------------------------------------------- END */
 
-
-
+/**
+ * 
+ * @param node 
+ */
 
 function Call_Originated_In_Test_Source(node: StackTraceAst) {
     return node.type == "call"
@@ -29,6 +31,13 @@ function Call_Originated_In_Test_Source(node: StackTraceAst) {
         && node.sub_stack[1].type == "location"
         && node.sub_stack[1].url == "anonymous";
 }
+
+/**
+ * 
+ * @param error 
+ * @param harness 
+ * @param error_location 
+ */
 export function createTestErrorFromErrorObject(
     error: Error,
     harness: TestHarness,
@@ -55,12 +64,17 @@ export function createTestErrorFromErrorObject(
 
                     ([line, column] = (<StackTraceLocation>node.sub_stack[1]).pos);
 
-                    source_map = decodeJSONSourceMap(harness.test_source_map);
+                    source_map = harness.test_source_map;
 
-                    ({ column, line } = getSourceLineColumn(line - 2, column, source_map));
+                    ({ column, line } = getSourceLineColumn(
+                        /** Line offset due to extra code the Function constructor adds to the test source */
+                        line - 2,
+                        column,
+                        source_map
+                    ));
 
-                    column++;
-                    line++;
+                    //column++;
+                    //line++;
 
                     CAN_RESOLVE_TO_SOURCE = true;
 
@@ -74,6 +88,22 @@ export function createTestErrorFromErrorObject(
                     CAN_RESOLVE_TO_SOURCE = true;
 
                     break;
+                } else if (
+                    node.type == "call"
+                    && node.sub_stack.length == 1
+                    && node.sub_stack[0].type == "location"
+                    && node.sub_stack[0].url !== "anonymous"
+                    && node.sub_stack[0].url.isSUBDIRECTORY_OF(cwd)
+                ) {
+                    const location = node.sub_stack[0];
+
+                    ([line, column] = (location).pos);
+
+                    src = location.url + "";
+
+                    CAN_RESOLVE_TO_SOURCE = true;
+
+                    break;
                 }
             }
 
@@ -82,13 +112,9 @@ export function createTestErrorFromErrorObject(
             line,
             offset,
             source: src,
-            summary: message,
-            detail:
-                [
-                    `The object ${error} was passed to compileTestErrorFromExceptionObject.`,
-                    `This object is not an instance of Error and cannot be parsed.`,
-                ],
-            CAN_RESOLVE_TO_SOURCE: false,
+            summary: message.split("\n").pop(),
+            detail: (stack || message).split("\n"),
+            CAN_RESOLVE_TO_SOURCE,
         };
     } else {
         return {
@@ -113,8 +139,8 @@ export function createTestErrorFromString(msg, harness: TestHarness): Transferab
 }
 export async function seekSourceFile(test_error: TransferableTestError, harness: TestHarness) {
 
-    let { line, column, source } = test_error, origin = source;
     let
+        { line, column, source } = test_error, origin = source,
         source_url = new URL(source),
         active_url = source_url,
         map_source_url = null,
@@ -122,20 +148,20 @@ export async function seekSourceFile(test_error: TransferableTestError, harness:
 
     const cwd = new URL(harness.working_directory);
 
-    //Check for source map.
-    //* 
-    outer:
-    while (true) {
+    outer: while (true) {
         if (!active_url.isSUBDIRECTORY_OF(cwd)) break;
         source_text = (await active_url.fetchText());
         if (active_url.ext == "map") {
+
             let source_map = decodeJSONSourceMap(source_text);
-            let sources = "";
+
             ({ column, line, source } = getSourceLineColumn(line, column, source_map));
-            column++;
-            line++;
+
             source_url = URL.resolveRelative(source, active_url);
+
             active_url = source_url;
+
+            continue;
         } else if (active_url.ext == "js" || active_url.ext == "ts") {
             for (const [, loc] of source_text.matchAll(/\/\/#\s*sourceMappingURL=(.+)/g)) {
                 map_source_url = URL.resolveRelative(`./${loc}`, origin);
@@ -144,7 +170,9 @@ export async function seekSourceFile(test_error: TransferableTestError, harness:
             }
             break;
         }
+        break;
     }
+
     source_text = (await source_url.fetchText());
 
     return { line, column, source_text, source: source_url };
@@ -154,7 +182,7 @@ export async function blame(test_error: TransferableTestError, harness: TestHarn
 
     const { source_text, line, column } = await seekSourceFile(test_error, harness);
 
-    const string = new Lexer(source_text).seek(line - 1, column - 1).blame();
+    const string = new Lexer(source_text).seek(line, column).blame();
 
     return string.split("\n");
 }

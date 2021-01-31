@@ -75,7 +75,12 @@ export interface TestInfo {
      * Location of test within the original source code and compiled source code
      */
     location: {
-        source: { offset: number, line: number, column: number; },
-        compiled: { offset: number, line: number, column: number; };
+        source: {
+            offset?: number,
+            /**  Line number of the assertion site in the spec source, 1-based indexed */
+            line: number,
+            /**  Column number of the assertion site in the spec source, 1-based indexed */
+            column: number;
+        };
     };
 };

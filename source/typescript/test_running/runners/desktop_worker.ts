@@ -40,8 +40,6 @@ async function RunTest({ test }: { test: Test; }) {
     } = harness_env;
 
     try {
-        //@ts-ignore
-        harness.test_source_map = test.map;
 
         //@ts-ignore
         global.harness = harness;
