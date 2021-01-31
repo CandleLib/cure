@@ -1,7 +1,7 @@
 import { decodeJSONSourceMap, SourceMap } from "@candlefw/conflagrate";
 import { TestHarness, TestHarnessEnvironment } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
-import { createTestErrorFromErrorObject } from "../../utilities/test_error";
+import { createTestErrorFromErrorObject } from "../../utilities/test_error.js";
 
 export function createTestHarnessEnvironmentInstance(equal, util, performance: Performance, rst): TestHarnessEnvironment {
 
@@ -78,7 +78,20 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             time_points: [],
 
             caught_exception: null,
-
+            /////////////////////////////
+            get regA() {
+                return regA;
+            },
+            get regB() {
+                return regB;
+            },
+            get regC() {
+                return regC;
+            },
+            get regD() {
+                return regD;
+            },
+            /////////////////////////////
             async _import(url) {
                 return import(url);
             },
