@@ -191,7 +191,7 @@ export class DesktopRunner implements TestRunner {
                                 logs: [],
                                 message: "",
                                 //@ts-ignore
-                                errors: [createTestErrorFromString(("Test timed out at " + dur + " milliseconds", "", wkr.test.pos.line + 1, wkr.test.pos.column + 1), globals.harness)],
+                                errors: [createTestErrorFromString("Test timed out at " + dur + " milliseconds", globals.harness)],
                                 test: wkr.test,
                                 TIMED_OUT: true,
                                 PASSED: false
