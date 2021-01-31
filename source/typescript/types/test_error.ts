@@ -1,8 +1,12 @@
+import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
+
 /**
  * Interface for any error that should be recorded
  * for later reporting
  */
 export interface TransferableTestError {
+
+    throwable_id: THROWABLE_TEST_OBJECT_ID.TRANSFERABLE_ERROR,
 
     /**
      * Brief description of error
@@ -10,7 +14,8 @@ export interface TransferableTestError {
     summary: string;
 
     /**
-     * Details of error
+     * Details of error that may be added, such as the stack trace information
+     * and/or explanation of what may cause the error.
      */
     detail?: string[];
 
@@ -24,7 +29,7 @@ export interface TransferableTestError {
      *
      * This should be the source location that gives the best indication of what went wrong.
      */
-    source: "rig" | "runner" | "suite" | string;
+    source_path: "rig" | "runner" | "suite" | string;
 
     /**
      * Absolute character offset of error target in source

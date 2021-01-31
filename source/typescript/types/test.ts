@@ -1,4 +1,5 @@
 import { Lexer } from "@candlefw/wind";
+import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
 import { ImportSource, ModuleSpecifier } from "./imports";
 
 
@@ -6,6 +7,8 @@ import { ImportSource, ModuleSpecifier } from "./imports";
  * Contains a fully compiled test script that can be run. 
  */
 export interface Test {
+    throwable_id: THROWABLE_TEST_OBJECT_ID.TEST,
+
     /**
      * Name of the test. Includes suite name and redundant name info.
      */

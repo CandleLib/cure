@@ -23,8 +23,8 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
         test_name = name_split.pop();
 
     let
-        origin = "@candlefw",
-        suite_name = "test",
+        origin = "CandleFW/test",
+        suite_name = "",
         suite_sub_names = [];
 
     if (globals.suites) {
@@ -50,7 +50,7 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
     else
         suite_sub_names.push(splitHierarchalName(result.test.name).pop());
 
-    return { suites: [origin, suite_name, ...suite_sub_names], name: test_name };
+    return { suites: [origin, suite_name, ...suite_sub_names].filter(_ => _), name: test_name };
 }
 
 

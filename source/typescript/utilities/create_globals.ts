@@ -7,6 +7,7 @@ import { Globals } from "../types/globals";
 import { TransferableTestError } from "../types/test_error.js";
 import { TestHarnessEnvironment } from "../types/test_harness.js";
 import { endWatchedTests } from "./end_watched_tests.js";
+import { THROWABLE_TEST_OBJECT_ID } from "./throwable_test_object_enum.js";
 
 
 type createGlobalsReturn = {
@@ -33,6 +34,8 @@ export function createGlobals(
             harness_flushClipboard
         } = env,
         globals: Globals = {
+
+            throwable_id: THROWABLE_TEST_OBJECT_ID.GLOBALS,
 
             flags: {
 
