@@ -36,7 +36,7 @@ export function* selectExpressionHandler(node: JSNode, globals: Globals): Genera
     const type = node.type;
 
     for (const c of globals.expression_handlers) {
-        if (((c.signature & (type & 0x7FFFFF))) && ((!(c.signature & 0xFF100000)) || c.signature == type)) {
+        if (((c.signature & (type & 0x7FFFFF))) && ((!(c.signature & 0xFF800000)) || c.signature == type)) {
             yield c;
         }
     }
