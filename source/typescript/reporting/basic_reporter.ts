@@ -125,8 +125,8 @@ export class BasicReporter implements Reporter {
 
             const
                 { name, tests } = suite,
-                offsetA = (" ").repeat((depth - 1) * 2),
-                offsetB = (" ").repeat((depth + 0) * 2),
+                offsetA = (" ").repeat((depth) * 2),
+                offsetB = (" ").repeat((depth + 1) * 2),
                 suite_strings = [];
 
             let suite_header = "", FAILURE;
@@ -275,10 +275,11 @@ export class BasicReporter implements Reporter {
 
         try {
 
-            for (const { node: suite, meta: { depth, parent } } of bidirectionalTraverse(this.root_suite, "suites", true).skipRoot()) {
+
+            for (const { node: suite, meta: { depth, parent } } of bidirectionalTraverse(this.root_suite, "suites", true)) {
 
                 const
-                    { name, tests } = suite, offsetA = (" ").repeat((depth - 1) * 2), offsetB = (" ").repeat((depth + 1) * 2);
+                    { name, tests } = suite, offsetA = (" ").repeat((depth) * 2), offsetB = (" ").repeat((depth + 1) * 2);
 
                 if (tests.size > 0) {
 
