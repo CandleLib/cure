@@ -1,5 +1,6 @@
 import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
+import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, JSNodeTypeLU, parser, renderCompressed, stmt } from "@candlefw/js";
+import { JSExpressionClass } from "@candlefw/js/build/types/types/JSNodeClasses";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
 import { assertionSiteSoftError } from "../../utilities/library_errors.js";
@@ -51,6 +52,7 @@ function createAssertSiteObject(
 export function compileAssertionSiteTestExpression(state: CompilerState, expr: JSNode)
     : { ast: JSNode, optional_name: string; } {
 
+
     for (const binding_compiler of selectExpressionHandler(expr, state.globals)) {
 
         if (binding_compiler.test(expr)) {
@@ -90,12 +92,12 @@ export function compileAssertionSiteTestExpression(state: CompilerState, expr: J
 
 export function compileAssertionSite(
     state: CompilerState,
-    node: JSNode,
+    node: JSCallExpression,
     LEAVE_ASSERTION_SITE: boolean,
     index: number
 ): JSNode | void {
 
-    node.nodes[0].value = ""; // Forcefully delete assert name
+    (<JSIdentifierReference>node.nodes[0]).value = ""; // Forcefully delete assert name
 
     const {
         assertion_expr,

@@ -1,26 +1,33 @@
-import { JSNode, JSNodeType, tools } from "@candlefw/js";
+import { JSCallExpression, JSNode, JSNodeType, tools } from "@candlefw/js";
 
 const assert_group_names = ["assert_group"];
 const assert_site_names = ["assert"];
 
-export function Expression_Is_An_Assertion_Site(stmt: JSNode): boolean {
+export interface AssertionCallSite extends JSCallExpression { IS_ASSERTION_SITE: true; }
+export interface AssertionGroupSite extends JSCallExpression { IS_ASSERTION_GROUP_SITE: true; }
+
+
+export function Expression_Is_An_Assertion_Site(expr: JSNode): expr is AssertionCallSite {
     if (
-        stmt.type == JSNodeType.ExpressionStatement
-        && stmt.nodes[0].type == JSNodeType.CallExpression
-        && stmt.nodes[0].nodes[0].type == JSNodeType.IdentifierReference
-        && assert_site_names.includes(tools.getIdentifierName(stmt.nodes[0].nodes[0]))
-    )
+        //stmt.type == JSNodeType.ExpressionStatement
+        //&& 
+        expr.type == JSNodeType.CallExpression
+        && expr.nodes[0].type == JSNodeType.IdentifierReference
+        && assert_site_names.includes(tools.getIdentifierName(expr.nodes[0]))
+    ) {
         return true;
+    }
 
     return false;
 }
 
-export function Expression_Is_An_Assertion_Group_Site(stmt: JSNode): boolean {
+export function Expression_Is_An_Assertion_Group_Site(expr: JSNode): expr is AssertionGroupSite {
     if (
-        stmt.type == JSNodeType.ExpressionStatement
-        && stmt.nodes[0].type == JSNodeType.CallExpression
-        && stmt.nodes[0].nodes[0].type == JSNodeType.IdentifierReference
-        && assert_group_names.includes(tools.getIdentifierName(stmt.nodes[0].nodes[0]))
+        //stmt.type == JSNodeType.ExpressionStatement
+        //&&
+        expr.type == JSNodeType.CallExpression
+        && expr.nodes[0].type == JSNodeType.IdentifierReference
+        && assert_group_names.includes(tools.getIdentifierName(expr.nodes[0]))
     )
         return true;
 

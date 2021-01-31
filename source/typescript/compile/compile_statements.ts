@@ -258,7 +258,7 @@ function captureFunctionParameterNames(state: CompilerState) {
 
 function compileExpressionStatement(
     state: CompilerState,
-    node: JSNode,
+    node: JSExpressionStatement,
     LEAVE_ASSERTION_SITE: boolean,
     OUTER_SEQUENCED: boolean,
     index: number
@@ -266,18 +266,17 @@ function compileExpressionStatement(
 
     let [expr] = node.nodes;
 
-    if (node.nodes[0].type == JSNodeType.AwaitExpression) {
+    if (expr.type == JSNodeType.AwaitExpression) {
         state.AWAIT = true;
         expr = expr.nodes[0];
     }
+    if (Expression_Is_An_Assertion_Site(expr))
 
-    if (Expression_Is_An_Assertion_Site(node))
+        return compileAssertionSite(state, expr, LEAVE_ASSERTION_SITE, index);
 
-        return compileAssertionSite(state, node.nodes[0], LEAVE_ASSERTION_SITE, index);
+    else if (Expression_Is_An_Assertion_Group_Site(expr))
 
-    else if (Expression_Is_An_Assertion_Group_Site(node))
-
-        return compileAssertionGroupSite(state, node.nodes[0], OUTER_SEQUENCED);
+        return compileAssertionGroupSite(state, expr, OUTER_SEQUENCED);
 
     else if (expr.type == JSNodeType.CallExpression)
 
