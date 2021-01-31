@@ -72,7 +72,7 @@ export function compileAssertionSiteTestExpression(state: CompilerState, expr: J
             const
                 thr =
                     message ?
-                        parser(`if(${js_string}) $harness.addException(new AssertionError(${error_data}));`).ast
+                        parser(`if(${js_string}) $harness.addException(new Error(${error_data}));`).ast
                         : parser(`if(${js_string});`).ast;
 
 
