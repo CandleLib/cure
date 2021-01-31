@@ -1,5 +1,6 @@
-
 @IGNORE θws θnl
+
+
 
 <> start → v8_stack_trace
 
@@ -13,18 +14,32 @@
 <> call_arg > call_id \( v8_stack_line(+\, ) \)										f:r { { type:"call", call_id:$sym1, sub_stack: $sym3 } }
 	| location
 
-<> call_id > (RST g:ws)( (RST g:ws) g:id | (RST g:ws) g:num | \. | \_ | \$ )(+\" ) g:ws?		f:r { $sym1 }
+<> call_id > member g:ws?		f:r { $sym1 }
 
-<> location > ( url | anonymous ) location_indices?									f:r { $sym1 == "anonymous" ? { type:"location", url:$sym1, pos:$sym2 } : { type:"location", url:new env.URL($sym1), pos:$sym2 } }
-
-<> anonymous > \<anonymous> 														f:r { "anonymous" }
+<> location > ( url | \<anonymous> ) location_indices?								f:r { $sym1 == "<anonymous>" ? { type:"location", url:"anonymous", pos:$sym2 } : { type:"location", url:new env.URL($sym1), pos:$sym2 } }
 
 <> location_indices > \: g:num location_indices?									f:r { [ parseInt($sym2), ...$sym3 ] }
 
-<> url > (RST g:ws) protocol? domain? path											f:r { $sym1 + $sym2 + $sym3 }
+<> url > (RST g:ws) ( protocol domain? f:r { $sym1 + $sym2 } )? path				f:r { (($sym1 + $sym2) ) }
 
-<> domain > (RST g:ws) ( g:id | \. | g:num | \- )(+\" )
+<> domain > (RST g:ws) ( g:id | g:num | \. | \- )(+\" )
 
-<> path > (RST g:ws) ( \. | \/ | g:id | g:num )(+\" )
+<> path > (RST g:ws) \/ ( \. | \/ | g:id | g:num )(+\" )                            f:r { $sym1 + $sym2 }
 
 <> protocol >(RST g:ws)  g:id (RST g:ws) \: (RST g:ws) \//							f:r { $sym1 + $sym2 + $sym3 }
+
+
+<> member > identifier \. member                                                    f:r { $sym1 + $sym2 + $sym3 }
+    | identifier \. \[ member \]                                                    f:r { $sym1 + $sym2 + $sym3 + $sym4 + $sym5 }
+    | identifier
+
+<> identifier → identifier_symbols 
+
+<> identifier_symbols →  identifier_symbols (RST g:ws) g:id      ↦r { $sym1 + $sym2 }
+    │ identifier_symbols (RST g:ws) \_                           ↦r { $sym1 + $sym2 }
+    │ identifier_symbols (RST g:ws) \-                           ↦r { $sym1 + $sym2 }
+    │ identifier_symbols (RST g:ws) \$                           ↦r { $sym1 + $sym2 }
+    │ identifier_symbols (RST g:ws) g:num                        ↦r { $sym1 + $sym2 }
+    │ \_ 
+    │ \$ 
+    │ g:id
