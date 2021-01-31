@@ -21,6 +21,7 @@ const
             signature: JSNodeClass.BINARY_EXPRESSION,
 
             test: node => {
+
                 return node.type == JSNodeType.EqualityExpression || node.type == JSNodeType.RelationalExpression;
             },
 

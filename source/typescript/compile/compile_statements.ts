@@ -1,5 +1,5 @@
 import { copy, traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeClass, JSNodeType, renderWithFormatting, tools } from "@candlefw/js";
+import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, tools } from "@candlefw/js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
@@ -107,6 +107,7 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
 
 function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUTER_SEQUENCED: boolean) {
 
+
     for (let { node, meta: { skip, mutate, index } } of jst(state.AST)
         .skipRoot()
         .makeSkippable()
@@ -186,7 +187,6 @@ export function compileEnclosingStatement(
     RETURN_PROPS_ONLY = false
 ): StatementProp {
 
-
     const receiver = { ast: null };
 
     const prop = compileTestsFromSourceAST(state.globals, node_containing_block, state.imports, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
@@ -208,6 +208,7 @@ export function compileEnclosingStatement(
                 if (node == assertion_site.origin) {
                     const c = copy(node);
                     c.nodes.length = 0;
+                    //@ts-ignore
                     c.nodes.push(assertion_site.ast);
                     replace(c);
                 }

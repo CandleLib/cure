@@ -1,9 +1,6 @@
 import spark from "@candlefw/spark";
-
-import { completedRun, updateRun, startRun } from "../reporting/report.js";
-
+import { completedRun, startRun, updateRun } from "../reporting/report.js";
 import { Globals } from "../types/globals.js";
-
 import { Test } from "../types/test.js";
 
 export async function runTests(
@@ -53,8 +50,6 @@ export async function runTests(
 
         outcome.results.push(...globals.getLibraryTestInfo());
 
-
-
         outcome.results = outcome.results.sort((a, b) => a.test.index < b.test.index ? -1 : 1);
 
         FAILED = await completedRun(outcome.results, globals);
@@ -72,3 +67,4 @@ export async function runTests(
 
     return outcome;
 }
+

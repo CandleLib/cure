@@ -39,7 +39,6 @@ export function compileImport(node: JSNode, { imports }: CompilerState) {
                 obj.import_names.push({ import_name: <string>original.value, module_name: <string>original.value, pos: original.pos });
         }
         else if (id.type == JSNodeType.IdentifierDefault) {
-
             obj.import_names.push({ import_name: <string>id.value, module_name: "default", pos: id.pos });
         }
         else {
