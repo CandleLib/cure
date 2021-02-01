@@ -4,7 +4,7 @@ import URL from "@candlefw/url";
 import { CompilerState } from "../types/compiler_state";
 import { ImportModule } from "../types/imports";
 
-export function compileImport(node: JSNode, { imports }: CompilerState) {
+export function compileImport(node: JSNode, { imported_modules: imports }: CompilerState) {
 
     const module_specifier = node.nodes[1]?.nodes[0]?.value;
 

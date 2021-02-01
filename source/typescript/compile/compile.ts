@@ -4,32 +4,30 @@
  * @module compile
  */
 
-import { JSNode } from "@candlefw/js";
-import { ImportModule } from "../types/imports.js";
+import { JSModule, JSScript } from "@candlefw/js";
 import { AssertionSite } from "../types/assertion_site.js";
-import { compileTestsFromSourceAST } from "./compile_statements.js";
 import { Globals } from "../types/globals.js";
+import { ImportModule } from "../types/imports.js";
+import { compileTestsFromSourceAST } from "./compile_statements.js";
 
 
 /**
  * Compiles TestRigs from ast objects.
  * 
- * @param {JSNode} ast 
+ * @param {JSNode} source_ast 
  * 
  * @param {Reporter} reporter - Users reporter.color to add asrenderWithFormattingAndSourceMapsertion messaging syntax highlights.
  */
-export function compileTests(ast: JSNode, globals: Globals, origin: string): { assertion_sites: AssertionSite[], imports: ImportModule[]; } {
-
-    ast.pos.source = origin;
+export function compileTests(source_ast: JSScript | JSModule, globals: Globals, origin: string): { assertion_sites: AssertionSite[], imports: ImportModule[]; } {
 
     const
         imports: Array<ImportModule> = [],
         assertion_sites: AssertionSite[] = [],
-        ast_prop = compileTestsFromSourceAST(globals, ast, imports);
+        script_stmt_ref = compileTestsFromSourceAST(globals, source_ast, imports);
 
     let index = 0;
 
-    for (const assertion_site of ast_prop.assertion_sites) {
+    for (const assertion_site of script_stmt_ref.assertion_sites) {
 
         const { import_names } = assertion_site;
 

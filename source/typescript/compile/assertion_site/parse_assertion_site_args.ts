@@ -1,4 +1,4 @@
-import { JSNode, JSNodeClass, JSNodeType, renderCompressed, tools } from "@candlefw/js";
+import { JSCallExpression, JSCallExpressionClass, JSIdentifierClass, JSIdentifierReference, JSNode, JSNodeClass, JSNodeType, renderCompressed, tools } from "@candlefw/js";
 import { AssertionSiteArguments } from "../../types/assertion_site_arguments.js";
 import { jst } from "../utilities/traverse_js_node.js";
 
@@ -49,12 +49,12 @@ function Node_Is_A_String(node: JSNode) {
     return node.type == JSNodeType.StringLiteral;
 }
 
-function Node_Is_An_Identifier(node: JSNode) {
+function Node_Is_An_Identifier(node: JSNode): node is JSIdentifierReference {
     return node.type == JSNodeType.IdentifierReference;
 }
 
 
-function Node_Is_A_Call(node: JSNode) {
+function Node_Is_A_Call(node: JSNode): node is JSCallExpression {
     return node.type == JSNodeType.CallExpression;
 }
 
@@ -66,10 +66,10 @@ function handleOtherExpressionTypes(result: AssertionSiteArguments, node: JSNode
 
     if (Node_Is_A_Call(node)) {
 
-        const [first_argument] = node.nodes;
+        const [id, args] = node.nodes, [first_argument] = args.nodes;
 
         if (
-            tools.getIdentifierName(node).toLowerCase() == "name"
+            tools.getIdentifierName(id).toLowerCase() == "name"
             &&
             first_argument.type | JSNodeClass.EXPRESSION
         ) {
@@ -93,7 +93,7 @@ function handleNumericArguments(result: AssertionSiteArguments, node: JSNode) {
     result.timeout_limit = parseFloat(<string>node.value);
 }
 
-function handleIdentifierArguments(node: JSNode, result: AssertionSiteArguments) {
+function handleIdentifierArguments(node: JSIdentifierReference, result: AssertionSiteArguments) {
 
     const val = (<string>node.value).toLowerCase();
 

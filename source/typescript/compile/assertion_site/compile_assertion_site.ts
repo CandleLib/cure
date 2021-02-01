@@ -6,7 +6,7 @@ import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
 import { createTargetedTestError } from "../../utilities/test_error.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum.js";
-import { combinePropRefsAndDecl, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
+import { mergeStatementReferencesAndDeclarations, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
 import { compileExpressionHandler, selectExpressionHandler } from "../expression_handler/expression_handler_functions.js";
 import { empty_set } from "../utilities/empty_set.js";
 import { jst, jstBreadth } from "../utilities/traverse_js_node.js";
@@ -77,7 +77,7 @@ export function compileAssertionSite(
             .length) > 0,
 
         ast = <JSNode><any>{
-            type: JSNodeType.BlockStatement,
+            type: JSNodeType.Script,
             nodes: []
         };
 
@@ -123,13 +123,13 @@ export function compileAssertionSite(
         prop = compileTestsFromSourceAST(
             state.globals,
             assertion_call_node,
-            state.imports
+            state.imported_modules
         );
 
 
     if (LEAVE_ASSERTION_SITE)
         for (const ref of prop.required_references.values())
-            state.global_references.add(ref);
+            state.global_reference_ids.add(ref);
 
     // Make sure the site is valid
 
@@ -155,7 +155,7 @@ export function compileAssertionSite(
 
     packageAssertionSites(state, prop, assertion_site);
 
-    assertion_site.origin = state.AST;
+    assertion_site.origin = state.ast;
 
     return LEAVE_ASSERTION_SITE ? assertion_site.ast : null;
 }
@@ -168,7 +168,7 @@ export function compileAssertionGroupSite(
 ): JSNode {
 
     const
-        { statements, tests: tests }
+        { statement_references: statements, test_closures: tests }
             = state,
 
         { SEQUENCED, BROWSER, SOLO, timeout_limit, name, INSPECT, SKIP }
@@ -178,7 +178,7 @@ export function compileAssertionGroupSite(
 
         LEAVE_ASSERTION_SITE = SEQUENCED || OUTER_SEQUENCED,
 
-        OUT_SEQUENCED = true,
+        OUTER_SCOPE_IS_SEQUENCED = true,
 
         block: JSNode = <JSNode>jstBreadth(node, 4).filter("type", JSNodeType.BlockStatement, JSNodeType.FunctionBody).run(true)[0],
 
@@ -186,14 +186,13 @@ export function compileAssertionGroupSite(
             state,
             block,
             LEAVE_ASSERTION_SITE,
-            OUT_SEQUENCED,
+            OUTER_SCOPE_IS_SEQUENCED,
             RETURN_PROPS_ONLY
         ) : null;
 
     if (prop) {
 
         if (LEAVE_ASSERTION_SITE) {
-
 
             const
                 imports_ = new Set(prop.assertion_sites.flatMap(r => [...r.import_names.values()])),
@@ -212,8 +211,6 @@ export function compileAssertionGroupSite(
                         state.globals.input_source
                     );
 
-            //assertion_site.origin = state.AST;
-
             if (imports_.size > 0)
                 prop.required_references = new setUnion(imports_, prop.required_references);
 
@@ -221,7 +218,7 @@ export function compileAssertionGroupSite(
 
         } else {
 
-            combinePropRefsAndDecl(state, prop);
+            mergeStatementReferencesAndDeclarations(state, prop);
 
             for (const assertion_site of prop.assertion_sites) {
                 assertion_site.static_name = createHierarchalName(name, assertion_site.static_name);
@@ -229,7 +226,7 @@ export function compileAssertionGroupSite(
                 assertion_site.SOLO = assertion_site.SOLO || SOLO;
                 assertion_site.RUN = assertion_site.RUN || !SKIP;
                 assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
-                assertion_site.origin = state.AST;
+                assertion_site.origin = state.ast;
             }
 
             packageAssertionSites(state, prop);

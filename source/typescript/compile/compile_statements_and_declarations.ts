@@ -1,42 +1,45 @@
 import { JSNode } from "@candlefw/js";
-import { StatementProp } from "../types/statement_props";
+import { StatementReference } from "../types/statement_props";
 export function compileStatementsAndDeclarations(
-    ref: StatementProp,
-    offset: number,
-    statements: StatementProp[] = [],
+    stmt_ref: StatementReference,
+    statement_index: number,
+    statement_references: StatementReference[] = [],
     //Only function declarations are hoisted.
-    declarations: StatementProp[] = []
+    declaration_references: StatementReference[] = []
 ) {
 
+    console.log({ offset: statement_index, statement_references, declaration_references });
 
     const
-        active_refs: Set<string> = new Set(ref.required_references.values()),
+        active_refs: Set<string> = new Set(stmt_ref.required_references.values()),
         declared_refs: Set<string> = new Set(),
-        stmts: JSNode[] = [];
+        statements: JSNode[] = [];
 
-    for (let i = offset - 1; i > -1; i--) {
+    console.log({ active_refs });
 
-        const stmt = statements[i];
+    for (let i = statement_index - 1; i > -1; i--) {
 
-        let use = !!stmt.FORCE_USE;
+        const statement_ref = statement_references[i];
 
-        if (!use)
+        let INCLUDE_STATEMENT = !!statement_ref.FORCE_USE;
+
+        if (!INCLUDE_STATEMENT)
             for (const ref of active_refs.values()) {
-                if (stmt.required_references.has(ref)
-                    || stmt.declared_variables.has(ref)) {
-                    use = true;
+                if (statement_ref.required_references.has(ref)
+                    || statement_ref.declared_variables.has(ref)) {
+                    INCLUDE_STATEMENT = true;
                     break;
                 }
             }
 
-        if (use) {
+        if (INCLUDE_STATEMENT) {
 
-            stmts.push(stmt.stmt);
+            statements.push(statement_ref.stmt);
 
-            for (const ref of stmt.required_references.values())
+            for (const ref of statement_ref.required_references.values())
                 active_refs.add(ref);
 
-            for (const ref of stmt.declared_variables.values()) {
+            for (const ref of statement_ref.declared_variables.values()) {
                 declared_refs.add(ref);
                 active_refs.delete(ref);
             }
@@ -44,33 +47,36 @@ export function compileStatementsAndDeclarations(
     }
 
 
-    for (let i = declarations.length - 1; i > -1; i--) {
+    for (let i = declaration_references.length - 1; i > -1; i--) {
 
-        const declaration = declarations[i];
+        const declaration_ref = declaration_references[i];
 
-        let use = false;
+        let INCLUDE_STATEMENT = false;
 
-        for (const ref of active_refs.values()) {
-            if (declaration.required_references.has(ref) || declaration.declared_variables.has(ref)) {
-                use = true;
+        for (const id_reference of active_refs.values()) {
+            if (
+                declaration_ref.required_references.has(id_reference)
+                || declaration_ref.declared_variables.has(id_reference)
+            ) {
+                INCLUDE_STATEMENT = true;
                 break;
             }
         }
 
-        if (use) {
+        if (INCLUDE_STATEMENT) {
 
-            for (const ref of declaration.required_references.values())
-                active_refs.add(ref);
+            for (const id_reference of declaration_ref.required_references.values())
+                active_refs.add(id_reference);
 
-            for (const ref of declaration.declared_variables.values())
-                declared_refs.add(ref);
+            for (const id_declaration of declaration_ref.declared_variables.values())
+                declared_refs.add(id_declaration);
 
-            stmts.push(declaration.stmt);
+            statements.push(declaration_ref.stmt);
         }
     }
 
     for (const ref of declared_refs.values())
         active_refs.delete(ref);
 
-    return { stmts: stmts.reverse(), imports: active_refs };
+    return { stmts: statements.reverse(), imports: active_refs };
 }

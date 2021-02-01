@@ -1,10 +1,10 @@
 import { copy, traverse } from "@candlefw/conflagrate";
-import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, tools } from "@candlefw/js";
+import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, JSNodeTypeLU, JSStatementClass, tools } from "@candlefw/js";
 import { AssertionSite, AssertionSiteClosure } from "../types/assertion_site.js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
 import { ImportModule } from "../types/imports.js";
-import { StatementProp } from "../types/statement_props";
+import { StatementReference } from "../types/statement_props";
 import { closureSet, setDiff, setUnion } from "../utilities/sets.js";
 import { compileAssertionGroupSite, compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
 import { compileImport } from "./compile_import.js";
@@ -40,7 +40,7 @@ export function compileTestsFromSourceAST(
     Imports: ImportModule[],
     LEAVE_ASSERTION_SITE = false,
     OUTER_SEQUENCED = false,
-): StatementProp {
+): StatementReference {
 
     const options = createCompilerState(globals, AST, Imports);
 
@@ -52,25 +52,26 @@ export function compileTestsFromSourceAST(
 }
 
 function compileRigsFromDeclarationsAndStatementsAndTestSites({
-    AST: ast,
-    tests,
-    statements,
-    declarations,
+    ast,
+    test_closures,
+    statement_references,
+    declaration_references,
     AWAIT,
-    global_references,
-    global_declarations
+    global_reference_ids,
+    global_declaration_ids
 }: CompilerState) {
 
     const assertion_sites = [];
 
-    for (const { assertion_site, offset, data } of tests) {
+    for (const { assertion_site, offset, statement_reference } of test_closures) {
 
-        const { stmts, imports } = compileStatementsAndDeclarations(data, offset, statements, declarations);
+        const { stmts: required_statements, imports }
+            = compileStatementsAndDeclarations(statement_reference, offset, statement_references, declaration_references);
 
         assertion_site.ast = <JSNode>{
             type: JSNodeType.Script,
             nodes: [
-                ...stmts,
+                ...required_statements,
                 ...(assertion_site.ast.type == JSNodeType.Script ?
                     assertion_site.ast.nodes :
                     [assertion_site.ast])
@@ -83,20 +84,27 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
         assertion_sites.push(assertion_site);
     }
 
+    for (const declaration_reference of declaration_references)
 
-    for (const decl of declarations)
+        if (declaration_reference.required_references.size > 0)
 
-        if (decl.required_references.size > 0)
-
-            if (decl.declared_variables.size > 0)
-                global_references = new setDiff(new setUnion(global_references, decl.required_references), decl.declared_variables);
+            if (declaration_reference.declared_variables.size > 0)
+                global_reference_ids =
+                    new setDiff(new setUnion(global_reference_ids,
+                        declaration_reference.required_references),
+                        declaration_reference.declared_variables);
             else
-                global_references = new setUnion(global_references, decl.required_references);
+                global_reference_ids
+                    = new setUnion(global_reference_ids,
+                        declaration_reference.required_references);
 
-    return <StatementProp>{
+    return <StatementReference>{
         stmt: ast,
-        declared_variables: <Set<string>>global_declarations,
-        required_references: new setDiff(global_references, global_declarations),
+        declared_variables: <Set<string>>global_declaration_ids,
+        required_references: new setDiff(
+            global_reference_ids,
+            global_declaration_ids
+        ),
         FORCE_USE: false,
         assertion_sites: assertion_sites,
         AWAIT
@@ -107,13 +115,19 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
 function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUTER_SEQUENCED: boolean) {
 
 
-    for (let { node, meta: { skip, mutate, index } } of jst(state.AST)
+    for (let { node, meta: { skip, mutate, index } } of jst(state.ast)
         .skipRoot()
         .makeSkippable()
         .makeMutable()) {
         state.FORCE_USE = false;
 
         switch (node.type) {
+            //Nodes only found in for(;;) statements
+            // These should should be treated as
+            // the function parameters/arguments of the for loop.
+            // case JSNodeType.LexicalDeclaration: // TODO - Create/Rename node types ForLexicalDeclaration and ForVariableDeclaration
+            case JSNodeType.VariableDeclaration:
+                setGlobalDeclarations(node, state); skip(); break;
 
             case JSNodeType.FormalParameters:
                 continue;
@@ -122,10 +136,10 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
                 compileImport(node, state); skip(); break;
 
             case JSNodeType.IdentifierBinding:
-                if (id(node)) state.global_declarations.add(id(node)); break;
+                setGlobalDeclarations(node, state); break;
 
             case JSNodeType.IdentifierReference:
-                if (id(node)) state.global_references.add(id(node)); break;
+                if (id(node)) state.global_reference_ids.add(id(node)); break;
 
             case JSNodeType.AwaitExpression:
                 state.AWAIT = true; break;
@@ -142,9 +156,9 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
 
             case JSNodeType.TryStatement:
             case JSNodeType.ForOfStatement:
+            case JSNodeType.ForStatement:
             case JSNodeType.ForInStatement:
             case JSNodeType.DoStatement:
-            case JSNodeType.ForStatement:
             case JSNodeType.WhileStatement:
             case JSNodeType.BlockStatement:
             case JSNodeType.ArrowFunction:
@@ -162,39 +176,59 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
                 for (const { node: bdg } of traverse(node, "nodes", 2)
                     .skipRoot()
                     .filter("type", JSNodeType.IdentifierBinding))
-                    state.global_declarations.add(id(bdg));
+                    state.global_declaration_ids.add(id(bdg));
 
             default:
 
-                if (node.type & JSNodeClass.STATEMENT) {
+                if (Node_Is_Statement_Node(node)) {
+
 
                     if (node.type == JSNodeType.LabeledStatement && node.nodes[0].value == "keep")
                         state.FORCE_USE = true;
 
                     compileMiscellaneous(state, node);
+
                     skip();
                 }
                 break;
         }
     }
 }
+function Node_Is_Statement_Node(node: JSNode): node is JSStatementClass {
+    return (node.type & JSNodeClass.STATEMENT) > 0;
+}
+
+function setGlobalDeclarations(expr: JSNode, state: CompilerState) {
+    for (const { node } of jst(expr))
+        if (node.type == JSNodeType.IdentifierBinding) {
+            if (id(node)) state.global_declaration_ids.add(id(node));
+        }
+}
+
+function setLocalDeclarations(expr: JSNode, state: CompilerState) {
+    for (const { node } of jst(expr))
+        if (node.type == JSNodeType.IdentifierBinding)
+            if (id(node)) state.global_declaration_ids.add(id(node));
+}
+
 export function compileEnclosingStatement(
     state: CompilerState,
     node_containing_block: JSNode,
     LEAVE_ASSERTION_SITE = false,
     OUT_SEQUENCED = false,
     RETURN_PROPS_ONLY = false
-): StatementProp {
+): StatementReference {
 
-    const receiver = { ast: null };
+    const
+        receiver = { ast: null },
 
-    const prop = compileTestsFromSourceAST(state.globals, node_containing_block, state.imports, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
+        stmt_ref = compileTestsFromSourceAST(state.globals, node_containing_block, state.imported_modules, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
 
-    if (RETURN_PROPS_ONLY) return prop;
+    if (RETURN_PROPS_ONLY) return stmt_ref;
 
-    combinePropRefsAndDecl(state, prop);
+    mergeStatementReferencesAndDeclarations(state, stmt_ref);
 
-    for (const assertion_site of prop.assertion_sites) {
+    for (const assertion_site of stmt_ref.assertion_sites) {
 
         if (assertion_site.origin == node_containing_block) {
             //const c = copy(node_containing_block);
@@ -206,9 +240,11 @@ export function compileEnclosingStatement(
             for (const { node, meta: { replace } } of jst(node_containing_block).makeReplaceable().extract(receiver)) {
                 if (node == assertion_site.origin) {
                     const c = copy(node);
+
                     c.nodes.length = 0;
                     //@ts-ignore
                     c.nodes.push(assertion_site.ast);
+                    //c.nodes.push(...assertion_site.ast.nodes);
                     replace(c);
                 }
             }
@@ -219,27 +255,24 @@ export function compileEnclosingStatement(
         assertion_site.origin = node_containing_block;
     }
 
-    packageAssertionSites(state, prop);
+    packageAssertionSites(state, stmt_ref);
 
-    if (prop.stmt.nodes.length > 0) {
-        state.AWAIT = prop.AWAIT || state.AWAIT;
-        //    state.statements.push(prop);
-    }
-
+    if (stmt_ref.stmt.nodes.length > 0)
+        state.AWAIT = stmt_ref.AWAIT || state.AWAIT;
 
     return null;
 }
 
-export function combinePropRefsAndDecl(
+export function mergeStatementReferencesAndDeclarations(
     state: CompilerState,
-    prop: StatementProp) {
-    state.global_references = setGlobalRef(prop, state.global_references);
-    state.global_declarations = setGlobalDecl(prop, state.global_declarations);
+    prop: StatementReference) {
+    state.global_reference_ids = setGlobalRef(prop, state.global_reference_ids);
+    state.global_declaration_ids = setGlobalDecl(prop, state.global_declaration_ids);
 }
 
 function captureFunctionParameterNames(state: CompilerState) {
 
-    const { AST } = state;
+    const { ast: AST } = state;
 
     if (AST.type == JSNodeType.FunctionDeclaration
         ||
@@ -251,7 +284,7 @@ function captureFunctionParameterNames(state: CompilerState) {
             const [id_node] = AST.nodes;
 
             if (id_node)
-                state.global_declarations.add(id(id_node));
+                state.global_declaration_ids.add(id(id_node));
         }
     }
 }
@@ -288,77 +321,69 @@ function compileExpressionStatement(
 
 function compileMiscellaneous(
     state: CompilerState,
-    node: JSNode,
+    node: JSStatementClass,
     FORCE_USE: boolean = false
 ) {
 
-    const prop = compileTestsFromSourceAST(state.globals, node, state.imports);
+    const statement_reference = compileTestsFromSourceAST(state.globals, node, state.imported_modules);
 
-    combinePropRefsAndDecl(state, prop);
+    mergeStatementReferencesAndDeclarations(state, statement_reference);
 
-    state.AWAIT = prop.AWAIT || state.AWAIT;
+    state.AWAIT = statement_reference.AWAIT || state.AWAIT;
 
     if (node.type & JSNodeClass.STATEMENT) {
         // Extract IdentifierReferences and IdentifierAssignments 
         // and append to the statement scope.
 
-        packageAssertionSites(state, prop);
+        packageAssertionSites(state, statement_reference);
 
-        prop.FORCE_USE = state.FORCE_USE || prop.FORCE_USE || FORCE_USE;
+        statement_reference.FORCE_USE = state.FORCE_USE || statement_reference.FORCE_USE || FORCE_USE;
     }
 
-    if (prop?.stmt?.nodes?.length > 0) {
-        if (node.type & JSNodeClass.HOISTABLE_DECLARATION)
-            state.declarations.push(prop);
+    if (statement_reference?.stmt?.nodes?.length > 0) {
+        if ((node.type & JSNodeClass.HOISTABLE_DECLARATION) > 0)
+            state.declaration_references.push(statement_reference);
         else
-            state.statements.push(prop);
+            state.statement_references.push(statement_reference);
     }
 
-    return prop;
+    return statement_reference;
 }
 
-function compileArrowFunction(state: CompilerState, node: JSNode) {
-
-    const prop = compileTestsFromSourceAST(state.globals, node, state.imports);
-
-    combinePropRefsAndDecl(state, prop);
-
-    state.AWAIT = prop.AWAIT || state.AWAIT;
-}
-
-
-export function packageAssertionSites(state: CompilerState, prop: StatementProp, assertion_sites: AssertionSite | AssertionSite[] = prop.assertion_sites) {
+export function packageAssertionSites(state: CompilerState, stmt_ref: StatementReference, assertion_sites: AssertionSite | AssertionSite[] = stmt_ref.assertion_sites) {
 
     for (const assertion_site of Array.isArray(assertion_sites) ? assertion_sites : [assertion_sites]) {
 
-        let packaged_prop = prop;
+        let packaged_stmt_ref = stmt_ref;
 
         if (assertion_site.import_names.size > 0) {
-            packaged_prop = Object.assign({}, prop);
-            packaged_prop.required_references = new setUnion(prop.required_references, assertion_site.import_names);
+            packaged_stmt_ref = Object.assign({}, stmt_ref);
+            packaged_stmt_ref.required_references = new setUnion(stmt_ref.required_references, assertion_site.import_names);
         }
 
         state.test_closures.push(<AssertionSiteClosure>{
             assertion_site,
-            data: packaged_prop,
-            offset: state.statements.length
+            statement_reference: packaged_stmt_ref,
+            offset: state.statement_references.length
         });
     }
 }
 
-function setGlobalDecl(prop: StatementProp, glbl_decl: closureSet | Set<string> | setUnion) {
-    if (prop.declared_variables.size > 0)
-        glbl_decl = new setUnion(glbl_decl, prop.declared_variables);
-    return glbl_decl;
+function setGlobalDecl(stmt_ref: StatementReference, global_declarations: closureSet | Set<string> | setUnion) {
+
+    if (stmt_ref.declared_variables.size > 0)
+        global_declarations = new setUnion(global_declarations, stmt_ref.declared_variables);
+
+    return global_declarations;
 }
 
-function setGlobalRef(prop: StatementProp, glbl_ref: closureSet | Set<string> | setUnion) {
+function setGlobalRef(stmt_ref: StatementReference, glbl_ref: closureSet | Set<string> | setUnion) {
 
-    if (prop.required_references.size > 0) {
+    if (stmt_ref.required_references.size > 0) {
 
-        const ref = (prop.declared_variables.size > 0)
-            ? new setDiff(prop.required_references, prop.declared_variables)
-            : prop.required_references;
+        const ref = (stmt_ref.declared_variables.size > 0)
+            ? new setDiff(stmt_ref.required_references, stmt_ref.declared_variables)
+            : stmt_ref.required_references;
 
         return new setUnion(glbl_ref, ref);
     }
