@@ -153,6 +153,7 @@ export class DesktopRunner implements TestRunner {
 
     private async runWorkers(tests: Test[], workers: DesktopWorkerHandle[], finished: TestInfo[][], globals: Globals) {
 
+
         if (tests.length > 0 || workers.some(wkr => !wkr.READY)) {
             for (const wkr of workers) {
 
