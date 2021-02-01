@@ -99,12 +99,20 @@ export interface TestHarness {
      makeLiteral: (value: any) => string;
 
      /**
-      * Test whether a function throws when called.
-      *
+      * Test whether a function call throws an error
+      * 
       * @param {Function} fn - A function that will be called.
       * @returns {boolean} - `true` if the function threw an exception.
       */
-     throws: (fn: Function) => boolean;
+     throws: (value_range: [(...any: any[]) => any, ...any[]]) => boolean;
+
+     /**
+      * Test whether a function call throws an error
+      * 
+      * @param {Function} fn - A function that will be called.
+      * @returns {boolean} - `true` if the function threw an exception.
+      */
+     doesNotThrow: (value_range: [(...any: any[]) => any, ...any[]]) => boolean;
 
      /**
       * Tests the equality of two values.
@@ -120,6 +128,16 @@ export interface TestHarness {
       * @returns {boolean} - `true` if the two values are the same.
       */
      equal: (a: any, b: any) => boolean;
+
+     /**
+      * Test whether two values are truthy
+      */
+     and: (a: any, b: any) => boolean;
+
+     /**
+      * Test whether at least one of two values is truthy
+      */
+     or: (a: any, b: any) => boolean;
 
      /**
       * Tests the equality of two values.
@@ -166,6 +184,12 @@ export interface TestHarness {
       * to the function.
       */
      inspectAndThrow: (...vals: any[]) => void;
+
+     /**
+      * Retrieve a range of values from the test queue
+      * and place in an array
+      */
+     getValueRange: (start: number, end: number) => any[];
 
      /**
       * Creates a new TestResult object and pushes it to

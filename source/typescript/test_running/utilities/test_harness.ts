@@ -19,7 +19,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
         pf_now: () => number = performance.now,
 
-        data_stack: any[] = [],
+        data_queue: any[] = [],
 
         clipboard: TestInfo[] = [],
 
@@ -139,23 +139,27 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 }
             },
 
-            throws: (fn: Function, async = false): boolean | Promise<boolean> => {
-                if (async) {
-                    return new Promise(async res => {
-                        try {
-                            await fn();
-                            res(false);
-                        } catch (e) {
-                            addTestErrorToActiveResult(e);
-                            res(true);
-                        }
-                    });
-                }
+            doesNotThrow(values: [(...any: any[]) => any, ...any[]]): boolean {
                 try {
-                    fn();
+                    return !harness.throws(values);
                 } catch (e) {
-                    markWriteStart();
-                    addTestErrorToActiveResult(e);
+                    harness.addException(e);
+                    return false;
+                }
+            },
+
+            throws(values: [(...any: any[]) => any, ...any[]]): boolean {
+                if (!Array.isArray(values))
+                    values = [values];
+
+                const fn = values[0];
+
+                if (typeof fn !== "function")
+                    return false;
+
+                try {
+                    fn.apply(fn, values.slice(1));
+                } catch (e) {
                     return true;
                 }
                 return false;
@@ -191,15 +195,32 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 addTestErrorToActiveResult(e);
             },
 
-            inspect: (...args) => {
+            inspect(...args) {
                 markWriteStart();
                 const e = createInspectionError(...args);
 
                 active_test_result.logs.push(e.stack.toString());
             },
 
-            inspectAndThrow: (...args) => {
+
+            or(a: any, b: any): boolean {
+                return !!a || !!b;
+            },
+
+            and(a: any, b: any): boolean {
+                return (!!a && !!b);
+            },
+
+            inspectAndThrow(...args) {
                 throw createInspectionError(...args);
+            },
+
+            getValueRange(start: number, end: number) {
+                let
+                    clip_start = data_queue.length - active_test_result.test_stack.length + start,
+                    clip_end = clip_start + (end - start) + 1;
+
+                return data_queue.slice(clip_start, clip_end);
             },
 
             shouldHaveProperty(object, ...properties: string[]) {
@@ -295,7 +316,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 active_test_result = clipboard[clipboard.length - 1];
 
-                data_stack.length -= previous_active.test_stack.length;
+                data_queue.length -= previous_active.test_stack.length;
 
                 previous_active.PASSED = previous_active.PASSED && previous_active.errors.length == 0;
 
@@ -307,13 +328,13 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             pushValue(val: any) {
                 markWriteStart();
                 active_test_result.test_stack.push(harness.makeLiteral(val));
-                data_stack.push(val);
+                data_queue.push(val);
             },
 
             getValue(index: number) {
                 markWriteStart();
-                const pointer = data_stack.length - active_test_result.test_stack.length;
-                return data_stack[pointer + index];
+                const pointer = data_queue.length - active_test_result.test_stack.length;
+                return data_queue[pointer + index];
             },
 
             pushAndAssertValue(SUCCESS: boolean) {
@@ -364,7 +385,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             active_test_result = null;
             results.length = 0;
             clipboard.length = 0;
-            data_stack.length = 0;
+            data_queue.length = 0;
             source_map = null;
             previous_start = pf_now();
         },
@@ -397,7 +418,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     active_test_result.clipboard_end = end;
                     test.PASSED = false;
                     active_test_result = test;
-                    data_stack.length = 0;
+                    data_queue.length = 0;
                     results.push(test);
                 }
 
