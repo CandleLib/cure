@@ -5,17 +5,62 @@ interface Operator {
     action_name: string;
     inputs: 1 | 2;
     precedence: number;
-    function: ((a: any, b: any) => any) | ((a: any) => any);
+    function?: ((a: any, b: any) => any) | ((a: any) => any);
 }
+
+/**
+ * Special operator used to return
+ * an array of values from start to end, inclusive
+ */
+interface ValueRange {
+    type: "range";
+    start: number,
+    end: number,
+}
+
+/**
+ * Reference to general built-in or user defined operator
+ */
 interface OperatorReference {
+    type: "op_ref";
     sym: string;
     index: number;
     precedence: number;
 }
+type TestyObjects =
+    | ValueRange
+    | OperatorReference
+    | number
+    | string;
+
 
 const default_operators = {
+    "<": {
+        action_name: "$harness.lessThan",
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
+    ">": {
+        action_name: "$harness.greaterThan",
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
     "==": {
         action_name: "$harness.equal",
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
+    "===": {
+        action_name: "$harness.equal",
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
+    "!==": {
+        action_name: "$harness.notEqual",
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
@@ -31,39 +76,75 @@ const default_operators = {
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
+    },
+    "noThrow": {
+        action_name: "$harness.doesNotThrow",
+        BUILT_IN: true,
+        precedence: 4,
+        inputs: 1
+    },
+    "&&": {
+        action_name: "$harness.and",
+        BUILT_IN: true,
+        precedence: 4,
+        inputs: 1
+    },
+    "||": {
+        action_name: "$harness.or",
+        BUILT_IN: true,
+        precedence: 4,
+        inputs: 1
     }
 };
 
-function completeCaptures(array: (OperatorReference | number | string)[], globals: Globals) {
+function completeCaptures(array: TestyObjects[], globals: Globals) {
 
     const sorted_operators = [];
+
     let i = 0;
 
     for (const obj of array) {
         if (typeof obj == "number") {
             array[i] = `$harness.getValue(${obj})`;
         } else if (typeof obj != "string") {
-            obj.index = i;
-            sorted_operators.push(obj);
+            if (obj.type == "op_ref") {
+                obj.index = i;
+                sorted_operators.push(obj);
+            } else {
+                array[i] = `$harness.getValueRange(${obj.start},${obj.end})`;
+            }
         }
         i++;
     }
 
-    //convert to names
-    sorted_operators.sort((a, b) => { return b.precedence - a.precedence; });
+    sorted_operators.sort((a, b) => {
+        if (a.precedence == b.precedence)
+            return -1;
+        return b.precedence - a.precedence;
+    });
 
-    let output = array[0];
+    let output = array[0] + "";
 
-    for (const obj of sorted_operators)
+    let z = [];
+
+    for (const obj of sorted_operators) {
+
+        z.push(array.slice());
+
         if (obj.captures == 1)
             output = compileUnaryOperator(array, obj, default_operators[obj.sym]);
-
         else
             output = compileBinaryOperator(array, obj, default_operators[obj.sym]);
 
+
+    }
+
+    z.push(array.slice());
+
     return [output];
 }
-function compileBinaryOperator(array: (OperatorReference | number | string)[], obj: OperatorReference, operator: Operator) {
+
+function compileBinaryOperator(array: TestyObjects[], obj: OperatorReference, operator: Operator) {
 
     const
         refA = array[obj.index - 1],
@@ -77,7 +158,7 @@ function compileBinaryOperator(array: (OperatorReference | number | string)[], o
 
     return output;
 }
-function compileUnaryOperator(array: (OperatorReference | number | string)[], obj: OperatorReference, operator: Operator) {
+function compileUnaryOperator(array: TestyObjects[], obj: OperatorReference, operator: Operator) {
 
     const
         ref = array[obj.index + 1];
@@ -89,6 +170,7 @@ function compileUnaryOperator(array: (OperatorReference | number | string)[], ob
 
     return output;
 }
+
 function getPrecedence(symbols_string: string, globals: Globals): number {
     return default_operators[symbols_string]?.precedence ?? -1;
 }
