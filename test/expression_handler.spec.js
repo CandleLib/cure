@@ -74,6 +74,10 @@ assert_group(sequence, "Post Test Run", () => {
 
     assert(results[0].test_stack[4] == "==");
 
+    assert(results[1].PASSED == true);
+
+    assert(results[2].PASSED == false);
+
 });
 
 
@@ -85,5 +89,3 @@ const throwing_function = (t) => { if (t) throw new Error("Error Encountered"); 
 assert("Built in check for a call that throws should pass", throwing_function(false));
 
 assert("Built in call for should not throw should pass", !throwing_function(true));
-
-assert(solo, "Built in call for should not throw should pass", 2 = 3);

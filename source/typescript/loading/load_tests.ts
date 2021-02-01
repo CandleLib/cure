@@ -11,6 +11,7 @@ import { ImportModule, ImportRequirement, ImportSource, ModuleSpecifier } from "
 import { Test } from "../types/test.js";
 import { TestSuite } from "../types/test_suite.js";
 import { createTestError } from "../utilities/library_errors.js";
+import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum.js";
 
 /**
  * Create Tests from a test filepath and add to suite.
@@ -20,6 +21,8 @@ import { createTestError } from "../utilities/library_errors.js";
  */
 export function loadTests(text_data: string, suite: TestSuite, globals: Globals): void {
 
+    globals.input_source = suite.origin;
+
     try {
         const lex = new Lexer(text_data);
 
@@ -27,7 +30,10 @@ export function loadTests(text_data: string, suite: TestSuite, globals: Globals)
 
         const { assertion_sites } = compileTests(parser(lex).ast, globals, "");
 
-        suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
+        if (assertion_sites.length > 0)
+            suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
+        else
+            suite.tests = [];
 
     } catch (e) {
 
@@ -93,6 +99,8 @@ function createTestRig(
         } = assertion_site;
 
     return {
+
+        throwable_id: THROWABLE_TEST_OBJECT_ID.TEST,
 
         name: static_name,
         suite_index: suite.index,

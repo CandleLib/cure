@@ -5,10 +5,11 @@ import { Reporter } from "../types/reporter.js";
 import { Test } from "../types/test.js";
 import { TestInfo } from "../types/test_info.js";
 import { createHierarchalName, splitHierarchalName } from "../utilities/name_hierarchy.js";
-import { blame } from "../utilities/test_error.js";
+import { blame, blameAssertionSite } from "../utilities/test_error.js";
 import { CLITextDraw } from "./utilities/cli_text_console.js";
 import { rst } from "./utilities/colors.js";
 import { getExpressionHandlerReportLines } from "../compile/expression_handler/expression_handler_functions.js";
+import { createInspectionMessage } from "./utilities/create_inspection_message.js";
 
 function Object_Is_TestResult(o: any): o is TestInfo {
     return !!o.test;
@@ -23,8 +24,8 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
         test_name = name_split.pop();
 
     let
-        origin = "@candlefw",
-        suite_name = "test",
+        origin = "CandleFW/test",
+        suite_name = "",
         suite_sub_names = [];
 
     if (globals.suites) {
@@ -50,7 +51,7 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
     else
         suite_sub_names.push(splitHierarchalName(result.test.name).pop());
 
-    return { suites: [origin, suite_name, ...suite_sub_names], name: test_name };
+    return { suites: [origin, suite_name, ...suite_sub_names].filter(_ => _), name: test_name };
 }
 
 
@@ -289,12 +290,15 @@ export class BasicReporter implements Reporter {
                             suite.strings.push("", "");
                             HAS_FAILED = true; failed++;
 
-                            if (test_result.expression_handler_identifier >= 0)
+                            if (test_result.expression_handler_identifier >= 0) {
+
 
                                 for (const line of getExpressionHandlerReportLines(test_result, globals))
 
                                     suite.strings.push(offsetB + line);
 
+                                suite.strings.push(...(await blameAssertionSite(test, test_result, globals.harness)));
+                            }
                             for (const error of test_result.errors) {
 
                                 suite.strings.push(offsetB + result_name + ":");
@@ -306,6 +310,10 @@ export class BasicReporter implements Reporter {
 
                                 suite.strings.push(offsetB + error.summary, ...error.detail.map(s => offsetB + s));
                             }
+
+                            if (test.INSPECT)
+                                suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
+
                         }
                     }
                 }

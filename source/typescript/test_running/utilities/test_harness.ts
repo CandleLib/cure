@@ -1,7 +1,9 @@
 import { decodeJSONSourceMap, SourceMap } from "@candlefw/conflagrate";
+import { TransferableTestError } from "../../types/test_error";
 import { TestHarness, TestHarnessEnvironment } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
-import { createTestErrorFromErrorObject } from "../../utilities/test_error.js";
+import { createTransferableTestErrorFromException } from "../../utilities/test_error.js";
+import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum";
 
 export function createTestHarnessEnvironmentInstance(equal, util, performance: Performance, rst): TestHarnessEnvironment {
 
@@ -133,6 +135,10 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                         return rst + util.inspect(value, false, 20, true);
 
+                    case "undefined":
+
+                        return "undefined";
+
                     default:
 
                         return value.toString();
@@ -178,7 +184,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     fn();
                 } catch (e) {
                     markWriteStart();
-                    addTestErrorToActiveResult(e);
+                    addErrorToActiveResult(e);
                     return true;
                 }
 
@@ -192,7 +198,13 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
             addException: (e) => {
                 markWriteStart();
-                addTestErrorToActiveResult(e);
+                if (e instanceof Error)
+                    addErrorToActiveResult(e);
+                else if (e.throwable_id == THROWABLE_TEST_OBJECT_ID.TRANSFERABLE_ERROR)
+                    addTransferableErrorToActiveResult(e);
+                else
+                    addErrorToActiveResult(new Error("Could not report error"));
+
             },
 
             inspect(...args) {
@@ -357,9 +369,12 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
         } else Object.assign(global.cfw, { harness });
     }
 
-    function addTestErrorToActiveResult(e: Error) {
-        const error = createTestErrorFromErrorObject(e, harness);
-        active_test_result.errors.push(error);
+    function addTransferableErrorToActiveResult(e: TransferableTestError) {
+        active_test_result.errors.push(e);
+    }
+
+    function addErrorToActiveResult(e: Error) {
+        addTransferableErrorToActiveResult(createTransferableTestErrorFromException(e, harness));
     }
 
     function markWriteStart() {

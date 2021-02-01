@@ -4,10 +4,16 @@ import {
 } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/wind";
+import { AssertionSite } from "../types/assertion_site.js";
+import { Globals } from "../types/globals.js";
+import { StackTraceAst, StackTraceLocation } from "../types/stack_trace";
+import { Test } from "../types/test.js";
 import { TransferableTestError } from "../types/test_error.js";
 import { TestHarness } from "../types/test_harness.js";
+import { TestInfo } from "../types/test_info.js";
+import { TestSuite } from "../types/test_suite.js";
 import parser from "./parser.js";
-import { StackTraceCall, StackTraceLocation, StackTraceAst } from "../types/stack_trace";
+import { THROWABLE_TEST_OBJECT_ID } from "./throwable_test_object_enum.js";
 
 
 
@@ -32,13 +38,75 @@ function Call_Originated_In_Test_Source(node: StackTraceAst) {
         && node.sub_stack[1].url == "anonymous";
 }
 
+type ErrorObjectTarget =
+    | TransferableTestError
+    | AssertionSite
+    | Error
+    | Test
+    | TestSuite
+    | Globals;
+
+/**
+ * Creates a TransferableTestError with appropriate blame information based
+ * on the object type assigned to `target`
+ * @param target 
+ * @param message 
+ * @param harness 
+ */
+export function createTargetedTestError(target: ErrorObjectTarget, message: string, harness: TestHarness, error?: Error): TransferableTestError {
+
+    if (target instanceof Error) {
+        return createTransferableTestErrorFromException(target, harness);
+    } else switch (target.throwable_id) {
+
+        case THROWABLE_TEST_OBJECT_ID.TRANSFERABLE_ERROR:
+            return target;
+
+        case THROWABLE_TEST_OBJECT_ID.GLOBALS:
+            //Represents a general compilation error
+            break;
+
+        case THROWABLE_TEST_OBJECT_ID.ASSERTION_SITE:
+
+            return createTransferableTestError(
+                target.source_path,
+                message,
+                target.pos,
+                [`Source location ${target.source_path}:${target.pos.line + 1}:${target.pos.char}`],
+                true
+            );
+
+        case THROWABLE_TEST_OBJECT_ID.TEST:
+            // The assertion site 
+            break;
+
+        case THROWABLE_TEST_OBJECT_ID.TEST_SUITE:
+            // The assertion site 
+            break;
+    }
+
+}
+
+function createTransferableTestError(source_path, message: string, pos: { column: number, line: number; }, detail_lines: string[] = [], CAN_BLAME: boolean = false): TransferableTestError {
+    return <TransferableTestError>{
+        throwable_id: THROWABLE_TEST_OBJECT_ID.TRANSFERABLE_ERROR,
+        summary: message,
+        detail: detail_lines,
+        source_path,
+        offset: 0,
+        column: pos.column,
+        line: pos.line + 1,
+        CAN_RESOLVE_TO_SOURCE: CAN_BLAME,
+    };
+}
+
 /**
  * 
  * @param error 
  * @param harness 
  * @param error_location 
  */
-export function createTestErrorFromErrorObject(
+export function createTransferableTestErrorFromException(
     error: Error,
     harness: TestHarness,
     error_location: string = "unknown"
@@ -108,40 +176,31 @@ export function createTestErrorFromErrorObject(
                 }
             }
 
-        return {
-            column,
-            line,
-            offset,
-            source: src,
-            summary: message.split("\n").pop(),
-            detail: (stack || message).split("\n"),
-            CAN_RESOLVE_TO_SOURCE,
-        };
+        return createTransferableTestError(
+            src,
+            message.split("\n").pop(),
+            { line, column },
+            (stack || message).split("\n"),
+            CAN_RESOLVE_TO_SOURCE
+        );
+
     } else {
-        return {
-            column: 0,
-            line: 0,
-            offset: 0,
-            source: error_location,
-            summary: `An object that is not an instance of Error was passed to compileTestErrorFromExceptionObject`,
-            detail:
-                [
-                    `The object ${error} was passed to compileTestErrorFromExceptionObject.`,
-                    `This object is not an instance of Error and cannot be parsed.`,
-                ],
-            CAN_RESOLVE_TO_SOURCE: false,
-        };
+        return createTransferableTestError(
+            error_location,
+            `An object that is not an instance of Error was passed to compileTestErrorFromExceptionObject`,
+            { line: 0, column: 0 },
+        );
     }
 }
 
 
 export function createTestErrorFromString(msg, harness: TestHarness): TransferableTestError {
-    return createTestErrorFromErrorObject(new Error(msg), harness);
+    return createTransferableTestErrorFromException(new Error(msg), harness);
 }
-export async function seekSourceFile(test_error: TransferableTestError, harness: TestHarness) {
+export async function seekSourceFile(test_error: { column: number, line: number, source_path: string; }, harness: TestHarness) {
 
     let
-        { line, column, source } = test_error, origin = source,
+        { line, column, source_path: source } = test_error, origin = source,
         source_url = new URL(source),
         active_url = source_url,
         map_source_url = null,
@@ -188,6 +247,15 @@ export async function blame(test_error: TransferableTestError, harness: TestHarn
     return string.split("\n");
 }
 
+export async function blameAssertionSite(test: Test, test_result: TestInfo, harness: TestHarness) {
+
+    const { source_text, line, column } = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source_path: test.source_location }, harness);
+
+    const string = new Lexer(source_text).seek(line, column).blame();
+
+    return string.split("\n");
+}
+
 export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
     const source_map = decodeJSONSourceMap(sourcemap_json_string);
     return getSourceLineColumn(line, column, source_map);
@@ -196,3 +264,4 @@ export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
 export function getLexerFromLineColumnString(line, column, string): Lexer {
     return new Lexer(string).seek(line, column);
 }
+

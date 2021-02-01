@@ -1,5 +1,6 @@
 import { SourceMap } from "@candlefw/conflagrate";
 import { ImportSource } from "./imports.js";
+import { TransferableTestError } from "./test_error.js";
 /**
  * Closure environment for privileged methods that operate on internal properties
  * of TestHarness
@@ -165,7 +166,7 @@ export interface TestHarness {
      /**
       * Add error to test harness.
       */
-     addException: (e) => void;
+     addException: (e: Error | TransferableTestError) => void;
 
      /**
       * Appends inspection error to the test errors array

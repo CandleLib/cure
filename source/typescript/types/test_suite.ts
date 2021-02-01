@@ -1,4 +1,5 @@
 import URL from "@candlefw/url";
+import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
 import { Test } from "./test";
 
 
@@ -6,6 +7,7 @@ import { Test } from "./test";
  * Stores TestRigs loaded from a test file.
  */
 export interface TestSuite {
+    throwable_id: THROWABLE_TEST_OBJECT_ID.TEST_SUITE,
     /**
      * The numerical order in which this TestSuite was created.
      */

@@ -133,7 +133,7 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
 
             case JSNodeType.ExpressionStatement:
 
-                const mutation = compileExpressionStatement(state, node, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED, index);
+                const mutation = compileExpressionStatement(state, node, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED);
 
                 if (mutation || mutation === null) mutate(<JSNode>mutation);
 
@@ -262,7 +262,6 @@ function compileExpressionStatement(
     node: JSExpressionStatement,
     LEAVE_ASSERTION_SITE: boolean,
     OUTER_SEQUENCED: boolean,
-    index: number
 ) {
 
     let [expr] = node.nodes;
@@ -273,7 +272,7 @@ function compileExpressionStatement(
     }
     if (Expression_Is_An_Assertion_Site(expr))
 
-        return compileAssertionSite(state, expr, LEAVE_ASSERTION_SITE, index);
+        return compileAssertionSite(state, expr, LEAVE_ASSERTION_SITE);
 
     else if (Expression_Is_An_Assertion_Group_Site(expr))
 
