@@ -331,7 +331,8 @@ function compileMiscellaneous(
 
     state.AWAIT = statement_reference.AWAIT || state.AWAIT;
 
-    if (node.type & JSNodeClass.STATEMENT) {
+    if (Node_Is_Statement_Node(node)) {
+
         // Extract IdentifierReferences and IdentifierAssignments 
         // and append to the statement scope.
 
