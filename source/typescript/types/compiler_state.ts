@@ -7,14 +7,14 @@ import { AssertionSiteClosure } from "./assertion_site";
 export type CompilerState = {
     globals: Globals;
 
-    AST: JSNode;
+    ast: JSNode;
     AWAIT: boolean;
     FORCE_USE: boolean;
 
     imported_modules: ImportModule[];
 
-    global_declarations: closureSet | setUnion | setDiff | Set<string>;
-    global_references: closureSet | setUnion | Set<string>;
+    global_declaration_ids: closureSet | setUnion | setDiff | Set<string>;
+    global_reference_ids: closureSet | setUnion | Set<string>;
 
     statement_references: StatementReference[];
     declaration_references: StatementReference[];

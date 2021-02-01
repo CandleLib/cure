@@ -1,3 +1,4 @@
+import { harness_internal_name } from "../../test_running/utilities/test_harness.js";
 import { Globals } from "../../types/globals.js";
 import testy_parser from "../../utilities/testy_parser.js";
 
@@ -36,61 +37,61 @@ type TestyObjects =
 
 const default_operators = {
     "<": {
-        action_name: "$harness.lessThan",
+        action_name: `${harness_internal_name}.lessThan`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     ">": {
-        action_name: "$harness.greaterThan",
+        action_name: `${harness_internal_name}.greaterThan`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "==": {
-        action_name: "$harness.equal",
+        action_name: `${harness_internal_name}.equal`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "===": {
-        action_name: "$harness.equal",
+        action_name: `${harness_internal_name}.equal`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "!==": {
-        action_name: "$harness.notEqual",
+        action_name: `${harness_internal_name}.notEqual`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "!=": {
-        action_name: "$harness.notEqual",
+        action_name: `${harness_internal_name}.notEqual`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "!": {
-        action_name: "$harness.throws",
+        action_name: `${harness_internal_name}.throws`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
     },
     "noThrow": {
-        action_name: "$harness.doesNotThrow",
+        action_name: `${harness_internal_name}.doesNotThrow`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
     },
     "&&": {
-        action_name: "$harness.and",
+        action_name: `${harness_internal_name}.and`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
     },
     "||": {
-        action_name: "$harness.or",
+        action_name: `${harness_internal_name}.or`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
@@ -105,13 +106,13 @@ function completeCaptures(array: TestyObjects[], globals: Globals) {
 
     for (const obj of array) {
         if (typeof obj == "number") {
-            array[i] = `$harness.getValue(${obj})`;
+            array[i] = `${harness_internal_name}.getValue(${obj})`;
         } else if (typeof obj != "string") {
             if (obj.type == "op_ref") {
                 obj.index = i;
                 sorted_operators.push(obj);
             } else {
-                array[i] = `$harness.getValueRange(${obj.start},${obj.end})`;
+                array[i] = `${harness_internal_name}.getValueRange(${obj.start},${obj.end})`;
             }
         }
         i++;

@@ -1,6 +1,5 @@
-import { renderCompressed as $r, JSNodeType, JSNodeClass } from "@candlefw/js";
 import { exp, JSAssignmentExpression, JSCallExpression, JSEqualityExpression, JSNode, JSNodeClass, JSNodeType, JSRelationalExpression, JSUnaryExpression, renderCompressed as $r } from "@candlefw/js";
-import { msgA, msgC, rst, valA, valB, fail } from "../../reporting/utilities/colors.js";
+import { fail, rst, valA } from "../../reporting/utilities/colors.js";
 import { ExpressionHandler } from "../../types/expression_handler";
 
 function sanitizeTemplate(string) {
@@ -30,15 +29,15 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
             queue.push(`"${$r(right).replace(/\"/g, "\\\"")}"`);
             const b = queue.push(right);
             queue.push(`'${node.symbol.replace(/\"/g, "\\\"")}'`);
-            const e = queue.evaluate(`${b} == ${a}`);
+            const e = queue.evaluate(`${b} ${node.symbol} ${a}`);
             queue.report(e);
         },
 
-        print: (stack, reporter) => {
+        print: (queue, reporter) => {
 
             const
 
-                [left_code, left_val, right_code, right_val, symbol] = [...stack.pop()],
+                [left_code, left_val, right_code, right_val, symbol] = [...queue.shift()],
 
                 symbol_to_phrase_map = {
                     "==": "to equal",
@@ -123,7 +122,7 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
         },
 
         print: (queue, reporter) => {
-            const [left, sym, right] = [...queue.pop()];
+            const [left, sym, right] = [...queue.shift()];
             return [`Invalid use of assignment expression [${valA + left + fail + ` ${sym} ` + valA + right + rst}] in assertion site`];
         },
     }

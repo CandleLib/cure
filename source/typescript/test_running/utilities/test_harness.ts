@@ -5,6 +5,8 @@ import { TestInfo } from "../../types/test_info";
 import { createTransferableTestErrorFromException } from "../../utilities/test_error.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum";
 
+export const harness_internal_name = "$$";
+
 export function createTestHarnessEnvironmentInstance(equal, util, performance: Performance, rst): TestHarnessEnvironment {
 
     let

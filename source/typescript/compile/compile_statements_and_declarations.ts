@@ -8,14 +8,10 @@ export function compileStatementsAndDeclarations(
     declaration_references: StatementReference[] = []
 ) {
 
-    console.log({ offset: statement_index, statement_references, declaration_references });
-
     const
         active_refs: Set<string> = new Set(stmt_ref.required_references.values()),
         declared_refs: Set<string> = new Set(),
         statements: JSNode[] = [];
-
-    console.log({ active_refs });
 
     for (let i = statement_index - 1; i > -1; i--) {
 

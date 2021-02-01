@@ -1,18 +1,18 @@
-import { JSNode, renderCompressed, stmt } from "@candlefw/js";
-
+import { JSNode, renderCompressed } from "@candlefw/js";
 import { ExpressionHandler, ExpressionHandlerBase } from "../../types/expression_handler.js";
 import { Globals } from "../../types/globals.js";
+import { ReportQueue } from "../../types/report_queue.js";
 import { TestInfo } from "../../types/test_info.js";
 import { jst } from "../utilities/traverse_js_node.js";
 import { compileTestyScript } from "./testy_compiler.js";
-/** 
- * Harness built in evaluators
- * equal : ==              | boolean
- * equal : !=              | boolean
- * deep_equal : ===        | string or boolean
- * throws : throws( exp )  | boolean
- * extern : extern( exp )  | boolean
- */
+import {
+    createPopTestResultInstruction,
+    createPushAndAssetInstruction,
+    createPushInstruction,
+    createPushTestResultInstruction,
+    createSetNameInstruction
+} from "./test_instructions.js";
+
 export function loadExpressionHandler(globals: Globals, obj: ExpressionHandlerBase) {
 
     // Check for the presence of the expected 
@@ -81,7 +81,7 @@ export function compileExpressionHandler(
                 ? node
                 : renderCompressed(node);
 
-            instructions.push(stmt(`$harness.pushValue(${val});`));
+            instructions.push(createPushInstruction(val));
 
             return id;
         },
@@ -92,7 +92,7 @@ export function compileExpressionHandler(
 
             value_lookup.set(id, value_lookup.size);
 
-            instructions.push(stmt(`$harness.pushValue(${compileTestyScript(expression_script, globals)});`));
+            instructions.push(createPushInstruction(compileTestyScript(expression_script, globals)));
 
             return id;
         },
@@ -104,7 +104,7 @@ export function compileExpressionHandler(
 
             value_lookup.set(id, value_lookup.size);
 
-            instructions.push(stmt(`$harness.pushAndAssertValue(${compileTestyScript(report_script, globals)});`));
+            instructions.push(createPushAndAssetInstruction(compileTestyScript(report_script, globals)));
 
             return id;
         }
@@ -114,13 +114,13 @@ export function compileExpressionHandler(
     // harness.pushTestResult...
     // harness.setResultName...
 
-    instructions.unshift(stmt(`$harness.setResultName(${dynamic_name || `"${(static_name || generated_name).replace(/\"/g, "\\\"")}"`})`));
+    instructions.unshift(createSetNameInstruction(generated_name, static_name, dynamic_name));
 
-    instructions.unshift(stmt(`$harness.pushTestResult(${handler.identifier});`));
+    instructions.unshift(createPushTestResultInstruction(handler));
 
     instructions.push(...teardown_statements);
 
-    instructions.push(stmt(`$harness.popTestResult();`));
+    instructions.push(createPopTestResultInstruction());
 
     jst(<any>{ nodes: instructions }).run(node => void (node.pos = expression_node.pos));
 
@@ -135,8 +135,8 @@ export function getExpressionHandlerReportLines(test_info: TestInfo, globals: Gl
 
     if (!handler) return ["Unable To Print Expression Handler Message"];
 
-    return handler.print({
-        pop: function* () {
+    return handler.print(<ReportQueue>{
+        shift: function* () {
             for (const val of test_info.test_stack)
                 yield val;
         }

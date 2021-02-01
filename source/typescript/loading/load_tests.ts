@@ -1,10 +1,11 @@
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlefw/conflagrate";
-import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
+import { parser, renderWithFormatting, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/wind";
 import path from "path";
 import { compileTests } from "../compile/compile.js";
 import { format_rules } from "../reporting/utilities/format_rules.js";
+import { harness_internal_name } from "../test_running/utilities/test_harness.js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { Globals } from "../types/globals.js";
 import { ImportModule, ImportRequirement, ImportSource, ModuleSpecifier } from "../types/imports.js";
@@ -142,7 +143,7 @@ function createTestRigFunctionSourceCode(suite: TestSuite, assertion_site: Asser
     try {
         collectImports(suite, imports, import_module_sources, import_arg_names, import_arg_specifiers);
 
-        test_function_arguments.push("$harness", ...import_arg_names);
+        test_function_arguments.push(harness_internal_name, ...import_arg_names);
 
         const source = renderWithFormattingAndSourceMap(ast, <any>format_rules, null, mappings, 0, null);
 
