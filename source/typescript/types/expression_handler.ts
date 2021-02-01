@@ -92,7 +92,7 @@ export interface ExpressionHandler<T extends JSNode> {
      * If `true` is returned, this Binding compiler will be accepted as the handler for the
      * test.
      */
-    confirmUse: (node: JSNode) => node is T,
+    confirmUse: (node: T) => node is T,
 
     /**
      * Return a JavaScript expression string that evaluates to `true` or `false`.
@@ -108,7 +108,7 @@ export interface ExpressionHandler<T extends JSNode> {
      * code branch will run.
      * 
      * 
-     * @param {JSNode} node The first AST node within the double parenthesis AssertionSite.
+     * @param {T} node The first AST node within the double parenthesis AssertionSite.
      */
     build: (node: T, expression_vm: TestStack) => void;
 
