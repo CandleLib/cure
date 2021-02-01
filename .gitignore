@@ -51,12 +51,15 @@ jspm_packages/
 # Serverless directories
 .serverless
 
-#Build directory
+# Build directory
 build/
 
-#sublime  workspace
+# sublime  workspace
 *.sublime-workspace
 
-#HCG compiler backup files.
+# HCG compiler backup files.
 *.hcgb*
+
+# Temp test directory
+__temp__
 
