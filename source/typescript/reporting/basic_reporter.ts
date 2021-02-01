@@ -263,7 +263,6 @@ export class BasicReporter implements Reporter {
             { fail, msgA, pass, objB } = this.colors;
 
         let
-            HAS_FAILED = false,
 
             total = results.length,
 
@@ -285,10 +284,16 @@ export class BasicReporter implements Reporter {
                             { test, PASSED } = test_result,
                             { name: result_name } = getNameData(test_result, globals);
 
+
+                        if (test.INSPECT)
+                            suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
+
                         if (!PASSED) {
 
-                            suite.strings.push("", "");
-                            HAS_FAILED = true; failed++;
+                            failed++;
+
+                            for (const log of test_result.logs)
+                                suite.strings.push("LOG:", ...log.split("\n"), "");
 
                             if (test_result.expression_handler_identifier >= 0) {
 
@@ -297,7 +302,7 @@ export class BasicReporter implements Reporter {
 
                                     suite.strings.push(offsetB + line);
 
-                                suite.strings.push(...(await blameAssertionSite(test, test_result, globals.harness)));
+                                suite.strings.push(...(await blameAssertionSite(test, test_result, globals.harness)).map(s => offsetB + s));
                             }
                             for (const error of test_result.errors) {
 
@@ -311,9 +316,8 @@ export class BasicReporter implements Reporter {
                                 suite.strings.push(offsetB + error.summary, ...error.detail.map(s => offsetB + s));
                             }
 
-                            if (test.INSPECT)
-                                suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
 
+                            suite.strings.push("", "");
                         }
                     }
                 }
@@ -343,6 +347,6 @@ export class BasicReporter implements Reporter {
 
         await this.renderToTerminal([strings.join("\n"), rst].join("\n"), terminal);
 
-        return HAS_FAILED;
+        return failed > 0;
     }
 }

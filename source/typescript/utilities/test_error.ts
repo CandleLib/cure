@@ -123,7 +123,7 @@ export function createTransferableTestErrorFromException(
 
         const cwd = new URL(harness.working_directory);
 
-        let column = 0, line = 0, offset = 0, src = harness.source_location, source_map, CAN_RESOLVE_TO_SOURCE = false;
+        let column = 0, line = 0, stack_location = "", src = harness.source_location, source_map, CAN_RESOLVE_TO_SOURCE = false;
 
         if (!FAILED)
             for (const { node, meta } of traverse(<StackTraceAst>{ sub_stack: stack_ast }, "sub_stack").skipRoot()) {
@@ -146,6 +146,7 @@ export function createTransferableTestErrorFromException(
                     //line++;
 
                     CAN_RESOLVE_TO_SOURCE = true;
+                    stack_location = src + ":" + (line + 1) + ":" + column;
 
                     break;
                 } else if (node.type == "location" && node.url !== "anonymous" && node.url.isSUBDIRECTORY_OF(cwd)) {
@@ -172,6 +173,10 @@ export function createTransferableTestErrorFromException(
 
                     CAN_RESOLVE_TO_SOURCE = true;
 
+                    line--;
+
+                    stack_location = src + ":" + (line + 1) + ":" + column;
+
                     break;
                 }
             }
@@ -180,7 +185,7 @@ export function createTransferableTestErrorFromException(
             src,
             message.split("\n").pop(),
             { line, column },
-            (stack || message).split("\n"),
+            (stack_location).split("\n"),
             CAN_RESOLVE_TO_SOURCE
         );
 
@@ -235,25 +240,26 @@ export async function seekSourceFile(test_error: { column: number, line: number,
 
     source_text = (await source_url.fetchText());
 
-    return { line, column, source_text, source: source_url };
+    return { line, column, source_text, source_url };
 }
 
 export async function blame(test_error: TransferableTestError, harness: TestHarness) {
 
-    const { source_text, line, column } = await seekSourceFile(test_error, harness);
+    const { source_text, source_url, line, column } = await seekSourceFile(test_error, harness);
 
     const string = new Lexer(source_text).seek(line, column).blame();
 
-    return string.split("\n");
+    return [source_url + ":" + line + ":" + column, ...string.split("\n")];
+}
 }
 
 export async function blameAssertionSite(test: Test, test_result: TestInfo, harness: TestHarness) {
 
-    const { source_text, line, column } = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source_path: test.source_location }, harness);
+    const { source_text, line, column, source_url } = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source_path: test.source_location }, harness);
 
     const string = new Lexer(source_text).seek(line, column).blame();
 
-    return string.split("\n");
+    return [source_url + ":" + line + ":" + column, ...string.split("\n")];
 }
 
 export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {
