@@ -315,7 +315,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     previous_clipboard_end: previous_start,
                     errors: [],
                     logs: [],
-                    log_start: active_test_result ? active_test_result.logs[0] : 0,
+                    log_start: active_test_result ? active_test_result.log_start : 0,
                     test_stack: [],
                     expression_handler_identifier,
                     location: {
