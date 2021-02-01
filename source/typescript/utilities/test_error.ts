@@ -10,9 +10,11 @@ import { StackTraceAst, StackTraceLocation } from "../types/stack_trace";
 import { Test } from "../types/test.js";
 import { TransferableTestError } from "../types/test_error.js";
 import { TestHarness } from "../types/test_harness.js";
+import { TestInfo } from "../types/test_info.js";
 import { TestSuite } from "../types/test_suite.js";
 import parser from "./parser.js";
 import { THROWABLE_TEST_OBJECT_ID } from "./throwable_test_object_enum.js";
+
 
 
 /* DO NOT MOVE OR REMOVE THE FOLLOWING LINE ----------------- DO NOT MOVE OR REMOVE THE FOLLOWING LINES */
@@ -132,12 +134,13 @@ export function createTransferableTestErrorFromException(
 
                     source_map = harness.test_source_map;
 
-                    ({ column, line } = getSourceLineColumn(
-                        /** Line offset due to extra code the Function constructor adds to the test source */
-                        line - 2,
-                        column,
-                        source_map
-                    ));
+                    if (source_map)
+                        ({ column, line } = getSourceLineColumn(
+                            /** Line offset due to extra code the Function constructor adds to the test source */
+                            line - 2,
+                            column,
+                            source_map
+                        ));
 
                     //column++;
                     //line++;
@@ -194,7 +197,7 @@ export function createTransferableTestErrorFromException(
 export function createTestErrorFromString(msg, harness: TestHarness): TransferableTestError {
     return createTransferableTestErrorFromException(new Error(msg), harness);
 }
-export async function seekSourceFile(test_error: TransferableTestError, harness: TestHarness) {
+export async function seekSourceFile(test_error: { column: number, line: number, source_path: string; }, harness: TestHarness) {
 
     let
         { line, column, source_path: source } = test_error, origin = source,
@@ -238,6 +241,15 @@ export async function seekSourceFile(test_error: TransferableTestError, harness:
 export async function blame(test_error: TransferableTestError, harness: TestHarness) {
 
     const { source_text, line, column } = await seekSourceFile(test_error, harness);
+
+    const string = new Lexer(source_text).seek(line, column).blame();
+
+    return string.split("\n");
+}
+
+export async function blameAssertionSite(test: Test, test_result: TestInfo, harness: TestHarness) {
+
+    const { source_text, line, column } = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source_path: test.source_location }, harness);
 
     const string = new Lexer(source_text).seek(line, column).blame();
 

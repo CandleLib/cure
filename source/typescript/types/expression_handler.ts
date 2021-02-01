@@ -1,5 +1,4 @@
-import { JSNodeClass, JSNodeType, JSNode as JSExpressionClass } from "@candlefw/js";
-import { JSExpressionClass } from "@candlefw/js/build/types/types/JSNodeClasses";
+import { JSNode as JSExpressionClass, JSNode, JSNodeClass, JSNodeType } from "@candlefw/js";
 import { Reporter } from "./reporter";
 import { ReportQueue } from "./report_queue";
 import { TestQueue } from "./test_queue";
@@ -8,7 +7,7 @@ import { TestQueue } from "./test_queue";
  * An object used to compile double parenthesis bindings into a testable and reportable
  * expression.
  */
-export interface ExpressionHandler {
+export interface ExpressionHandler<T extends JSNode> {
     /**
      * Internal use
      * 
@@ -33,13 +32,13 @@ export interface ExpressionHandler {
      * If `true` is returned, this Binding compiler will be accepted as the handler for the
      * test.
      */
-    confirmUse: (node: JSExpressionClass) => boolean,
+    confirmUse: (node: T) => node is T,
 
     /**
      * 
      * @param {JSExpressionClass} node The first AST node within the double parenthesis AssertionSite.
      */
-    build: (node: JSExpressionClass, test_queue: TestQueue) => void;
+    build: (node: T, test_queue: TestQueue) => void;
 
     /**
      * Return an exception message that will be used as the report if the test fails.
@@ -47,3 +46,5 @@ export interface ExpressionHandler {
     print: (report_queue: ReportQueue, reporter: Reporter) => string[];
 
 };
+
+export type ExpressionHandlerBase<T = JSNode> = ExpressionHandler<T>;

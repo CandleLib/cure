@@ -14,6 +14,8 @@
 		"test.watch": "cfw.test -w --threads=2 ./test/**",
 		"build.watch": "tsc --watch",
 		"build": "tsc -p ./tsconfig.json",
+		"compile.testy_parser.debug": "hydrocarbon compile --nom testy_parser --workers 10 --output_dir ./build/library/utilities/ --annotations --debug  ./source/grammar/testy.hcg",
+		"compile.testy_parser.release": "hydrocarbon compile --nom testy_parser --workers 10 --output_dir ./source/typescript/utilities/ --recognizer_type wasm  ./source/grammar/testy.hcg",
 		"compile.st_parser.debug": "hydrocarbon compile --workers 10 --output_dir ./build/library/utilities/ --annotations --debug  ./source/grammar/stack_trace_parser.hcg",
 		"compile.st_parser.release": "hydrocarbon compile --workers 10 --output_dir ./source/typescript/utilities/ --recognizer_type wasm  ./source/grammar/stack_trace_parser.hcg"
 	},

@@ -59,7 +59,7 @@ function syntaxHighlight(str: string, prop_name, node: JSNode): string {
  * @param suite
  * @param reporter
  */
-export async function createInspectionMessage(result: TestInfo, test: Test, suite: TestSuite, reporter: Reporter, watched_files: Set<string>): Promise<string> {
+export async function createInspectionMessage(result: TestInfo, test: Test, suite: TestSuite, reporter: Reporter): Promise<string> {
 
     let errors = [];
 
@@ -82,7 +82,7 @@ Passed: ${num_col + result.PASSED + rst}
 Asynchronous Test: ${num_col + test.IS_ASYNC + rst}
 Browser Test: ${num_col + !!test.BROWSER + rst}
 
-Source File: ${str_col + suite.origin + rst}
+Source File: ${str_col + suite.url + rst}
 
 Imports:
     ${test.import_arg_specifiers.map(({ module_name, module_specifier }) => symD + module_name + rst + " from \n        " + pass + module_specifier + rst).join("\n    ")

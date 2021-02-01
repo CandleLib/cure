@@ -135,7 +135,7 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
 
                 const mutation = compileExpressionStatement(state, node, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED);
 
-                if (mutation || mutation == null) mutate(<JSNode>mutation);
+                if (mutation || mutation === null) mutate(<JSNode>mutation);
 
                 skip();
 

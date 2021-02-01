@@ -2,12 +2,13 @@ import equal from "deep-equal";
 import { performance } from "perf_hooks";
 import util from "util";
 import { parentPort } from "worker_threads";
+import { rst } from "../../reporting/utilities/colors.js";
 import { ImportSource } from "../../types/imports.js";
 import { Test } from "../../types/test.js";
-import { rst } from "../../reporting/utilities/colors.js";
+import { createNameErrorMessage } from "../../utilities/library_errors.js";
 import { createTestFunctionFromTestSource } from "../utilities/create_test_function.js";
-
 import { createTestHarnessEnvironmentInstance } from "../utilities/test_harness.js";
+
 
 //@ts-ignore
 const harness_env = createTestHarnessEnvironmentInstance(equal, util, <Performance><any>performance, rst);
@@ -15,7 +16,6 @@ export const harness = harness_env.harness;
 export const ImportedModules: Map<string, any> = new Map();
 
 
-import { createNameErrorMessage } from "../../utilities/library_errors.js";
 
 
 
@@ -128,6 +128,7 @@ async function RunTest({ test }: { test: Test; }) {
             result.name = createNameErrorMessage(i);
             result.PASSED = false;
         }
+
 
     parentPort.postMessage(results);
 }
