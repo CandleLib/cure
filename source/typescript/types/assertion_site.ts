@@ -9,7 +9,7 @@ import { StatementReference } from "./statement_props";
 export type AssertionSiteClosure = {
     assertion_site: AssertionSite;
     statement_reference: StatementReference;
-    offset: number;
+    statement_index: number;
 };
 
 

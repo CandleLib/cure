@@ -63,7 +63,7 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
 
     const assertion_sites = [];
 
-    for (const { assertion_site, offset, statement_reference } of test_closures) {
+    for (const { assertion_site, statement_index: offset, statement_reference } of test_closures) {
 
         const { stmts: required_statements, imports }
             = compileStatementsAndDeclarations(statement_reference, offset, statement_references, declaration_references);
@@ -365,7 +365,7 @@ export function packageAssertionSites(state: CompilerState, stmt_ref: StatementR
         state.test_closures.push(<AssertionSiteClosure>{
             assertion_site,
             statement_reference: packaged_stmt_ref,
-            offset: state.statement_references.length
+            statement_index: state.statement_references.length
         });
     }
 }
