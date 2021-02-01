@@ -8,6 +8,8 @@ import { TransferableTestError } from "../types/test_error.js";
 import { TestHarness } from "../types/test_harness.js";
 import parser from "./parser.js";
 import { StackTraceCall, StackTraceLocation, StackTraceAst } from "../types/stack_trace";
+import { Test } from "../types/test.js";
+import { TestInfo } from "../types/test_info.js";
 
 
 
@@ -137,7 +139,7 @@ export function createTestErrorFromErrorObject(
 export function createTestErrorFromString(msg, harness: TestHarness): TransferableTestError {
     return createTestErrorFromErrorObject(new Error(msg), harness);
 }
-export async function seekSourceFile(test_error: TransferableTestError, harness: TestHarness) {
+export async function seekSourceFile(test_error: { column: number, line: number, source: string; }, harness: TestHarness) {
 
     let
         { line, column, source } = test_error, origin = source,
@@ -181,6 +183,15 @@ export async function seekSourceFile(test_error: TransferableTestError, harness:
 export async function blame(test_error: TransferableTestError, harness: TestHarness) {
 
     const { source_text, line, column } = await seekSourceFile(test_error, harness);
+
+    const string = new Lexer(source_text).seek(line, column).blame();
+
+    return string.split("\n");
+}
+
+export async function blameAssertionSite(test: Test, test_result: TestInfo, harness: TestHarness) {
+
+    const { source_text, line, column } = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source: test.source_location }, harness);
 
     const string = new Lexer(source_text).seek(line, column).blame();
 
