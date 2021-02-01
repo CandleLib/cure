@@ -66,12 +66,13 @@ export function createTestErrorFromErrorObject(
 
                     source_map = harness.test_source_map;
 
-                    ({ column, line } = getSourceLineColumn(
-                        /** Line offset due to extra code the Function constructor adds to the test source */
-                        line - 2,
-                        column,
-                        source_map
-                    ));
+                    if (source_map)
+                        ({ column, line } = getSourceLineColumn(
+                            /** Line offset due to extra code the Function constructor adds to the test source */
+                            line - 2,
+                            column,
+                            source_map
+                        ));
 
                     //column++;
                     //line++;
