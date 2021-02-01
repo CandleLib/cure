@@ -76,6 +76,11 @@ export interface TestInfo {
     logs: string[];
 
     /**
+     * Internal use
+     */
+    log_start: number,
+
+    /**
      * Assertion location
      * 
      * Location of test within the original source code and compiled source code

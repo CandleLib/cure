@@ -27,6 +27,8 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
         clipboard: TestInfo[] = [],
 
+        log_book: string[] = [],
+
         results: TestInfo[] = [],
 
         /**
@@ -211,9 +213,12 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
             inspect(...args) {
                 markWriteStart();
+
+                log_book.push("aaa");
+
                 const e = createInspectionError(...args);
 
-                active_test_result.logs.push(e.stack.toString());
+                log_book.push(e.stack.toString());
             },
 
 
@@ -310,6 +315,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     previous_clipboard_end: previous_start,
                     errors: [],
                     logs: [],
+                    log_start: active_test_result ? active_test_result.logs[0] : 0,
                     test_stack: [],
                     expression_handler_identifier,
                     location: {
@@ -329,6 +335,14 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 const previous_active = clipboard.pop();
 
                 active_test_result = clipboard[clipboard.length - 1];
+
+                const log_start = previous_active.log_start;
+
+                previous_active.logs.length = 0;
+
+                previous_active.logs.push(...log_book.slice(log_start - 1));
+
+                log_book.length = log_start;
 
                 data_queue.length -= previous_active.test_stack.length;
 
@@ -352,6 +366,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             },
 
             pushAndAssertValue(SUCCESS: boolean) {
+
                 markWriteStart();
 
                 if (!SUCCESS)
@@ -372,7 +387,9 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
     }
 
     function addTransferableErrorToActiveResult(e: TransferableTestError) {
-        active_test_result.errors.push(e);
+        if (active_test_result)
+            active_test_result.errors.push(e);
+        else throw e;
     }
 
     function addErrorToActiveResult(e: Error) {

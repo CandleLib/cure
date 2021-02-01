@@ -284,16 +284,10 @@ export class BasicReporter implements Reporter {
                             { test, PASSED } = test_result,
                             { name: result_name } = getNameData(test_result, globals);
 
-
-                        if (test.INSPECT)
-                            suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
-
                         if (!PASSED) {
 
                             failed++;
 
-                            for (const log of test_result.logs)
-                                suite.strings.push("LOG:", ...log.split("\n"), "");
 
                             if (test_result.expression_handler_identifier >= 0) {
 
@@ -319,6 +313,15 @@ export class BasicReporter implements Reporter {
 
                             suite.strings.push("", "");
                         }
+
+                        if (test.INSPECT) {
+
+                            suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
+
+                            for (const log of test_result.logs)
+                                suite.strings.push(offsetB + "LOG:", ...log.split("\n").map(s => offsetB + s), "");
+                        }
+
                     }
                 }
 
