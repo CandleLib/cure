@@ -2,7 +2,15 @@ import { JSNode } from "@candlefw/js";
 import { Lexer } from "@candlefw/wind";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
 import { ImportRequirement } from "./imports";
+import { StatementReference } from "./statement_props";
 
+
+
+export type AssertionSiteClosure = {
+    assertion_site: AssertionSite;
+    statement_reference: StatementReference;
+    offset: number;
+};
 
 
 export interface AssertionSite {
