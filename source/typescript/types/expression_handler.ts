@@ -1,4 +1,4 @@
-import { JSNode as JSExpressionClass, JSNode, JSNodeClass, JSNodeType } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeType } from "@candlefw/js";
 import { Reporter } from "./reporter";
 import { ReportQueue } from "./report_queue";
 import { TestQueue } from "./test_queue";
@@ -7,7 +7,7 @@ import { TestQueue } from "./test_queue";
  * An object used to compile double parenthesis bindings into a testable and reportable
  * expression.
  */
-export interface ExpressionHandler<T extends JSNode> {
+export interface ExpressionHandler<T = JSNode> {
     /**
      * Internal use
      * 

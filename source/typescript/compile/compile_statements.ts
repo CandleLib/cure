@@ -1,11 +1,10 @@
 import { copy, traverse } from "@candlefw/conflagrate";
 import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, tools } from "@candlefw/js";
-import { AssertionSite } from "../types/assertion_site.js";
+import { AssertionSite, AssertionSiteClosure } from "../types/assertion_site.js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
 import { ImportModule } from "../types/imports.js";
 import { StatementProp } from "../types/statement_props";
-import { TestClosure } from "../types/test_site";
 import { closureSet, setDiff, setUnion } from "../utilities/sets.js";
 import { compileAssertionGroupSite, compileAssertionSite } from "./assertion_site/compile_assertion_site.js";
 import { compileImport } from "./compile_import.js";
@@ -339,7 +338,7 @@ export function packageAssertionSites(state: CompilerState, prop: StatementProp,
             packaged_prop.required_references = new setUnion(prop.required_references, assertion_site.import_names);
         }
 
-        state.tests.push(<TestClosure>{
+        state.test_closures.push(<AssertionSiteClosure>{
             assertion_site,
             data: packaged_prop,
             offset: state.statements.length

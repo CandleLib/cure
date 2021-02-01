@@ -1,4 +1,4 @@
-import { ExpressionHandler } from "./expression_handler";
+import { ExpressionHandler, ExpressionHandlerBase } from "./expression_handler";
 import { Test } from "./test";
 import { TestInfo } from "./test_info";
 import { TestRunner } from "./test_runner";
@@ -18,7 +18,7 @@ import { TestSuite } from "./test_suite";
  * The string value of a flag must match that of an {AssertionSiteReferenceName}.
  * Namely, it must be a valid JavaScript identifier name.
  */
-type MetaLabel = AssertionReferenceName;
+export type MetaLabel = AssertionReferenceName;
 
 /**
  * A string whose values is a valid JavaScript identifier name.
@@ -35,7 +35,7 @@ type MetaLabel = AssertionReferenceName;
  * 
  * 
  */
-type AssertionReferenceName = string;
+export type AssertionReferenceName = string;
 
 /**
  * Used to pass customization options to cfw.test
@@ -118,7 +118,7 @@ export interface CFWTestConfiguration {
      * ```
      * Example value:
      * ```
-     * ["it", "it_should", "test"]
+     * ["it", "it_should", "test", "expect"]
      * ```
      */
     assertion_site_reference_name: AssertionReferenceName[];
@@ -135,7 +135,7 @@ export interface CFWTestConfiguration {
      * ```
      * Example value:
      * ```
-     * ["group", "these_should", "these"]
+     * ["group", "these_should", "these", "every"]
      * ```
      */
     assertion_group_reference_name: AssertionReferenceName[];
@@ -152,7 +152,7 @@ export interface CFWTestConfiguration {
      * Expression handlers. User provided ExpressionHandlers take 
      * precedent over built-in handlers that match a given expression.
      */
-    expression_handlers: ExpressionHandler[];
+    expression_handlers: ExpressionHandlerBase[];
 
     /**
      * Define add on reporter handlers whose print function are called 
