@@ -1,10 +1,10 @@
 import { JSNode, renderCompressed, stmt } from "@candlefw/js";
 
-import { ExpressionHandler } from "../../types/expression_handler.js";
+import { ExpressionHandler, ExpressionHandlerBase } from "../../types/expression_handler.js";
 import { Globals } from "../../types/globals.js";
 import { TestInfo } from "../../types/test_info.js";
 import { jst } from "../utilities/traverse_js_node.js";
-
+import { compileTestyScript } from "./testy_compiler.js";
 /** 
  * Harness built in evaluators
  * equal : ==              | boolean
@@ -13,7 +13,7 @@ import { jst } from "../utilities/traverse_js_node.js";
  * throws : throws( exp )  | boolean
  * extern : extern( exp )  | boolean
  */
-export function loadExpressionHandler(globals: Globals, obj: ExpressionHandler) {
+export function loadExpressionHandler(globals: Globals, obj: ExpressionHandlerBase) {
 
     // Check for the presence of the expected 
     // properties of BindingExpressionCompiler
@@ -37,7 +37,7 @@ export function loadExpressionHandler(globals: Globals, obj: ExpressionHandler) 
     return true;
 };
 
-export function* selectExpressionHandler(node: JSNode, globals: Globals): Generator<ExpressionHandler> {
+export function* selectExpressionHandler(node: JSNode, globals: Globals): Generator<ExpressionHandlerBase> {
 
     const type = node.type;
 
@@ -48,27 +48,9 @@ export function* selectExpressionHandler(node: JSNode, globals: Globals): Genera
     }
 };
 
-function parseEvaluationScript(script: string, lookup: Map<string, number>): string {
-
-    script = script.replace(/(.*)==(.*)/g, (m, p1, p2) => `$harness.equal(${p1}, ${p2})`);
-
-    script = script.replace(/(.*)!=(.*)/g, (m, p1, p2) => `$harness.notEqual(${p1}, ${p2})`);
-
-    script = script.replace(/!(.*)/g, (m, p1, p2) => `$harness.throws(${p1})`);
-
-    script = script.replace(/\$(exp|val|rep)(\d{0,3})/g, (match, p1) => {
-        if (lookup.has(match))
-            return `$harness.getValue(${lookup.get(match)})`;
-        return "";
-    });
-
-
-    return script;
-}
-
 export function compileExpressionHandler(
     expression_node: JSNode,
-    handler: ExpressionHandler,
+    handler: ExpressionHandler<JSNode>,
     setup_statements: JSNode[],
     teardown_statements: JSNode[],
     globals: Globals,
@@ -91,7 +73,7 @@ export function compileExpressionHandler(
 
         push(node) {
 
-            const id = "$val" + value_lookup.size;
+            const id = "$$" + value_lookup.size;
 
             value_lookup.set(id, value_lookup.size);
 
@@ -106,11 +88,11 @@ export function compileExpressionHandler(
 
         evaluate(expression_script) {
 
-            const id = "$exp" + value_lookup.size;
+            const id = "$$" + value_lookup.size;
 
             value_lookup.set(id, value_lookup.size);
 
-            instructions.push(stmt(`$harness.pushValue(${parseEvaluationScript(expression_script, value_lookup)});`));
+            instructions.push(stmt(`$harness.pushValue(${compileTestyScript(expression_script, globals)});`));
 
             return id;
         },
@@ -118,11 +100,11 @@ export function compileExpressionHandler(
 
         report(report_script) {
 
-            const id = "$rep" + value_lookup.size;
+            const id = "$$" + value_lookup.size;
 
             value_lookup.set(id, value_lookup.size);
 
-            instructions.push(stmt(`$harness.pushAndAssertValue(${parseEvaluationScript(report_script, value_lookup)});`));
+            instructions.push(stmt(`$harness.pushAndAssertValue(${compileTestyScript(report_script, globals)});`));
 
             return id;
         }
@@ -135,8 +117,6 @@ export function compileExpressionHandler(
     instructions.unshift(stmt(`$harness.setResultName(${dynamic_name || `"${(static_name || generated_name).replace(/\"/g, "\\\"")}"`})`));
 
     instructions.unshift(stmt(`$harness.pushTestResult(${handler.identifier});`));
-
-    //
 
     instructions.push(...teardown_statements);
 
@@ -163,3 +143,4 @@ export function getExpressionHandlerReportLines(test_info: TestInfo, globals: Gl
 
     }, globals.reporter);
 }
+

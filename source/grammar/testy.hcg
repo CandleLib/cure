@@ -1,0 +1,16 @@
+@IGNORE θws θnl
+
+<> testy → expression                   f:r { $sym1[0] }
+
+<> expression > binary                  f:r { env.completeCaptures($sym1, env.globals) }
+
+<> binary > unary op binary             f:r { ($sym3.unshift(...$sym1, ($sym2.captures = 2,  $sym2)), $sym3)  }
+    | unary                            
+
+<> unary > op unary                     f:r { [ $sym1, ...$sym2 ] }
+    | id                                f:r { [ $sym1 ] }
+    | \( expression \)                  f:r { $sym2 }
+
+<> op > ( g:sym | g:id )(+\' ) g:ws?    f:r { { sym:$sym1, precedence:env.getPrecedence($sym1, env.globals), captures:1 } }
+
+<> id > \$$ g:num                       f:r { parseInt($sym2) } 
