@@ -135,7 +135,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                     default:
 
-                        return value;
+                        return value.toString();
                 }
             },
 
