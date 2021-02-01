@@ -22,7 +22,7 @@ export function createTestsFromStringSource(source) {
     return assertion_sites;
 }
 
-function createGlobalsObject(report_constructor = NullReporter) {
+export function createGlobalsObject(report_constructor = NullReporter) {
 
     const { globals } = createGlobals(1000, "internal", false, false, false);
 
