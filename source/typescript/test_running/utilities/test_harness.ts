@@ -121,7 +121,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 return Infinity;
             },
 
-            makeLiteral: (value: any): string => {
+            makeLiteral(value: any): string {
 
                 if (value instanceof Error)
                     return `\n\n${value.stack}\n\n`;
@@ -171,7 +171,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 return false;
             },
 
-            equal: (a: any, b: any): boolean => {
+            equal(a: any, b: any): boolean {
 
                 if (typeof a == "object" && typeof b == "object" && a != b)
                     return equal(a, b);
@@ -179,7 +179,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 return a == b;
             },
 
-            externAssertion: (fn: Function): boolean => {
+            externAssertion(fn: Function): boolean {
                 try {
                     fn();
                 } catch (e) {
@@ -196,7 +196,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             },
 
 
-            addException: (e) => {
+            addException(e) {
                 markWriteStart();
                 if (e instanceof Error)
                     addErrorToActiveResult(e);
