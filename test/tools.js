@@ -7,7 +7,7 @@ import { loadTests } from "@candlefw/test/build/library/loading/load_tests.js";
 import { runTests } from "@candlefw/test/build/library/test_running/run_tests.js";
 import { DesktopRunner } from "@candlefw/test/build/library/test_running/runners/desktop_runner.js";
 import default_expression_handlers from "../build/library/compile/expression_handler/expression_handlers.js";
-import { loadExpressionHandler } from "../build/library/compile/expression_handler/expression_handler_manager.js";
+import { loadExpressionHandler } from "../build/library/compile/expression_handler/expression_handler_functions.js";
 import { createGlobals } from "../build/library/utilities/create_globals.js";
 import { createTestSuite } from "../build/library/utilities/create_test_suite.js";
 
