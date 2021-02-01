@@ -114,8 +114,8 @@ function createTestRig(
         INSPECT,
         BROWSER: BROWSER || false,
 
-        source_location: suite.url.toString(),
-        working_directory: globals.package_dir.toString(),
+        source_location: suite?.url?.toString() ?? "",
+        working_directory: globals?.package_dir?.toString() ?? "",
 
     };
 }
