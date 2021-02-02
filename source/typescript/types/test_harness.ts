@@ -106,7 +106,7 @@ export interface TestHarness {
       * @param {Function} fn - A function that will be called.
       * @returns {boolean} - `true` if the function threw an exception.
       */
-     throws: (value_range: [(...any: any[]) => any, ...any[]]) => boolean;
+     throws: (value_range: [(...any: any[]) => any, ...any[]]) => boolean | Promise<boolean>;
 
      /**
       * Test whether a function call throws an error
@@ -114,7 +114,7 @@ export interface TestHarness {
       * @param {Function} fn - A function that will be called.
       * @returns {boolean} - `true` if the function threw an exception.
       */
-     doesNotThrow: (value_range: [(...any: any[]) => any, ...any[]]) => boolean;
+     doesNotThrow: (value_range: [(...any: any[]) => any, ...any[]]) => boolean | Promise<boolean>;
 
      /**
       * Tests the equality of two values.
@@ -177,15 +177,6 @@ export interface TestHarness {
       * to the function.
       */
      inspect: (...vals: any[]) => void;
-
-     /**
-      * Throws an Error object whose message is the details of 
-      * the arguments serialized into a color formatted string.
-      * 
-      * @param {any[]} vals - Spread of all arguments passed 
-      * to the function.
-      */
-     inspectAndThrow: (...vals: any[]) => void;
 
      /**
       * Retrieve a range of values from the test queue

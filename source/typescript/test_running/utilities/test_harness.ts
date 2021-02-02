@@ -1,11 +1,13 @@
 import { decodeJSONSourceMap, SourceMap } from "@candlefw/conflagrate";
+import URL from "@candlefw/url";
 import { TransferableTestError } from "../../types/test_error";
 import { TestHarness, TestHarnessEnvironment } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
 import { createTransferableTestErrorFromException } from "../../utilities/test_error.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum";
 
-export const harness_internal_name = "$$";
+const AsyncFunction = (async function () { }).constructor;
+export const harness_internal_name = "$$h";
 
 export function createTestHarnessEnvironmentInstance(equal, util, performance: Performance, rst): TestHarnessEnvironment {
 
@@ -30,42 +32,6 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
         log_book: string[] = [],
 
         results: TestInfo[] = [],
-
-        /**
-         * If the first argument is a number, let "n", then this function will only produce an error if
-         * it has been called "n" times. Useful in loops when one wants to observe results after "n" iterations. 
-         * If the number is 0, then the arguments will be treated as if the second argument was the first, third was the second, and so on.
-         * 
-         * If the first argument is a number AND the second arg is a number , let "n", then the depth to which properties of 
-         * objects are inspected is limited to a depth of "n".
-         */
-        createInspectionError = (...args): Error => {
-            const
-                first = args[0],
-                second = args[1];
-
-            let limit = 8;
-
-            if (typeof first == "number" && args.length > 1) {
-                //if (harness.inspect_count++ < first)
-                //    return;
-
-                args = args.slice(1);
-
-                if (typeof second == "number" && args.length > 1) {
-
-                    limit = second;
-
-                    args = args.slice(1);
-                }
-            }
-
-            const e = new Error("cfw.test.harness.inspect intercept:\n    " + rst + args.map(val => util.inspect(val, false, limit, true)).join("    \n") + "\n");
-
-            e.stack = e.stack.split("\n").slice(3).join("\n");
-
-            return e;
-        },
 
         harness: TestHarness = <TestHarness>{
 
@@ -149,16 +115,22 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 }
             },
 
-            doesNotThrow(values: [(...any: any[]) => any, ...any[]]): boolean {
+            doesNotThrow(values: [(...any: any[]) => any, ...any[]]): boolean | Promise<boolean> {
                 try {
-                    return !harness.throws(values);
+                    const val = harness.throws(values);
+
+                    if (val instanceof Promise)
+                        return val;
+
+                    return !val;
+
                 } catch (e) {
                     harness.addException(e);
                     return false;
                 }
             },
 
-            throws(values: [(...any: any[]) => any, ...any[]]): boolean {
+            throws(values: [(...any: any[]) => any, ...any[]]): boolean | Promise<boolean> {
                 if (!Array.isArray(values))
                     values = [values];
 
@@ -168,8 +140,16 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     return false;
 
                 try {
-                    fn.apply(fn, values.slice(1));
+                    if (fn instanceof AsyncFunction) {
+                        return new Promise(async (res) => {
+                            await fn.apply(fn, values.slice(1));
+                            res(false);
+                        });
+                    } else {
+                        fn.apply(fn, values.slice(1));
+                    }
                 } catch (e) {
+                    console.log(e);
                     return true;
                 }
                 return false;
@@ -211,14 +191,38 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
             },
 
+            /**
+             * If the first argument is a number, let "n", then this function will only produce an error if
+             * it has been called "n" times. Useful in loops when one wants to observe results after "n" iterations. 
+             * If the number is 0, then the arguments will be treated as if the second argument was the first, third was the second, and so on.
+             * 
+             * If the first argument is a number AND the second arg is a number , let "n", then the depth to which properties of 
+             * objects are inspected is limited to a depth of "n".
+             */
             inspect(...args) {
                 markWriteStart();
 
-                log_book.push("aaa");
+                const
+                    first = args[0],
+                    second = args[1];
 
-                const e = createInspectionError(...args);
+                let limit = 8;
 
-                log_book.push(e.stack.toString());
+                if (typeof first == "number" && args.length > 1) {
+                    //if (harness.inspect_count++ < first)
+                    //    return;
+
+                    args = args.slice(1);
+
+                    if (typeof second == "number" && args.length > 1) {
+
+                        limit = second;
+
+                        args = args.slice(1);
+                    }
+                }
+
+                log_book.push("cfw.test.harness.inspect intercept:", ...args.flatMap(val => util.inspect(val, false, limit, true).split("\n")), "");
             },
 
 
@@ -228,10 +232,6 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
             and(a: any, b: any): boolean {
                 return (!!a && !!b);
-            },
-
-            inspectAndThrow(...args) {
-                throw createInspectionError(...args);
             },
 
             getValueRange(start: number, end: number) {
@@ -292,12 +292,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 active_test_result.location.source = { column, line, offset };
             },
 
-            setCompiledLocation(column, line, offset) {
-
-                markWriteStart();
-
-                //active_test_result.location.compiled = { column, line, offset };
-            },
+            setCompiledLocation(column, line, offset) { },
 
             pushTestResult(expression_handler_identifier: number = -1) {
                 const start = pf_now();
@@ -338,9 +333,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 const log_start = previous_active.log_start;
 
-                previous_active.logs.length = 0;
-
-                previous_active.logs.push(...log_book.slice(log_start - 1));
+                previous_active.logs.push(...log_book.slice(log_start));
 
                 log_book.length = log_start;
 
@@ -422,6 +415,8 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             data_queue.length = 0;
             source_map = null;
             previous_start = pf_now();
+
+            URL.GLOBAL = new URL(test_working_directory);
         },
 
         harness_initialSourceCodeString(test_source_code: string) {
