@@ -33,7 +33,7 @@ function createAssertSiteObject(
         SOLO,
         INSPECT,
         IS_ASYNC: AWAIT,
-        BROWSER,
+        BROWSER: !!BROWSER,
         error: null,
         imports: [],
         pos: <any>(original_assertion_expression || assertion_site_ast).pos,
@@ -200,10 +200,10 @@ export function compileAssertionGroupSite(
                     createAssertSiteObject(
                         name,
                         SKIP,
-                        SOLO,
-                        INSPECT,
+                        SOLO || prop.assertion_sites.some(s => s.SOLO),
+                        INSPECT || prop.assertion_sites.some(s => s.INSPECT),
                         prop.assertion_sites.some(s => s.IS_ASYNC),
-                        BROWSER,
+                        BROWSER || prop.assertion_sites.some(s => s.BROWSER),
                         node,
                         node,
                         prop.stmt,
@@ -222,10 +222,10 @@ export function compileAssertionGroupSite(
 
             for (const assertion_site of prop.assertion_sites) {
                 assertion_site.static_name = createHierarchalName(name, assertion_site.static_name);
-                assertion_site.BROWSER = assertion_site.BROWSER || BROWSER;
-                assertion_site.SOLO = assertion_site.SOLO || SOLO;
-                assertion_site.RUN = assertion_site.RUN || !SKIP;
-                assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
+                assertion_site.BROWSER = assertion_site.BROWSER || BROWSER || assertion_site.BROWSER;
+                assertion_site.SOLO = assertion_site.SOLO || SOLO || assertion_site.SOLO;
+                assertion_site.RUN = assertion_site.RUN || !SKIP || assertion_site.RUN;
+                assertion_site.INSPECT = assertion_site.INSPECT || INSPECT || assertion_site.INSPECT;
                 assertion_site.origin = state.ast;
             }
 
