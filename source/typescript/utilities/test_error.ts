@@ -1,7 +1,4 @@
-import {
-    decodeJSONSourceMap, getSourceLineColumn,
-    traverse
-} from "@candlefw/conflagrate";
+import { decodeJSONSourceMap, getSourceLineColumn, traverse } from "@candlefw/conflagrate";
 import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/wind";
 import { AssertionSite } from "../types/assertion_site.js";
@@ -14,22 +11,21 @@ import { TestInfo } from "../types/test_info.js";
 import { TestSuite } from "../types/test_suite.js";
 import parser from "./parser.js";
 import { THROWABLE_TEST_OBJECT_ID } from "./throwable_test_object_enum.js";
+import { createTest__cfwtest } from "../test_running/utilities/create_test_function.js";
 
 
 
-/* DO NOT MOVE OR REMOVE THE FOLLOWING LINE ----------------- DO NOT MOVE OR REMOVE THE FOLLOWING LINES */
-// <-- EXCEPTION TO ABOVE RULE: Ensure these lines (including comments) are on line numbers 14, 15, 16, 17
-export function testThrow() { /* ---------------- */ throw new Error("FOR TESTING"); };
-/* END -------------------------------------------------------------------------------------------- END */
-
+const test_function_name = createTest__cfwtest.name;
 /**
  * 
  * @param node 
  */
 
 function Call_Originated_In_Test_Source(node: StackTraceAst) {
+
+    console.log(node);
     return node.type == "call"
-        && node.call_id == "Object.eval"
+        && (node.call_id == "Object.eval" || node.call_id == "asyncObject.eval")
         && node.sub_stack[0].type == "call"
         && node.sub_stack[0].call_id == "eval"
         && node.sub_stack[0]?.sub_stack?.[0]?.type == "call"
@@ -117,7 +113,7 @@ export function createTransferableTestErrorFromException(
 
         //only dig into files that are at the same root directory
 
-        const { FAILED, result } = parser(stack.trim(), { URL: URL });
+        const { FAILED, result, error_message } = parser(stack.trim(), { URL: URL });
 
         const [stack_ast] = <StackTraceAst[][]>result;
 
@@ -142,8 +138,8 @@ export function createTransferableTestErrorFromException(
                             source_map
                         ));
 
-                    //column++;
-                    //line++;
+
+                    line--;
 
                     CAN_RESOLVE_TO_SOURCE = true;
                     stack_location = src + ":" + (line + 1) + ":" + column;
@@ -175,19 +171,21 @@ export function createTransferableTestErrorFromException(
 
                     line--;
 
-                    stack_location = src + ":" + (line + 1) + ":" + column;
+                    stack_location = "    at package file " + src + ":" + (line + 1) + ":" + column;
 
                     break;
                 }
             }
 
-        return createTransferableTestError(
+        const transfer_error = createTransferableTestError(
             src,
             message.split("\n").pop(),
             { line, column },
-            (stack_location).split("\n"),
+            (stack_location + "\n" + stack.split("\n").slice(1).join("\n")).split("\n"),
             CAN_RESOLVE_TO_SOURCE
         );
+
+        return transfer_error;
 
     } else {
         return createTransferableTestError(
@@ -251,7 +249,7 @@ export async function blame(test_error: TransferableTestError, harness: TestHarn
 
     return [source_url + ":" + line + ":" + column, ...string.split("\n")];
 }
-}
+
 
 export async function blameAssertionSite(test: Test, test_result: TestInfo, harness: TestHarness) {
 
