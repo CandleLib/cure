@@ -1,4 +1,4 @@
-import { exp, JSAssignmentExpression, JSCallExpression, JSEqualityExpression, JSNode, JSNodeClass, JSNodeType, JSRelationalExpression, JSUnaryExpression, renderCompressed as $r } from "@candlefw/js";
+import { exp, JSAssignmentExpression, JSAwaitExpression, JSCallExpression, JSEqualityExpression, JSInstanceOfExpression, JSNode, JSNodeClass, JSNodeType, JSRelationalExpression, JSUnaryExpression, renderCompressed as $r } from "@candlefw/js";
 import { fail, rst, valA } from "../../reporting/utilities/colors.js";
 import { ExpressionHandler } from "../../types/expression_handler";
 
@@ -29,7 +29,7 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
             queue.push(`"${$r(right).replace(/\"/g, "\\\"")}"`);
             const b = queue.push(right);
             queue.push(`'${node.symbol.replace(/\"/g, "\\\"")}'`);
-            const e = queue.evaluate(`${b} ${node.symbol} ${a}`);
+            const e = queue.evaluate(`${a} ${node.symbol} ${b}`);
             queue.report(e);
         },
 
@@ -58,7 +58,32 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
         },
     },
     /**
-    * Call Expression Should Not Throw
+    * Instance of Expression
+    */
+    <ExpressionHandler<JSInstanceOfExpression>>{
+
+        filter: JSNodeType.InstanceOfExpression,
+
+        confirmUse: _ => true,
+
+        build: (node, queue) => {
+            const [left, right] = node.nodes;
+
+            queue.push(`"${$r(left).replace(/\"/g, "\\\"")}"`);
+            const a = queue.push(left); // Push an expression to the evaluation stack
+            queue.push(`"${$r(right).replace(/\"/g, "\\\"")}"`);
+            const b = queue.push(right);
+            const e = queue.evaluate(`${b} ==== ${a}`);
+            queue.report(e);
+        },
+
+        print: (queue, reporter) => {
+            return [];
+        },
+    },
+
+    /**
+    * Call Expression [ call() ]  Should Not Throw
     */
     <ExpressionHandler<JSCallExpression>>{
 
@@ -74,15 +99,16 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
                 vars = args.nodes.map(arg => queue.push(arg)),
                 first = fn, last = vars.pop();
 
-            queue.report(`noThrow{${first},${last}}`);
+            queue.report(`noThrow{${first},${last || first}}`);
         },
 
         print: (queue, reporter) => {
             return [];
         },
     },
+
     /**
-    * Call Expression Should Throw
+    * Call Expression [ !call() ] Should Throw
     */
     <ExpressionHandler<JSUnaryExpression>>{
 
@@ -105,8 +131,34 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
             return [];
         },
     },
+
     /**
-    * Call Expression Should Throw
+    * Await Expression [ !call() ] Should not throw
+    */
+    <ExpressionHandler<JSAwaitExpression>>{
+
+        filter: JSNodeType.AwaitExpression,
+
+        confirmUse: _ => true,
+
+        build: (node, queue) => {
+            const
+                [name, args] = (<JSCallExpression>node.nodes[0]).nodes,
+                str = queue.push(`"${$r(name).replace(/\"/g, "\\\"")}"`),
+                fn = queue.push(name),
+                vars = args.nodes.map(arg => queue.push(arg)),
+                first = fn, last = vars.pop();
+
+            queue.report(`!{${first},${last}}`);
+        },
+
+        print: (queue, reporter) => {
+            return [];
+        },
+    },
+
+    /**
+    * Assignment should throw
     */
     <ExpressionHandler<JSAssignmentExpression>>{
 
