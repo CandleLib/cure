@@ -318,8 +318,9 @@ export class BasicReporter implements Reporter {
 
                             suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
 
-                            for (const log of test_result.logs)
-                                suite.strings.push(offsetB + "LOG:", ...log.split("\n").map(s => offsetB + s), "");
+                            if (test_result.logs.length > 0)
+
+                                suite.strings.push(offsetB + "console.log calls:", ...test_result.logs.map(s => offsetB + "  " + s), "");
                         }
 
                     }
