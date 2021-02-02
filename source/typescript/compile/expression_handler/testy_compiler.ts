@@ -3,10 +3,10 @@ import { Globals } from "../../types/globals.js";
 import testy_parser from "../../utilities/testy_parser.js";
 
 interface Operator {
-    action_name: string;
+    action?: ((a: string, b: string) => string) | ((a: string) => string);
+    action_call_ref?: string;
     inputs: 1 | 2;
     precedence: number;
-    function?: ((a: any, b: any) => any) | ((a: any) => any);
 }
 
 /**
@@ -35,63 +35,81 @@ type TestyObjects =
     | string;
 
 
-const default_operators = {
+const default_operators = <{ [operator: string]: Operator; }>{
     "<": {
-        action_name: `${harness_internal_name}.lessThan`,
+        action: (a, b) => `${a}<${b}`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     ">": {
-        action_name: `${harness_internal_name}.greaterThan`,
+        action: (a, b) => `${a}>${b}`,
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
+    ">=": {
+        action: (a, b) => `${a}>=${b}`,
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
+    "<=": {
+        action: (a, b) => `${a}<=${b}`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "==": {
-        action_name: `${harness_internal_name}.equal`,
+        action_call_ref: `${harness_internal_name}.equal`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "===": {
-        action_name: `${harness_internal_name}.equal`,
+        action: (a, b) => `${a}===${b}`,
+        BUILT_IN: true,
+        precedence: 0,
+        inputs: 2
+    },
+    "====": {
+        action: (a, b) => `${a} instanceof ${b}`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "!==": {
-        action_name: `${harness_internal_name}.notEqual`,
+        action: (a, b) => `${a}!==${b}`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "!=": {
-        action_name: `${harness_internal_name}.notEqual`,
+        action_call_ref: `${harness_internal_name}.notEqual`,
         BUILT_IN: true,
         precedence: 0,
         inputs: 2
     },
     "!": {
-        action_name: `${harness_internal_name}.throws`,
+        action_call_ref: `${harness_internal_name}.throws`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
     },
     "noThrow": {
-        action_name: `${harness_internal_name}.doesNotThrow`,
+        action_call_ref: `${harness_internal_name}.doesNotThrow`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
     },
     "&&": {
-        action_name: `${harness_internal_name}.and`,
+        action: (a, b) => `${a}&&${b}`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
     },
     "||": {
-        action_name: `${harness_internal_name}.or`,
+        action: (a, b) => `${a}||${b}`,
         BUILT_IN: true,
         precedence: 4,
         inputs: 1
@@ -134,8 +152,10 @@ function completeCaptures(array: TestyObjects[], globals: Globals) {
 
         if (obj.captures == 1)
             output = compileUnaryOperator(array, obj, default_operators[obj.sym]);
-        else
+        else {
+            if (!default_operators[obj.sym]) throw new Error(`Cannot find operator for [${obj.sym}] symbol`);
             output = compileBinaryOperator(array, obj, default_operators[obj.sym]);
+        }
 
 
     }
@@ -148,10 +168,15 @@ function completeCaptures(array: TestyObjects[], globals: Globals) {
 function compileBinaryOperator(array: TestyObjects[], obj: OperatorReference, operator: Operator) {
 
     const
-        refA = array[obj.index - 1],
-        refB = array[obj.index + 1];
+        refA = <string>array[obj.index - 1],
+        refB = <string>array[obj.index + 1];
 
-    let output = `${operator.action_name}(${refA}, ${refB})`;
+    let output;
+
+    if (operator.action_call_ref)
+        output = `${operator.action_call_ref}(${refA}, ${refB})`;
+    else
+        output = `(${operator.action(refA, refB)})`;
 
     array[obj.index + 1] = output;
     array[obj.index] = output;
@@ -164,7 +189,7 @@ function compileUnaryOperator(array: TestyObjects[], obj: OperatorReference, ope
     const
         ref = array[obj.index + 1];
 
-    let output = `${operator.action_name}(${ref})`;
+    let output = `${operator.action_call_ref}(${ref})`;
 
     array[obj.index] = output;
     array[obj.index + 1] = output;
