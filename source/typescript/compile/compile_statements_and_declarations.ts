@@ -1,15 +1,16 @@
 import { JSNode } from "@candlefw/js";
 import { StatementReference } from "../types/statement_props";
 export function compileStatementsAndDeclarations(
-    stmt_ref: StatementReference,
+    statement_reference: StatementReference,
     statement_index: number,
     statement_references: StatementReference[] = [],
     //Only function declarations are hoisted.
     declaration_references: StatementReference[] = []
 ) {
 
+
     const
-        active_refs: Set<string> = new Set(stmt_ref.required_references.values()),
+        active_refs: Set<string> = new Set(statement_reference.required_references.values()),
         declared_refs: Set<string> = new Set(),
         statements: JSNode[] = [];
 
@@ -49,6 +50,7 @@ export function compileStatementsAndDeclarations(
 
         let INCLUDE_STATEMENT = false;
 
+
         for (const id_reference of active_refs.values()) {
             if (
                 declaration_ref.required_references.has(id_reference)
@@ -74,5 +76,5 @@ export function compileStatementsAndDeclarations(
     for (const ref of declared_refs.values())
         active_refs.delete(ref);
 
-    return { stmts: statements.reverse(), imports: active_refs };
+    return { required_statements: statements.reverse(), imports: active_refs };
 }

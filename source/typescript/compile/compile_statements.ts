@@ -1,5 +1,5 @@
 import { copy, traverse } from "@candlefw/conflagrate";
-import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, JSNodeTypeLU, JSStatementClass, tools } from "@candlefw/js";
+import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, JSNodeTypeLU, JSStatementClass, renderWithFormatting, tools } from "@candlefw/js";
 import { AssertionSite, AssertionSiteClosure } from "../types/assertion_site.js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
@@ -46,12 +46,14 @@ export function compileTestsFromSourceAST(
 
     captureFunctionParameterNames(options);
 
+    captureForLoopDeclarations(options);
+
     walkJSNodeTree(options, LEAVE_ASSERTION_SITE, OUTER_SEQUENCED);
 
-    return compileRigsFromDeclarationsAndStatementsAndTestSites(options);
+    return compileRigsFromDeclarationsStatementsAndTestSites(options);
 }
 
-function compileRigsFromDeclarationsAndStatementsAndTestSites({
+function compileRigsFromDeclarationsStatementsAndTestSites({
     ast,
     test_closures,
     statement_references,
@@ -63,10 +65,11 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
 
     const assertion_sites = [];
 
-    for (const { assertion_site, statement_index: offset, statement_reference } of test_closures) {
+    for (const { assertion_site, statement_index, statement_reference } of test_closures) {
 
-        const { stmts: required_statements, imports }
-            = compileStatementsAndDeclarations(statement_reference, offset, statement_references, declaration_references);
+
+        const { required_statements, imports }
+            = compileStatementsAndDeclarations(statement_reference, statement_index, statement_references, declaration_references);
 
         assertion_site.ast = <JSNode>{
             type: JSNodeType.Script,
@@ -84,7 +87,7 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
         assertion_sites.push(assertion_site);
     }
 
-    for (const declaration_reference of declaration_references)
+    for (const declaration_reference of declaration_references) {
 
         if (declaration_reference.required_references.size > 0)
 
@@ -97,6 +100,7 @@ function compileRigsFromDeclarationsAndStatementsAndTestSites({
                 global_reference_ids
                     = new setUnion(global_reference_ids,
                         declaration_reference.required_references);
+    }
 
     return <StatementReference>{
         stmt: ast,
@@ -253,12 +257,12 @@ export function compileEnclosingStatement(
         }
 
         assertion_site.origin = node_containing_block;
+
     }
 
     packageAssertionSites(state, stmt_ref);
 
-    if (stmt_ref.stmt.nodes.length > 0)
-        state.AWAIT = stmt_ref.AWAIT || state.AWAIT;
+    state.AWAIT = stmt_ref.AWAIT || state.AWAIT;
 
     return null;
 }
@@ -272,20 +276,32 @@ export function mergeStatementReferencesAndDeclarations(
 
 function captureFunctionParameterNames(state: CompilerState) {
 
-    const { ast: AST } = state;
+    const { ast } = state;
 
-    if (AST.type == JSNodeType.FunctionDeclaration
+    if (ast.type == JSNodeType.FunctionDeclaration
         ||
-        AST.type == JSNodeType.FunctionExpression
+        ast.type == JSNodeType.FunctionExpression) {
+
+        const [id_node] = ast.nodes;
+
+        if (id_node)
+            state.global_declaration_ids.add(id(id_node));
+    }
+}
+
+
+function captureForLoopDeclarations(state: CompilerState) {
+
+    const { ast } = state;
+
+    if (ast.type == JSNodeType.ForInStatement
         ||
-        AST.type == JSNodeType.ArrowFunction) {
-        if (AST.type !== JSNodeType.ArrowFunction) {
+        ast.type == JSNodeType.ForOfStatement
+        ||
+        ast.type == JSNodeType.ForStatement) {
 
-            const [id_node] = AST.nodes;
-
-            if (id_node)
-                state.global_declaration_ids.add(id(id_node));
-        }
+        for (const { node } of jst(ast, 5).filter("type", JSNodeType.IdentifierBinding))
+            setGlobalDeclarations(node, state);
     }
 }
 
@@ -359,7 +375,7 @@ export function packageAssertionSites(state: CompilerState, stmt_ref: StatementR
 
         if (assertion_site.import_names.size > 0) {
             packaged_stmt_ref = Object.assign({}, stmt_ref);
-            packaged_stmt_ref.required_references = new setUnion(stmt_ref.required_references, assertion_site.import_names);
+            packaged_stmt_ref.required_references = new setUnion(stmt_ref.required_references, new setDiff(assertion_site.import_names, stmt_ref.declared_variables));
         }
 
         state.test_closures.push(<AssertionSiteClosure>{
