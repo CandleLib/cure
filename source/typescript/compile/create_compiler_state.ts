@@ -6,7 +6,8 @@ import { ImportModule } from "../types/imports.js";
 export function createCompilerState(
     globals: Globals,
     ast: JSNode,
-    Imports: ImportModule[]
+    Imports: ImportModule[],
+    suite_name = ""
 ): CompilerState {
     return <CompilerState>{
         globals,
@@ -18,6 +19,7 @@ export function createCompilerState(
         statement_references: [],
         declaration_references: [],
         AWAIT: false,
-        FORCE_USE: false
+        FORCE_USE: false,
+        suite_name
     };
 }

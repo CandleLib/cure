@@ -20,4 +20,9 @@ export type CompilerState = {
     declaration_references: StatementReference[];
 
     test_closures: AssertionSiteClosure[];
+    /**
+     * Hierarchal string of the names of the chain of assertion_groups 
+     * this statement is a part of.
+     */
+    suite_name: string;
 };

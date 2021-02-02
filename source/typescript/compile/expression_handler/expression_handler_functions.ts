@@ -56,6 +56,7 @@ export function compileExpressionHandler(
     globals: Globals,
     dynamic_name: string,
     static_name: string,
+    suite_name: string
 ): { nodes: JSNode[], name; } {
     const instructions: JSNode[] = [];
 
@@ -114,7 +115,7 @@ export function compileExpressionHandler(
     // harness.pushTestResult...
     // harness.setResultName...
 
-    instructions.unshift(createSetNameInstruction(generated_name, static_name, dynamic_name));
+    instructions.unshift(createSetNameInstruction(generated_name, static_name, dynamic_name, suite_name));
 
     instructions.unshift(createPushTestResultInstruction(handler));
 

@@ -1,5 +1,6 @@
 import { Test } from "../../types/test.js";
 import { TestHarness } from "../../types/test_harness.js";
+import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 
 const AsyncFunction = (async function () { }).constructor;
 export async function createTestFunctionFromTestSource(
@@ -12,7 +13,7 @@ export async function createTestFunctionFromTestSource(
 
     harness.pushTestResult();
 
-    harness.setResultName("Could Not Load Imports");
+    harness.setResultName(createHierarchalName(test.name, "Could Not Load Imports"));
 
     await loadModules(test, ImportedModules, ld);
 
@@ -21,7 +22,7 @@ export async function createTestFunctionFromTestSource(
 
     harness.pushTestResult();
 
-    harness.setResultName("Could Not Create Test Function");
+    harness.setResultName(createHierarchalName(test.name, "Could Not Create Test Function"));
 
     const compiled_fn = createTest__cfwtest(test, createAddendum(test.import_module_sources, test), harness, ImportedModules);
 

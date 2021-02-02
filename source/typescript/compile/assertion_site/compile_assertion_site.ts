@@ -95,7 +95,8 @@ export function compileAssertionSite(
                     [],
                     state.globals,
                     name_expression ? renderCompressed(name_expression) : "",
-                    static_name
+                    static_name,
+                    state.suite_name
                 );
 
                 test_name = name;
@@ -168,8 +169,6 @@ export function compileAssertionGroupSite(
 ): JSNode {
 
     const
-        { statement_references: statements, test_closures: tests }
-            = state,
 
         { SEQUENCED, BROWSER, SOLO, timeout_limit, name, INSPECT, SKIP }
             = parseAssertionSiteArguments(node),
@@ -183,7 +182,7 @@ export function compileAssertionGroupSite(
         block: JSNode = <JSNode>jstBreadth(node, 4).filter("type", JSNodeType.BlockStatement, JSNodeType.FunctionBody).run(true)[0],
 
         prop = block ? compileEnclosingStatement(
-            state,
+            Object.assign({}, state, { suite_name: createHierarchalName(state.suite_name, name) }),
             block,
             LEAVE_ASSERTION_SITE,
             OUTER_SCOPE_IS_SEQUENCED,
@@ -233,7 +232,7 @@ export function compileAssertionGroupSite(
 
             if (prop.stmt.nodes.length > 0) {
                 state.AWAIT = prop.AWAIT || state.AWAIT;
-                statements.push(prop);
+                state.statement_references.push(prop);
             }
         }
     }

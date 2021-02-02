@@ -1,14 +1,13 @@
+import { traverse } from "@candlefw/conflagrate";
+import { ext, JSNodeType, parser } from "@candlefw/js";
+import URL from "@candlefw/url";
 import fs from "fs";
-
-import { runTests } from "../test_running/run_tests.js";
 import { rst } from "../reporting/utilities/colors.js";
+import { runTests } from "../test_running/run_tests.js";
+import { Globals } from "../types/globals.js";
 import { TestSuite } from "../types/test_suite";
 import { fatalExit } from "../utilities/fatal_exit.js";
-import URL from "@candlefw/url";
-import { parser, JSNodeType, ext } from "@candlefw/js";
-import { traverse, filter } from "@candlefw/conflagrate";
-import { Globals } from "../types/globals.js";
-import { createTestError } from "../utilities/library_errors.js";
+
 
 const fsp = fs.promises;
 
@@ -21,7 +20,6 @@ function createFileWatcher(path: URL, globals: Globals) {
         globals.reporter.notify("Watching", path + "");
 
         const watcher = fs.watch(path_string, async function () {
-
 
             if (!globals.flags.PENDING) {
 
@@ -111,8 +109,9 @@ function getPackagePath(path: string, globals: Globals)
     return { IS_PACKAGE_PATH, path };
 }
 
+
 /**
- * Handles the creation of file watchers for relative imported modules.
+ * Handles the creation of file watchers for files imported with a relative path
  */
 export async function handleWatchOfRelativeDependencies(suite: TestSuite, globals: Globals) {
 

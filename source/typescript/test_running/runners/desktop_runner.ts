@@ -6,7 +6,7 @@ import { DesktopWorkerHandle } from "../../types/desktop_worker_handle";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info";
 import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/test_runner";
-import { createHierarchalName } from "../../utilities/name_hierarchy";
+import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { createTestErrorFromString } from "../../utilities/test_error.js";
 
 export class DesktopRunner implements TestRunner {

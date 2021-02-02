@@ -5,7 +5,7 @@ export function setNameDelimiter(delimiter: string) {
 }
 
 export function createHierarchalName(...names: string[]): string {
-    return names.join("-->");
+    return names.filter(_ => !!_).join(name_delimiter);
 }
 
 export function splitHierarchalName(names: string): string[] {

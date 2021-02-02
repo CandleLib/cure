@@ -61,16 +61,20 @@ function syntaxHighlight(str: string, prop_name, node: JSNode): string {
  */
 export async function createInspectionMessage(result: TestInfo, test: Test, suite: TestSuite, reporter: Reporter): Promise<string> {
 
-    let errors = [];
-
-    const duration = result.clipboard_end - result.previous_clipboard_end;
-
     const
+        duration = result.clipboard_end - result.previous_clipboard_end,
+
+        origin = suite.url + "",
+
         { msgD, pass, symD, valB, symC, symA, valA } = reporter.colors,
         { line, column } = test.pos,
         str_col = valA,
         num_col = symA,
         str = `${rst}
+
+INSPECT -----------------------------------------------------------------------
+Test Name: ${test.name}
+Result Name: ${result.name}
 Duration: ${num_col + duration + rst}
 Tracking start time: ${num_col + result.clipboard_start + rst}
 Tracking end time: ${num_col + result.clipboard_end + rst}
@@ -82,19 +86,17 @@ Passed: ${num_col + result.PASSED + rst}
 Asynchronous Test: ${num_col + test.IS_ASYNC + rst}
 Browser Test: ${num_col + !!test.BROWSER + rst}
 
-Source File: ${str_col + suite.url + rst}
-
 Imports:
     ${test.import_arg_specifiers.map(({ module_name, module_specifier }) => symD + module_name + rst + " from \n        " + pass + module_specifier + rst).join("\n    ")
             || pass + "none"}
 
 -------------------------------------------------------------------------------
-
-${getLexerFromLineColumnString(line + 1, column, suite.data).errorMessage("Source Location", suite.origin).split("\n").join(("\n    "))}
+    Source: ${str_col}file://${origin}:${line + 1}:${column}${rst}
+    ${getLexerFromLineColumnString(line + 1, column, suite.data).blame().split("\n").join("\n    ")}
 
 -------------------------------------------------------------------------------
 
-Test Rig Source Code:
+    Test Rig Source Code:
 
     ${renderWithFormatting(parser(test.source).ast, <any>format_rules, syntaxHighlight).trim().split("\n").join("\n    ")}
 

@@ -20,12 +20,11 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
     const
         test: Test = Object_Is_TestResult(result) ? result.test : result,
         name = Object_Is_TestResult(result) ? result.name : createHierarchalName(result.name),
-        name_split = splitHierarchalName(name),
-        test_name = name_split.pop();
+        suite_names = splitHierarchalName(result.name),
+        test_name = suite_names.pop();
 
     let
         origin = "CandleFW/test",
-        suite_name = "",
         suite_sub_names = [];
 
     if (globals.suites) {
@@ -36,22 +35,17 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
 
             origin = suite.origin;
 
-            suite_name = (suite.name ?? "undefined")
+            const origin_name = (suite.name ?? "undefined")
                 .replace(/[_-]/g, " ")
                 .split(" ")
                 .map(d => d[0].toLocaleUpperCase() + d.slice(1).toLocaleLowerCase())
                 .join(" ");
 
-            suite_sub_names = name_split;
+            suite_names.unshift(origin_name);
         }
     }
 
-    if (!Object_Is_TestResult(result))
-        suite_sub_names.push(test_name);
-    else
-        suite_sub_names.push(splitHierarchalName(result.test.name).pop());
-
-    return { suites: [origin, suite_name, ...suite_sub_names].filter(_ => _), name: test_name };
+    return { suites: [origin, ...suite_names].filter(_ => _), name: test_name };
 }
 
 
@@ -260,6 +254,8 @@ export class BasicReporter implements Reporter {
 
             strings = [await this.update(results, globals, terminal, true)],
 
+            suites = [...globals.suites.values()],
+
             { fail, msgA, pass, objB } = this.colors;
 
         let
@@ -316,7 +312,7 @@ export class BasicReporter implements Reporter {
 
                         if (test.INSPECT) {
 
-                            suite.strings.push(...(await createInspectionMessage(test_result, test, suite, this)).split("\n").map(str => offsetB + str));
+                            suite.strings.push(...(await createInspectionMessage(test_result, test, suites[test.suite_index], this)).split("\n").map(str => offsetB + str));
 
                             if (test_result.logs.length > 0)
 

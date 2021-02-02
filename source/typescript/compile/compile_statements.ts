@@ -38,11 +38,12 @@ export function compileTestsFromSourceAST(
     globals: Globals,
     AST: JSNode,
     Imports: ImportModule[],
+    suite_names = "",
     LEAVE_ASSERTION_SITE = false,
     OUTER_SEQUENCED = false,
 ): StatementReference {
 
-    const options = createCompilerState(globals, AST, Imports);
+    const options = createCompilerState(globals, AST, Imports, suite_names);
 
     captureFunctionParameterNames(options);
 
@@ -226,7 +227,13 @@ export function compileEnclosingStatement(
     const
         receiver = { ast: null },
 
-        stmt_ref = compileTestsFromSourceAST(state.globals, node_containing_block, state.imported_modules, LEAVE_ASSERTION_SITE, OUT_SEQUENCED);
+        stmt_ref = compileTestsFromSourceAST(state.globals,
+            node_containing_block,
+            state.imported_modules,
+            state.suite_name,
+            LEAVE_ASSERTION_SITE,
+            OUT_SEQUENCED,
+        );
 
     if (RETURN_PROPS_ONLY) return stmt_ref;
 
@@ -341,7 +348,7 @@ function compileMiscellaneous(
     FORCE_USE: boolean = false
 ) {
 
-    const statement_reference = compileTestsFromSourceAST(state.globals, node, state.imported_modules);
+    const statement_reference = compileTestsFromSourceAST(state.globals, node, state.imported_modules, state.suite_name);
 
     mergeStatementReferencesAndDeclarations(state, statement_reference);
 
