@@ -4,24 +4,10 @@
  * SEQUENCE : { ... } labeled blocks;
  */
 
-import { compileRawTestRigs } from "@candlefw/test/build/library/compile/compile_statements.js";
-import { InitializeReporterColors } from "@candlefw/test/build/library/utilities/create_test_frame.js";
-
 import URL from "@candlefw/url";
+import { createTestsFromStringSource } from "./tools.js";
 
-import { parser, renderWithFormatting } from "@candlefw/js";
+const source = await (URL.resolveRelative("./test/data/sequence_test_spec.js")).fetchText();
+const result = createTestsFromStringSource(source);
 
-import { BasicReporter } from "@candlefw/test";
-
-const source = await(URL.resolveRelative("./data/sequence_test_spec.js")).fetchText(),
-    imports = [],
-    tests = [],
-    reporter = new BasicReporter;
-
-InitializeReporterColors(reporter);
-
-const result = compileRawTestRigs(parser(source).ast, reporter, imports);
-
-// compileStatementsNew expects a global object and  
-assert(result.raw_rigs.length == 1);
-assert(result.raw_rigs[0].test_maps.length == 11);
+assert(result.length == 1);

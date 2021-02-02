@@ -5,6 +5,7 @@ import { NullReporter } from "../build/library/main.js";
 assert("0 Basic built in assertion should pass", 2 + 2 == 4);
 
 var t = 0;
+
 assert("1 Basic built in assertion", t = 4);
 
 assert("2 Chai assert test 1 - Undeclared variable error", assert.equal(a + 1, 2));

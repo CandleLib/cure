@@ -4,8 +4,7 @@ import { createTestsFromStringSource, createTestSuiteFromSource, getSuiteTestOut
 
 await URL.server();
 
-const source = await (URL.resolveRelative("./data/dynamic_test.js")).fetchText();
-
+const source = await (URL.resolveRelative("./test/data/dynamic_test.js")).fetchText();
 const assertion_sites = createTestsFromStringSource(source);
 
 assert("Rigs object is not undefined", assertion_sites !== undefined);
@@ -21,7 +20,6 @@ assert(suite.tests.length == 8);
 
 const outcome = await getSuiteTestOutcomeFromSource(source);
 
-assert(outcome != null);
 assert(outcome.FAILED == true);
 assert("32 Test Results have been dynamically generated", outcome.results.length == 32);
 assert("32 Test Names have been dynamically generated", outcome.results.map(r => r.name) == [

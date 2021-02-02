@@ -5,7 +5,7 @@ while (i < 4) {
     assert(name("While B" + i++), i == 2);
 }
 
-for (let i = 0; i < 4; i++) {
+for (var i = 0; i < 4; i++) {
     assert(name("For(;;) A" + i), i == 2);
     assert(name("For(;;) B" + i), i == 2);
 }

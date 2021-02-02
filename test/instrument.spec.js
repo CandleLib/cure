@@ -1,28 +1,19 @@
-"Instrumentation Spec";
-
-import { instrument, processPackageData, createSpecFile } from "../build/library/utilities/instrument.js";
+import URL from "@candlefw/url";
 import { getPackageJsonObject as getPackageJSON } from "@candlefw/wax";
 import fs from "fs";
 import path from "path";
-import URL from "@candlefw/url";
-
+import { instrument, processPackageData } from "../build/library/utilities/instrument.js";
 
 URL.toString();
 
-"Gets package.json";
-{
-    "Loads package.json";
-    assert((await getPackageJSON()).FOUND == true);
+assert_group("Gets package.json", sequence, () => {
 
-    "Loads @candlefw/package.json";
-    assert((await getPackageJSON()).package.name == "@candlefw/test");
+    assert("Loads package.json", (await getPackageJSON()).FOUND == true);
+    assert("Loads @candlelib/package.json", (await getPackageJSON()).package.name == "@candlelib/test");
+    assert("The directory that package.json is found in should be the same as CWD/PWD", (await getPackageJSON()).package_dir == process.cwd() + "/");
+});
 
-    "The directory that package.json is found in should be the same as CWD/PWD";
-    assert((await getPackageJSON()).package_dir == process.cwd() + "/");
-}
-
-{
-    "Processes package.json";
+assert_group("Processes package.json", sequence, () => {
 
     "processPackageData throws if the package is not a module: commonjs";
     assert(!processPackageData({ main: "test", type: "commonjs", name: "@candlefw/test" }));
@@ -38,14 +29,10 @@ URL.toString();
     const { package: tst_pkg } = await getPackageJSON();
     processPackageData(pkg, tst_pkg);
     assert(pkg.devDependencies["@candlefw/test"] == tst_pkg.version);
-}
-
-{
-    "Creates spec file";
-}
+});
 
 
-assert_group("Full Sequence", sequence, () => {
+assert_group(skip, "Create Spec File", sequence, () => {
     "Simulated Test"; "#";
 
     const
@@ -58,9 +45,9 @@ assert_group("Full Sequence", sequence, () => {
         await fsp.mkdir(dir, { recursive: true });
         await fsp.mkdir(path.join(dir, build_dir), { recursive: true });
         await fsp.copyFile("./package.json", path.join(dir, "package.json"));
-        await fsp.copyFile(path.join(build_dir, "main.js"), path.join(dir, build_dir, "main.js"));
+        await fsp.copyFile(path.join(build_dir, "test.js"), path.join(dir, build_dir, "test.js"));
     } catch (e) {
-        $harness.addException(e);
+        $$h.addException(e);
         /*  Don't really care if this fails. 
             Likely the directory and file 
             already exists */ }

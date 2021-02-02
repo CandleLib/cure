@@ -16,7 +16,7 @@ import { createTestsFromStringSource } from "./tools.js";
 
 
 //*
-const source = await (URL.resolveRelative("./data/advance_sequence_spec.js")).fetchText();
+const source = await (URL.resolveRelative("./test/data/advance_sequence_spec.js")).fetchText();
 
 const assertion_sites = createTestsFromStringSource(source);
 

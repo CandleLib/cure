@@ -1,6 +1,6 @@
 
 
-"Tests outside a SEQUENCE:{} relying on side effects of previous tests should fail"; "#";
+"Tests outside a sequence relying on side effects of previous tests should fail";
 
 let i = 1;
 
@@ -15,8 +15,8 @@ assert(++i == 5);
 assert(++i == 6);
 
 
-SEQUENCE: {
-    "Tests inside a SEQUENCE:{} relying on previous test side effects should pass"; "#";
+assert_group(sequence, () => {
+    "Tests inside a sequence relying on previous test side effects should pass";
 
     let i = 0;
 
@@ -31,4 +31,4 @@ SEQUENCE: {
     assert(++i == 5);
 
     assert(++i == 6);
-}
+});

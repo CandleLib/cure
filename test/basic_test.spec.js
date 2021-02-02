@@ -8,7 +8,7 @@ assert_group("Test", sequence, () => {
      * We'll build a test frame that will run tests that 
      * will evaluate thru the outcome interface. 
      */
-    const frame = createTestFrame({ WATCH: false, number_of_workers: 1 }, "./test/internal.mock_spec.js");
+    const frame = createTestFrame({ WATCH: false, number_of_workers: 1 }, "./test/data/internal.mock_spec.js");
 
     frame.setReporter(new NullReporter());
 
@@ -23,13 +23,13 @@ assert_group("Test", sequence, () => {
     assert(outcome.results.length === 11,
         "Only 11 results should be available");
 
-    assert(outcome.results[2].errors[0] == "assert is not defined",
+    assert(outcome.results[2].errors[0].summary == "a is not defined",
         "Chai assert test 1 in internal.mock_spec.js should fail due to undefined `assert`");
 
-    assert(outcome.results[3].errors[0] == "a is not defined",
+    assert(outcome.results[3].errors[0].summary == "a is not defined",
         "Chai assert test 2 in internal.mock_spec.js should fail due to undefined `a`");
 
-    assert(outcome.results[4].errors[0] == "expected a+1 to equal 2: expected 3 to equal 2",
+    assert(outcome.results[4].PASSED == false,
         "Chai assert test 3 in internal.mock_spec.js should fail due to an assertion thrown by chai");
 
     assert(outcome.results[5].PASSED == true, "Chai assert test 4 should pass");
@@ -45,7 +45,7 @@ assert_group("Test", sequence, () => {
 
 assert_group("Iteration", sequence, () => {
 
-    const frame = createTestFrame({ WATCH: false, number_of_workers: 1 }, "./test/sequence.mock_spec.js");
+    const frame = createTestFrame({ WATCH: false, number_of_workers: 1 }, "./test/data/sequence.mock_spec.js");
 
     frame.setReporter(new NullReporter());
 

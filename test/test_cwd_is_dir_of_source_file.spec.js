@@ -13,5 +13,5 @@ const
     expected_dir = URL.resolveRelative("./test/", package_dir).path;
 
 assert(FOUND == true);
-assert(pkg?.name == "@candlefw/test");
+assert(pkg?.name == "@candlelib/test");
 assert(expected_dir == URL.GLOBAL + "");
