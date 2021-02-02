@@ -1,8 +1,7 @@
 import { Test } from "../../types/test.js";
 import { TestHarness } from "../../types/test_harness.js";
 
-const AsyncFunction = (async function () { }).constructor,
-    accessible_files: Set<string> = new Set();
+const AsyncFunction = (async function () { }).constructor;
 export async function createTestFunctionFromTestSource(
     test: Test,
     harness: TestHarness,
@@ -28,11 +27,10 @@ export async function createTestFunctionFromTestSource(
 
     harness.popTestResult();
 
-
     return compiled_fn;
 }
 
-function createTest__cfwtest(test: Test, addendum: string, harness: TestHarness, ImportedModules: Map<string, NodeModule>) {
+export function createTest__cfwtest(test: Test, addendum: string, harness: TestHarness, ImportedModules: Map<string, NodeModule>) {
 
     const
         { test_function_object_args, import_arg_specifiers, source } = test,
@@ -49,11 +47,14 @@ function createTest__cfwtest(test: Test, addendum: string, harness: TestHarness,
         test_args.push(module[e.module_name]);
     }
 
-    const
+    try {
+        const fn = ((AsyncFunction)(...test_function_object_args, addendum + source));
 
-        fn = ((AsyncFunction)(...test_function_object_args, addendum + source));
-
-    return () => fn.apply({}, test_args);
+        return () => fn.apply({}, test_args);
+    } catch (e) {
+        e.message = e.message + "dds";
+        throw e;
+    }
 }
 
 async function loadModules(test: Test, ImportedModules: Map<string, NodeModule>, ld: (arg: string) => Promise<NodeModule>) {
