@@ -54,7 +54,7 @@ export async function runTests(
         for (const runner of runners)
             runner.init(request, response, RELOAD_DEPENDENCIES);
 
-        while (pending < active_tests.length) {
+        while (pending <= active_tests.length) {
 
             if (intermediate_results.length > 0) {
 
@@ -66,11 +66,14 @@ export async function runTests(
                 intermediate_results.length = 0;
             }
 
+            if (pending == active_tests.length) break;
+
             await spark.sleep(1);
         }
 
         for (const runner of runners)
             runner.complete();
+
 
         outcome.results.push(...globals.getLibraryTestInfo());
 
