@@ -1,52 +1,76 @@
 import spark from "@candlefw/spark";
 import { completedRun, startRun, updateRun } from "../reporting/report.js";
-import { Globals } from "../types/globals.js";
+import { Globals, Outcome } from "../types/globals.js";
 import { Test } from "../types/test.js";
+import { TestInfo } from "../types/test_info.js";
+import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../types/test_runner.js";
 
 export async function runTests(
     tests: Test[],
     globals: Globals,
-    RELOAD_DEPENDS: boolean = false
-) {
+    RELOAD_DEPENDENCIES: boolean = false
+): Promise<Outcome> {
 
-    const update_timeout = 0, { runner, outcome } = globals;
+    const { runner, outcome } = globals;
 
-    let FAILED = false, t = update_timeout, SOLO_RUN = false;
+    let FAILED = false, SOLO_RUN = false;
+
+    outcome.results.length = 0;
+
+    outcome.fatal_errors.length = 0;
 
     try {
 
-        const active_tests = tests
-            .map(test => {
-                if (test.SOLO || test.INSPECT)
-                    SOLO_RUN = true;
-                return test;
-            })
-            .filter(test => test.RUN && (!SOLO_RUN || test.INSPECT || test.SOLO));
+        let pending = 0;
 
-        await startRun(active_tests.flat(), globals);
+        const
+            runners: TestRunner[] = [runner],
 
-        outcome.results.length = 0;
-        outcome.fatal_errors.length = 0;
+            intermediate_results = [],
 
-        for (const res of runner.run(active_tests, RELOAD_DEPENDS, globals)) {
-            try {
+            active_tests: { state: number, test: Test; }[] =
+                tests.map(test => {
+                    if (test.SOLO || test.INSPECT)
+                        SOLO_RUN = true;
+                    return { state: 0, test };
+                })
+                    .filter(({ test }) => test.RUN && (!SOLO_RUN || test.INSPECT || test.SOLO)),
 
-                if (res) {
+            response: TestRunnerResponse = async function (test: Test, ...results: TestInfo[]) {
+                intermediate_results.push(...results);
+                pending++;
+            },
 
-                    outcome.results.push(...(res.flat()));
-
-                    if (t-- <= 1) {
-                        updateRun(outcome.results, globals);
-                        t = update_timeout;
+            request: TestRunnerRequest = async function (runner: TestRunner) {
+                for (const slug of active_tests.filter(t => t.state == 0))
+                    if (runner.Can_Accept_Test(slug.test)) {
+                        slug.state = 1;
+                        return slug.test;
                     }
+            };
 
-                }
+        await startRun(active_tests.flatMap(d => d.test), globals);
 
-                await spark.sleep(0);
-            } catch (e) {
-                return globals.exit("Failed to load test frame", e);
+        for (const runner of runners)
+            runner.init(request, response, RELOAD_DEPENDENCIES);
+
+        while (pending < active_tests.length) {
+
+            if (intermediate_results.length > 0) {
+
+                for (const result of intermediate_results)
+                    outcome.results.push(result);
+
+                updateRun(outcome.results, globals);
+
+                intermediate_results.length = 0;
             }
+
+            await spark.sleep(1);
         }
+
+        for (const runner of runners)
+            runner.complete();
 
         outcome.results.push(...globals.getLibraryTestInfo());
 

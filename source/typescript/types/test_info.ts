@@ -6,7 +6,7 @@ import { TransferableTestError } from "./test_error.js";
 export interface TestInfo {
 
     /**
-     * Human Friendly Unique name of test
+     * A human friendly name for the test
      * 
      * Hierarchal test name structure can be created by 
      * separating the name with the name delimiter? (<= specify where this delimiter is set )
