@@ -385,6 +385,8 @@ export function packageAssertionSites(state: CompilerState, stmt_ref: StatementR
             packaged_stmt_ref.required_references = new setUnion(stmt_ref.required_references, new setDiff(assertion_site.import_names, stmt_ref.declared_variables));
         }
 
+        assertion_site.IS_ASYNC = assertion_site.IS_ASYNC || state.AWAIT;
+
         state.test_closures.push(<AssertionSiteClosure>{
             assertion_site,
             statement_reference: packaged_stmt_ref,

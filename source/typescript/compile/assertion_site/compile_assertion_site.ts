@@ -1,4 +1,4 @@
-import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed } from "@candlefw/js";
+import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed, renderWithFormatting } from "@candlefw/js";
 import URL from "@candlefw/url";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
@@ -113,7 +113,8 @@ export function compileAssertionSite(
     const assertion_site = createAssertSiteObject(
         test_name,
         SKIP, SOLO,
-        INSPECT, AWAIT,
+        INSPECT,
+        AWAIT || state.AWAIT,
         BROWSER,
         assertion_call_node,
         assertion_expression,
@@ -165,7 +166,7 @@ export function compileAssertionSite(
 export function compileAssertionGroupSite(
     state: CompilerState,
     node: JSNode,
-    OUTER_SEQUENCED: boolean
+    INSIDE_SEQUENCED_ASSERTION_GROUP: boolean
 ): JSNode {
 
     const
@@ -175,9 +176,9 @@ export function compileAssertionGroupSite(
 
         RETURN_PROPS_ONLY = true,
 
-        LEAVE_ASSERTION_SITE = SEQUENCED || OUTER_SEQUENCED,
+        LEAVE_ASSERTION_SITE = SEQUENCED || INSIDE_SEQUENCED_ASSERTION_GROUP,
 
-        OUTER_SCOPE_IS_SEQUENCED = true,
+        OUTER_SCOPE_IS_INSIDE_SEQUENCED = INSIDE_SEQUENCED_ASSERTION_GROUP,
 
         block: JSNode = <JSNode>jstBreadth(node, 4).filter("type", JSNodeType.BlockStatement, JSNodeType.FunctionBody).run(true)[0],
 
@@ -185,7 +186,7 @@ export function compileAssertionGroupSite(
             Object.assign({}, state, { suite_name: createHierarchalName(state.suite_name, name) }),
             block,
             LEAVE_ASSERTION_SITE,
-            OUTER_SCOPE_IS_SEQUENCED,
+            OUTER_SCOPE_IS_INSIDE_SEQUENCED,
             RETURN_PROPS_ONLY
         ) : null;
 
@@ -217,9 +218,11 @@ export function compileAssertionGroupSite(
 
         } else {
 
+
             mergeStatementReferencesAndDeclarations(state, prop);
 
             for (const assertion_site of prop.assertion_sites) {
+                assertion_site.IS_ASYNC = assertion_site.IS_ASYNC || state.AWAIT || assertion_site.IS_ASYNC;
                 assertion_site.static_name = createHierarchalName(name, assertion_site.static_name);
                 assertion_site.BROWSER = assertion_site.BROWSER || BROWSER || assertion_site.BROWSER;
                 assertion_site.SOLO = assertion_site.SOLO || SOLO || assertion_site.SOLO;
@@ -227,6 +230,7 @@ export function compileAssertionGroupSite(
                 assertion_site.INSPECT = assertion_site.INSPECT || INSPECT || assertion_site.INSPECT;
                 assertion_site.origin = state.ast;
             }
+
 
             packageAssertionSites(state, prop);
 
