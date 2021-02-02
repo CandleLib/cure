@@ -15,7 +15,7 @@ export interface Test {
     name: string;
 
     /**
-     * The test compiled into JavaScript script string. 
+     * The test compiled into JavaScript program. 
      */
     source: string,
 
