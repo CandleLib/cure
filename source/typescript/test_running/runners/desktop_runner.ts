@@ -3,6 +3,7 @@ import URL from "@candlefw/url";
 import { performance } from "perf_hooks";
 import { Worker } from "worker_threads";
 import { DesktopWorkerHandle } from "../../types/desktop_worker_handle";
+import { Globals } from "../../types/globals";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info";
 import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/test_runner";
@@ -32,7 +33,7 @@ export class DesktopRunner implements TestRunner {
             .map(() => ({ DISCARD: false, READY: false, target: null }));
     }
 
-    Can_Accept_Test(test: Test) { if (!test.BROWSER) return true; }
+    Can_Accept_Test(test: Test) { return !test.BROWSER; }
 
     complete() {
 
@@ -43,7 +44,7 @@ export class DesktopRunner implements TestRunner {
         this.loadWorkers(RELOAD_DEPENDENCIES, this.workers);
     }
 
-    async init(request, respond, RELOAD_DEPENDENCIES) {
+    async init(globals, request, respond, RELOAD_DEPENDENCIES) {
 
         this.STOP_ALL_ACTIVITY = true;
 
@@ -56,10 +57,10 @@ export class DesktopRunner implements TestRunner {
 
         this.STOP_ALL_ACTIVITY = false;
 
-        this.run();
+        this.run(globals);
     }
 
-    async run() {
+    async run(globals: Globals) {
         while (!this.STOP_ALL_ACTIVITY) {
 
             const current_time = performance.now();

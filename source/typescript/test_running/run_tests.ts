@@ -52,7 +52,7 @@ export async function runTests(
         await startRun(active_tests.flatMap(d => d.test), globals);
 
         for (const runner of runners)
-            runner.init(request, response, RELOAD_DEPENDENCIES);
+            runner.init(globals, request, response, RELOAD_DEPENDENCIES);
 
         while (pending <= active_tests.length) {
 

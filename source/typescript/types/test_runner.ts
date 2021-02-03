@@ -1,3 +1,4 @@
+import { Globals } from "./globals.js";
 import { Test } from "./test.js";
 import { TestInfo } from "./test_info";
 
@@ -49,6 +50,5 @@ export interface TestRunner {
      * @param {boolean} RELOAD_DEPENDENCIES - Force the test runner to 
      * unload all imported modules and reload the test environment
      */
-
-    init(request: TestRunnerRequest, respond: TestRunnerResponse, RELOAD_DEPENDENCIES?: boolean): Promise<void>;
+    init(globals: Globals, request: TestRunnerRequest, respond: TestRunnerResponse, RELOAD_DEPENDENCIES?: boolean): Promise<void>;
 }
