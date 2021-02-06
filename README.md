@@ -32,6 +32,9 @@ those scripts to find tests, suites, and other test related constructs, Cure sim
 compiles source code that can then be submitted to various endpoints to run. Only the code that is directly
 related to an assertion is included. This allows test to be lean, discarding any code that is not needed, 
 instrumented, and arbitrarily run.
+
+##### Additional Features:
+
 - References required by a test need not declared within a specific "test" function. As each assertion is
   able to run in isolation, they will receive a unique copy of a reference that is unpolluted from other
   assertions within the same test script.
