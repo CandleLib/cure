@@ -16,19 +16,19 @@ assert_group("Gets package.json", sequence, () => {
 assert_group("Processes package.json", sequence, () => {
 
     "processPackageData throws if the package is not a module: commonjs";
-    assert(!processPackageData({ main: "test", type: "commonjs", name: "@candlefw/test" }));
+    assert(!processPackageData({ main: "test", type: "commonjs", name: "@candlelib/cure" }));
 
     "processPackageData throws if the package is not a module: no type";
-    assert(!processPackageData({ main: "test", name: "@candlefw/test" }));
+    assert(!processPackageData({ main: "test", name: "@candlelib/cure" }));
 
     "processPackageData does not throw if the package is a module";
-    assert(processPackageData({ main: "test", type: "module", name: "@candlefw/test" }, {}));
+    assert(processPackageData({ main: "test", type: "module", name: "@candlelib/cure" }, {}));
 
-    "Adds @candlefw/test@latest to devDependencies of package.json";
-    const pkg = { main: "test", type: "module", name: "@candlefw/test" };
+    "Adds @candlelib/cure@latest to devDependencies of package.json";
+    const pkg = { main: "test", type: "module", name: "@candlelib/cure" };
     const { package: tst_pkg } = await getPackageJSON();
     processPackageData(pkg, tst_pkg);
-    assert(pkg.devDependencies["@candlefw/test"] == tst_pkg.version);
+    assert(pkg.devDependencies["@candlelib/cure"] == tst_pkg.version);
 });
 
 
@@ -64,7 +64,7 @@ assert_group(skip, "Create Spec File", sequence, () => {
 
     assert(FOUND == true);
 
-    assert(data.devDependencies["@candlefw/test"] == main_data.version);
+    assert(data.devDependencies["@candlelib/cure"] == main_data.version);
 
     assert(data?.scripts.test == "cfw.test ./test/**");
 

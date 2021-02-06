@@ -19,7 +19,7 @@
 
 
 import { parser } from "@candlefw/js";
-import { compileTestsFromSourceAST } from "@candlefw/test/build/library/compile/compile_statements.js";
+import { compileTestsFromSourceAST } from "@candlelib/cure/build/library/compile/compile_statements.js";
 import URL from "@candlefw/url";
 import { createGlobalsObject } from "./tools.js";
 

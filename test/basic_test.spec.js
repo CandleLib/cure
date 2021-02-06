@@ -1,5 +1,5 @@
 
-import { createTestFrame, NullReporter } from "@candlefw/test/build/library/test.js";
+import { createTestFrame, NullReporter } from "@candlelib/cure/build/library/test.js";
 
 assert("The function createTestFrame should not throw", createTestFrame());
 

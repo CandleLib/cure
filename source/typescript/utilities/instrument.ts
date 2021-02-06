@@ -101,13 +101,13 @@ export function processPackageData(pkg: PackageJSONData, cfw_test_pkg: PackageJS
     if (type !== "module")
         throw new TypeError(`cfw.test only works on module packages. The package type of [${name}] is [${type || "not defined"}]`);
 
-    //add @candlefw/test to dev dependencies
+    //add @candlelib/cure to dev dependencies
     if (!devDependencies) {
         pkg.devDependencies = {};
         devDependencies = pkg.devDependencies;
     }
 
-    devDependencies["@candlefw/test"] = cfw_test_pkg.version;
+    devDependencies["@candlelib/cure"] = cfw_test_pkg.version;
 
     const test_name = name.replace(/[\@\/\\]/g, " ").trim().split(" ").join(".") + ".spec.js";
 

@@ -60,7 +60,7 @@ const
 
     INSTRUMENT_HELP_MASSAGE = `
 
-Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)}
+CANDLELIB::CURE ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)}
 
 Instrumenting
 
@@ -83,7 +83,7 @@ Builds test file from package.json data
     `,
 
     HELP_MESSAGE = ` 
-Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)} 
+CANDLELIB::CURE ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)} 
 
     cfw.test [Command?] [Options] [...Input_Files]
 
@@ -146,21 +146,23 @@ Candlefw Test ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset
             import { module } from "/my_module"
             import { other_module } from "npm_module"
 
-README: https://github.com/CandleFW/test/blob/master/readme.md
+README: https://github.com/CandleLibrary/Cure/blob/release/README.md
 `;
 
 let files: string[] = args.trailing_arguments || [];
 
 const HELP = !!(args.help || args["?"]) || files.length == 0;
 
+
 async function start() {
+
     await URL.server();
 
     const { package: pkg, FOUND, package_dir } = await getPackageJsonObject(URL.getEXEURL(import.meta).path);
 
     sym_version = pkg.version;
 
-    process.title = "cfw.test";
+    process.title = "candled.cure";
 
     const legit_log = console.log;
 

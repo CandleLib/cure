@@ -2,7 +2,7 @@
 "CFW.test internal test";
 
 import chai from "chai";
-import { NullReporter } from "@candlefw/test";
+import { NullReporter } from "@candlelib/cure";
 
 
 function d(a = 2, b = 3) { }

@@ -103,7 +103,7 @@ export interface Globals {
     package_main?: string,
 
     /**
-     * Root directory for @candlefw/test
+     * Root directory for @candlelib/test
      */
     test_dir: string,
 

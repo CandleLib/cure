@@ -75,7 +75,7 @@ export interface TestFrameOptions {
     PRELOAD_IMPORTS?: boolean;
 
     /**
-     * Root dir of @candlefw/test
+     * Root dir of @candlelib/cure
      */
     test_dir: string;
 

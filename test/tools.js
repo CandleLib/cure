@@ -1,10 +1,10 @@
 import { parser } from "@candlefw/js";
-import { NullReporter } from "@candlefw/test";
-import { compileTests } from "@candlefw/test/build/library/compile/compile.js";
-import { loadTests } from "@candlefw/test/build/library/loading/load_tests.js";
-import { DesktopRunner } from "@candlefw/test/build/library/test_running/runners/desktop_runner.js";
-import { runTests } from "@candlefw/test/build/library/test_running/run_tests.js";
-import { initializeReporterColors } from "@candlefw/test/build/library/utilities/create_test_frame.js";
+import { NullReporter } from "@candlelib/cure";
+import { compileTests } from "@candlelib/cure/build/library/compile/compile.js";
+import { loadTests } from "@candlelib/cure/build/library/loading/load_tests.js";
+import { DesktopRunner } from "@candlelib/cure/build/library/test_running/runners/desktop_runner.js";
+import { runTests } from "@candlelib/cure/build/library/test_running/run_tests.js";
+import { initializeReporterColors } from "@candlelib/cure/build/library/utilities/create_test_frame.js";
 import URL from "@candlefw/url";
 import default_expression_handlers from "../build/library/compile/expression_handler/expression_handlers.js";
 import { loadExpressionHandler } from "../build/library/compile/expression_handler/expression_handler_functions.js";

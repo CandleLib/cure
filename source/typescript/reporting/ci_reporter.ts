@@ -1,4 +1,4 @@
-import { BasicReporter } from "../test.js";
+import { BasicReporter } from "../cure.js";
 import { TestInfo } from "../types/test_info.js";
 import { Globals } from "../types/globals.js";
 import { CLITextDraw } from "./utilities/cli_text_console.js";

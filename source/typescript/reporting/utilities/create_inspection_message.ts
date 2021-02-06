@@ -7,10 +7,6 @@ import { getLexerFromLineColumnString } from "../../utilities/test_error.js";
 import { objC, objD, rst, symA, symC, symD, valA, valB } from "./colors.js";
 import { format_rules } from "./format_rules.js";
 
-
-
-
-
 function syntaxHighlight(str: string, prop_name, node: JSNode): string {
 
     const { type } = node;

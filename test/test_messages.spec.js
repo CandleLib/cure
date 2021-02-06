@@ -10,7 +10,7 @@
 // error types.
 // error types.
 
-import { createTestFrame, NullReporter } from "@candlefw/test";
+import { createTestFrame, NullReporter } from "@candlelib/cure";
 
 const frame = createTestFrame({ WATCH: false, number_of_workers: 1, max_timeout: 1000 }, "./test/data/error_message_test_spec.js");
 
