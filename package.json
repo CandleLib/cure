@@ -1,9 +1,0 @@
-{
-  "name": "@candlefw/test",
-  "version": "0.0.1",
-  "description": "CandleFW Testing System",
-  "main": "test.js",
-  "repository": "https://github.com/candlefw/test",
-  "author": "galactrax <anthonycweathersby@gmail.com>",
-  "license": "MIT"
-}
