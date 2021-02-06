@@ -9,7 +9,7 @@
 
 - #### Highly Configurable
     Cure should be able handle the requirements of  an evolving code base. Cure sure should be easily adaptable to existing projects while
-    also allowing new projects to work with it minimal, ideally no, boilerplate.  
+    also allowing new projects to work with it using minimal, if not no boilerplate.  
 
     Additional features should be able to be added through a rich plugin system that that is simple to use.
 
