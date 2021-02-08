@@ -33,6 +33,10 @@ compiles source code that can then be submitted to various endpoints to run. Onl
 related to an assertion is included. This allows test to be lean, discarding any code that is not needed, 
 instrumented, and arbitrarily run.
 
+This also allows Cure to understands assertions from raw code. This means something like `(2+2).should.equal(4)`
+can be turned into `2+2==4`, simplifying assertions and letting Cure do the work of creating a human friendly
+message for such assertions. 
+
 ##### Additional Features:
 
 - References required by a test need not declared within a specific "test" function. As each assertion is
