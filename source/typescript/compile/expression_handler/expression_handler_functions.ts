@@ -6,11 +6,12 @@ import { TestInfo } from "../../types/test_info.js";
 import { jst } from "../utilities/traverse_js_node.js";
 import { compileTestyScript } from "./testy_compiler.js";
 import {
+    createPopNameInstruction,
     createPopTestResultInstruction,
     createPushAndAssetInstruction,
     createPushInstruction,
-    createPushTestResultInstruction,
-    createSetNameInstruction
+    createPushNameInstruction,
+    createPushTestResultInstruction
 } from "./test_instructions.js";
 
 export function loadExpressionHandler(globals: Globals, obj: ExpressionHandlerBase) {
@@ -115,11 +116,14 @@ export function compileExpressionHandler(
     // harness.pushTestResult...
     // harness.setResultName...
 
-    instructions.unshift(createSetNameInstruction(generated_name, static_name, dynamic_name, suite_name));
+
+    instructions.unshift(createPushNameInstruction(generated_name, static_name, dynamic_name));
 
     instructions.unshift(createPushTestResultInstruction(handler));
 
     instructions.push(...teardown_statements);
+
+    instructions.push(createPopNameInstruction());
 
     instructions.push(createPopTestResultInstruction());
 

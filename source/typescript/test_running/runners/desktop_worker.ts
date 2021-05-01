@@ -6,6 +6,7 @@ import { rst } from "../../reporting/utilities/colors.js";
 import { ImportSource } from "../../types/imports.js";
 import { Test } from "../../types/test.js";
 import { createNameErrorMessage } from "../../utilities/library_errors.js";
+import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { createTestFunctionFromTestSource } from "../utilities/create_test_function.js";
 import { createTestHarnessEnvironmentInstance } from "../utilities/test_harness.js";
 
@@ -14,11 +15,6 @@ import { createTestHarnessEnvironmentInstance } from "../utilities/test_harness.
 const harness_env = createTestHarnessEnvironmentInstance(equal, util, <Performance><any>performance, rst);
 export const harness = harness_env.harness;
 export const ImportedModules: Map<string, any> = new Map();
-
-
-
-
-
 export async function loadImport(source) {
     return await import(source);
 }
@@ -80,7 +76,7 @@ async function RunTest({ test }: { test: Test; }) {
 
         harness_initSourceMapFromString(test.map);
 
-        harness.setResultName(`Test failed with a critical error`);
+        harness.setResultName(createHierarchalName(test.name, `Test failed with a critical error`));
 
         await fn();
 

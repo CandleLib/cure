@@ -8,6 +8,7 @@ import { createTargetedTestError } from "../../utilities/test_error.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum.js";
 import { mergeStatementReferencesAndDeclarations, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
 import { compileExpressionHandler, selectExpressionHandler } from "../expression_handler/expression_handler_functions.js";
+import { createPopNameInstruction, createPushNameInstruction } from "../expression_handler/test_instructions.js";
 import { empty_set } from "../utilities/empty_set.js";
 import { jst, jstBreadth } from "../utilities/traverse_js_node.js";
 import { parseAssertionSiteArguments } from "./parse_assertion_site_args.js";
@@ -180,7 +181,22 @@ export function compileAssertionGroupSite(
 
         OUTER_SCOPE_IS_INSIDE_SEQUENCED = INSIDE_SEQUENCED_ASSERTION_GROUP,
 
-        block: JSNode = <JSNode>jstBreadth(node, 4).filter("type", JSNodeType.BlockStatement, JSNodeType.FunctionBody).run(true)[0],
+        block: JSNode = <JSNode>jstBreadth(node, 4).filter("type", JSNodeType.BlockStatement, JSNodeType.FunctionBody).run(true)[0];
+
+    let prop = null;
+
+    if (block) {
+        try {
+
+            //@ts-ignore
+            block.nodes.unshift(createPushNameInstruction(name));
+            //@ts-ignore
+            block.nodes.push(createPopNameInstruction());
+        } catch (e) {
+            console.log(name);
+            console.error(e);
+            process.exit();
+        }
 
         prop = block ? compileEnclosingStatement(
             Object.assign({}, state, { suite_name: createHierarchalName(state.suite_name, name) }),
@@ -189,6 +205,8 @@ export function compileAssertionGroupSite(
             OUTER_SCOPE_IS_INSIDE_SEQUENCED,
             RETURN_PROPS_ONLY
         ) : null;
+    }
+
 
     if (prop) {
 
@@ -227,7 +245,7 @@ export function compileAssertionGroupSite(
                 assertion_site.BROWSER = assertion_site.BROWSER || BROWSER || assertion_site.BROWSER;
                 assertion_site.SOLO = assertion_site.SOLO || SOLO || assertion_site.SOLO;
                 assertion_site.RUN = assertion_site.RUN || !SKIP || assertion_site.RUN;
-                assertion_site.INSPECT = assertion_site.INSPECT || INSPECT || assertion_site.INSPECT;
+                assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
                 assertion_site.origin = state.ast;
             }
 

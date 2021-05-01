@@ -20,6 +20,16 @@ export function createSetNameInstruction(generated_name: string, static_name: st
     return stmt(`${harness_internal_name}.setResultName(${hierarchal_name})`);
 }
 
+export function createPushNameInstruction(generated_name: string, static_name: string = "", dynamic_name: string = ""): JSNode {
+    const used_name = dynamic_name || `"${(static_name || generated_name).replace(/\"/g, "\\\"")}"`;
+
+    return stmt(`${harness_internal_name}.pushName(${used_name})`);
+}
+
+export function createPopNameInstruction(): JSNode {
+    return stmt(`${harness_internal_name}.popName()`);
+}
+
 export function createPopTestResultInstruction(): JSNode {
     return stmt(`${harness_internal_name}.popTestResult();`);
 }
