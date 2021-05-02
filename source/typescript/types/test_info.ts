@@ -1,7 +1,7 @@
 import { Test } from "./test.js";
 import { TransferableTestError } from "./test_error.js";
 /**
- * Information collected during testing
+ * Information collected during testing. Consumed by Reporters
  */
 export interface TestInfo {
 
@@ -38,6 +38,7 @@ export interface TestInfo {
      * tests have been run.
      */
     test?: Test;
+    
     /**
      * Identifer of the ExpressionHandler that generated the 
      * test. May be -1 if the TestInfo object was created while

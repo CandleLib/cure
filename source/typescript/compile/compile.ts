@@ -4,7 +4,7 @@
  * @module compile
  */
 
-import { JSModule, JSScript } from "@candlefw/js";
+import { ext, JSModule, JSScript } from "@candlefw/js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { Globals } from "../types/globals.js";
 import { ImportModule } from "../types/imports.js";
@@ -37,6 +37,8 @@ export function compileTests(source_ast: JSScript | JSModule, globals: Globals, 
             for (const id of $import.import_names)
                 if (import_names.has(id.import_name))
                     assertion_site.imports.push({ module: $import, name: id });
+
+
 
 
         assertion_sites.push(assertion_site);

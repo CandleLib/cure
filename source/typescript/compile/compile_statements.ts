@@ -124,6 +124,7 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
         .skipRoot()
         .makeSkippable()
         .makeMutable()) {
+            
         state.FORCE_USE = false;
 
         switch (node.type) {

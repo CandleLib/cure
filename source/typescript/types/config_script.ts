@@ -1,4 +1,4 @@
-import { ExpressionHandler, ExpressionHandlerBase } from "./expression_handler";
+import { ExpressionHandlerBase } from "./expression_handler";
 import { Test } from "./test";
 import { TestInfo } from "./test_info";
 import { TestRunner } from "./test_runner";

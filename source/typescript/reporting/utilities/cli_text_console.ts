@@ -40,8 +40,9 @@ export class CLITextDraw {
         if (this.S) return;
         this.S = true;
         return new Promise(res => {
-            console.clear();
+
             process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
+            
             process.stdout.cursorTo(0, 0, () => {
                 process.stdout.clearScreenDown(() => {
                     process.stdin.write(this.buffer, () => {

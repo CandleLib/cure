@@ -1,5 +1,5 @@
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlefw/conflagrate";
-import { parser, renderWithFormatting, renderWithFormattingAndSourceMap } from "@candlefw/js";
+import { parser, renderWithFormattingAndSourceMap } from "@candlefw/js";
 import URL from "@candlefw/url";
 import { Lexer } from "@candlefw/wind";
 import path from "path";
@@ -30,6 +30,7 @@ export function loadTests(text_data: string, suite: TestSuite, globals: Globals)
         lex.source = suite.origin;
 
         const { assertion_sites } = compileTests(parser(lex).ast, globals, "");
+
 
         if (assertion_sites.length > 0)
             suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
