@@ -3,11 +3,15 @@ import URL from "@candlefw/url";
 import { TransferableTestError } from "../../types/test_error";
 import { TestHarness, TestHarnessEnvironment } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";
+import { name_delimiter } from "../../utilities/name_hierarchy.js";
+
 import { createTransferableTestErrorFromException } from "../../utilities/test_error.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum";
 
 const AsyncFunction = (async function () { }).constructor;
 export const harness_internal_name = "$$h";
+
+
 
 export function createTestHarnessEnvironmentInstance(equal, util, performance: Performance, rst): TestHarnessEnvironment {
 
@@ -23,7 +27,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
         log = console.log,
 
-        pf_now: () => number = performance.now,
+        pf_now: () => number = () => performance.now(),
 
         data_queue: any[] = [],
 
@@ -32,6 +36,8 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
         log_book: string[] = [],
 
         results: TestInfo[] = [],
+
+        names: string[] = [],
 
         harness: TestHarness = <TestHarness>{
 
@@ -181,6 +187,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
 
             addException(e) {
+
                 markWriteStart();
                 if (e instanceof Error)
                     addErrorToActiveResult(e);
@@ -283,6 +290,20 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
 
                 if (!active_test_result.name)
                     active_test_result.name = string.toString();
+            },
+
+            pushName(string: string) {
+
+                markWriteStart();
+
+                names.push(string);
+
+                if (!active_test_result.name)
+                    active_test_result.name = names.join(name_delimiter);//string.toString(); 0;
+            },
+
+            popName() {
+                names.pop();
             },
 
             setSourceLocation(column, line, offset) {
@@ -413,6 +434,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
             results.length = 0;
             clipboard.length = 0;
             data_queue.length = 0;
+            names.length = 0;
             source_map = null;
             previous_start = pf_now();
 
