@@ -1,15 +1,14 @@
 #!/usr/bin/env node
 
-import { getPackageJsonObject, getProcessArgs, xtF, xtColor, xtReset, col_x11, xtBold } from "@candlefw/wax";
-
-import { createTestFrame, NullReporter, BasicReporter } from "../test.js";
-import { instrument } from "../utilities/instrument.js";
 import URL from "@candlefw/url";
+import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlefw/wax";
 import fs from "fs";
-
 import node_path from "path";
+import { BasicReporter, createTestFrame, NullReporter } from "../cure.js";
 import { CIReporter } from "../reporting/ci_reporter.js";
-const fsp = fs.promises;
+import { instrument } from "../utilities/instrument.js";
+
+export const fsp = fs.promises;
 
 
 let sym_version = "";
