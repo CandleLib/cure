@@ -5,6 +5,7 @@ import { loadExpressionHandler } from "../compile/expression_handler/expression_
 import { createSuiteReloaderFunction, loadSuite, SuiteReloader } from "../loading/load_suite.js";
 import { BasicReporter } from "../reporting/basic_reporter.js";
 import * as colors from "../reporting/utilities/colors.js";
+import { BrowserRunner } from "../test_running/runners/browser_runner.js";
 import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
 import { runTests } from "../test_running/run_tests.js";
 import { Globals, Outcome } from "../types/globals";
@@ -139,7 +140,10 @@ async function initializeGlobals(globals: Globals, number_of_workers: number) {
 
     await loadPackageJson(globals);
 
-    globals.runner = new DesktopRunner(Math.max(number_of_workers, 1));
+    globals.runners = [
+        new DesktopRunner(Math.max(number_of_workers, 1)),
+        new BrowserRunner(63021)
+    ];
 
     globals.watchers.length = 0;
 

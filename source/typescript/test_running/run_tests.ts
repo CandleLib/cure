@@ -1,4 +1,5 @@
 import spark from "@candlefw/spark";
+import { test } from "@candlefw/wick";
 import { completedRun, startRun, updateRun } from "../reporting/report.js";
 import { Globals, Outcome } from "../types/globals.js";
 import { Test } from "../types/test.js";
@@ -11,7 +12,7 @@ export async function runTests(
     RELOAD_DEPENDENCIES: boolean = false
 ): Promise<Outcome> {
 
-    const { runner, outcome } = globals;
+    const { runners: test_runners, outcome } = globals;
 
     let FAILED = false, SOLO_RUN = false;
 
@@ -24,7 +25,9 @@ export async function runTests(
         let pending = 0;
 
         const
-            runners: TestRunner[] = [runner],
+            runners: TestRunner[] = test_runners.filter(
+                r => tests.some(t => r.Can_Accept_Test(t))
+            ),
 
             intermediate_results = [],
 

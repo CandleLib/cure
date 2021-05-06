@@ -64,7 +64,7 @@ export function createGlobals(
 
             reporter: new NullReporter,
 
-            runner: null,
+            runners: null,
 
             watchers: [],
 

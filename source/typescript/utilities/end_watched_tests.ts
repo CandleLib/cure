@@ -6,8 +6,9 @@ export function endWatchedTests(globals: Globals, resolution: (arg: Outcome) => 
     for (const watcher of globals.watchers)
         watcher.close();
 
-    if (globals.runner)
-        globals.runner.destroy();
+    if (globals.runners)
+        for(const runner in globals.runner)
+            runner.destroy();
 
     if (resolution) {
 

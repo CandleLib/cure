@@ -3,11 +3,13 @@ import { FSWatcher } from "fs";
 import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum.js";
 import { ExpressionHandler } from "./expression_handler.js";
+import { RunnerPlugin } from "./plugin.js";
 import { Reporter } from "./reporter";
 import { Test } from "./test";
 import { TransferableTestError } from "./test_error.js";
 import { TestHarness } from "./test_harness";
 import { TestInfo } from "./test_info";
+import { TestRunner } from "./test_runner.js";
 import { TestSuite } from "./test_suite";
 
 export interface Outcome {
@@ -27,7 +29,7 @@ export interface Globals {
 
     reporter: Reporter;
 
-    runner?: DesktopRunner;
+    runners?: TestRunner[];
 
     watchers: FSWatcher[];
 
