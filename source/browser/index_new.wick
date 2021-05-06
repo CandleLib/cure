@@ -1,0 +1,49 @@
+import header from "./header.wick"
+import sidebar from "./sidebar.wick"
+import content from "./content.wick"
+
+export default <app>
+
+    <head>
+        <title>
+            test
+        </title>
+        <style>
+            body{
+                padding: 0;
+                margin: 0;
+                border: none;
+                width: 100%;
+                font-size: 12px;
+                font-size: 1em;
+                background-color: #ffffff;
+                color: rgb(0, 0, 0);
+            }
+        </style>
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap" rel="stylesheet">
+        <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&family=Titillium+Web:wght@300&display=swap" rel="stylesheet">
+    </head>
+
+    <header/>
+    <div id="content-container">
+        <sidebar/>
+        <content/>
+    </div>
+
+    <style>
+        root button{ 
+            color:red
+        }
+
+        button:hover {
+            cursor: pointer;
+        }
+
+        #content-container {
+            display:flex;
+            height:100%;
+        }
+    </style>
+
+</app>
+

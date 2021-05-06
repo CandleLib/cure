@@ -3,81 +3,130 @@
     <head></head>
     <body>
         <script type=module>
-            import { constructTestFunction } from "/construct_test_function/acquire/";
-            import { harnessConstructor } from "/test_harness/acquire/";
-
+            import parser from "/utilities/parser.js";
+            import { createNameErrorMessage } from "/utilities/library_errors.js";
+            import { createHierarchalName } from "/utilities/name_hierarchy.js";
+            import { createTestHarnessEnvironmentInstance } from "/test_running/utilities/test_harness.js";
+            import { createTestFunctionFromTestSource } from "/test_running/utilities/create_test_function.js";
             const TestError = function(d){ const {message, stack} = new Error(d); this.message = message, this.stack = stack};
 
             //Load test runners 
             async function loadImport(source) {
                 return await import(source[0] == "/" ? source : "/" + source );
-            }
-            
-            async function run_test(test){
+            }  
 
-                const 
-                    log = console.log,
-                    ImportedModules = new Map(),
-                    harness = harnessConstructor((a,b)=>a===b, {
-                        inspect: JSON.stringify,
-                    }, performance, "", TestError, true);
+            const logger = console.log
+            const ImportedModules= new Map();
 
-                const result= { start: performance.now(), end: 0, duration: 0, errors: [], test, TIMED_OUT: false, PASSED: true };
+            export function createAddendum(sources, test) {
+            return "";
+        }
                     
-                result.start = performance.now();
-                try {
+            async function RunTest(test){
+                let results = [];
+                const {
+                    harness,
+                    harness_flushClipboard,
+                    harness_getResults,
+                    harness_overrideLog,
+                    harness_restoreLog,
+                    harness_init,
+                    harness_initSourceMapFromString,
+                    harness_initialSourceCodeString
+                } = createTestHarnessEnvironmentInstance(
+                    (a,b)=>a===b, {  inspect: JSON.stringify,  }, performance, ""
+                );
 
-                    const  fn = await (await constructTestFunction(
-                        test, 
-                        harness, 
-                        ImportedModules, 
-                        TestError, 
-                        loadImport ));
-                    
-                        result.start = performance.now();
+                logger("STARTING")
+
+                 try {
+                    //@ts-ignore
+                    window.harness = harness;
+
+                    harness_init(
+                        test.source_location,
+                        test.working_directory
+                    );
+
+                    harness_overrideLog();
+
+                    //Test Initialization TestResult
+
+                    const fn = (await createTestFunctionFromTestSource(
+                        test,
+                        harness,
+                        ImportedModules,
+                        loadImport,
+                        createAddendum
+                    ));
+
+                    // Clear any existing TestInfo created by [createTestFunctionFromTestSource]
+                    harness_init(
+                        test.source_location,
+                        test.working_directory
+                    );
+
+                    harness_initialSourceCodeString(test.source);
+
+                    // Global TestResult 
+                    // - Catchall for any errors that lead to a hard crash of the test function
+                    harness.pushTestResult();
+
+                    harness_initSourceMapFromString(test.map);
+
+                    harness.setResultName(createHierarchalName(test.name, `Test failed with a critical error`));
+
                     await fn();
+
+                    harness.popTestResult();
+
+                    harness_restoreLog();
+
+                    results = harness_getResults().slice(0, -1);
+
                 } catch (e) {
 
-                    log(e)
-                    //alert(e)
-                    let error = null;
+                    harness_restoreLog();
 
-                    error = e;
+                    harness_flushClipboard();
 
-                    if (e instanceof TestError) {
-                        error = e;
-                    } else {
-                        try {
-                            error = new TestError(e, harness.origin, test.pos.line, test.pos.column, "", "", test.map);
-                        } catch (ee) {
-                            error = new TestError(`Could not wrap error:\n ${e} \n` + (typeof ee == "object" ? (ee.stack || ee.message || ee) : ee), harness.origin);
-                        }
+                    harness.addException(e);
+
+                    harness.popTestResult();
+
+                    results = harness_getResults().slice(-1); //Only return the worker test
+
+                }
+
+
+                if (results.length == 0) {results
+                    harness_init(
+                        test.source_location,
+                        test.working_directory
+                    );
+
+                    harness.pushTestResult();
+
+                    harness.setResultName("Critical Test Errors");
+
+                    harness.addException(new Error("No results generated from this test"));
+
+                    harness.popTestResult();
+
+                    results = harness_getResults();
+                }
+
+                for (let i = 0, result = null; (result = results[i], i++ < results.length);)
+                    if (result.name == "") {
+                        result.name = createNameErrorMessage(i);
+                        result.PASSED = false;
                     }
+                logger({results})
 
-                    error.index = harness.test_index;
-                    result.errors = harness.errors;
-                    result.errors.push(error);
-                    result.end = performance.now();
-                    result.PASSED = false;
-                }
-
-                console.log = log;
-
-                harness.last_error = null;
-                result.end = performance.now();
-                result.errors = harness.errors;
-
-                if (result.errors.length > 0){
-                    result.PASSED = false;
-                }
-
-                result.duration = result.end - result.start;
-
-
-                return result;
+                return results;
             }
 
-            window.runTest = run_test;
+            window.runTest = RunTest;
 
         </script>
     </body>

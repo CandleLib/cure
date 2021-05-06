@@ -1,5 +1,6 @@
-import lantern, { $404_dispatch, candlefw_dispatch, LanternServer } from "@candlefw/lantern";
+import lantern, { $404_dispatch, candlefw_dispatch, LanternServer, compiled_wick_dispatch } from "@candlefw/lantern";
 import spark from "@candlefw/spark";
+import { SHIFT_IN } from "@candlefw/wind/build/types/ascii_code_points";
 import { spawn } from "child_process";
 import { Http2Server } from "http2";
 import path from "path";
@@ -10,27 +11,22 @@ import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/t
 
 export class BrowserRunner implements TestRunner {
 
+    static active_runner: BrowserRunner;
+    static server: LanternServer<Http2Server>;
+    static resource_directory: string;
+    static SERVER_LOADED: boolean;
+    static port: number;
     respond: TestRunnerResponse;
-
     request: TestRunnerRequest;
-
-    server: LanternServer<Http2Server>;
-
-    port: number;
-
-    SERVER_LOADED: boolean;
-
-    resource_directory: string;
-
     STOP_ALL_ACTIVITY: boolean;
+
+    to_complete: number;
 
     globals: Globals;
 
-    constructor(port: number = 8080) {
-        this.port = 8080;
-        this.resource_directory = "";
+    constructor() {
         this.STOP_ALL_ACTIVITY = false;
-        this.SERVER_LOADED = false;
+        this.to_complete = 0;
     }
 
     Can_Accept_Test(test: Test) { return !!test.BROWSER; }
@@ -38,30 +34,27 @@ export class BrowserRunner implements TestRunner {
     complete() {
         this.respond = null;
         this.request = null;
+        this.STOP_ALL_ACTIVITY = true;
     }
 
     async init(globals: Globals, request, respond) {
 
-
-
-        if (!this.SERVER_LOADED) {
-
-            this.resource_directory = globals.test_dir + "source/browser/";
-            this.port = await lantern.getUnusedPort();
-            this.server = await lantern({
-                type: "http2",
-                port: this.port,
-                host: "0.0.0.0",
-                secure: lantern.mock_certificate,
-                log: lantern.null_logger
-            });
-
-        }
-
-        await this.startBrowsers(globals);
-
         this.respond = respond;
         this.request = request;
+        this.STOP_ALL_ACTIVITY = false;
+
+        console.log("INIT");
+
+        if (!BrowserRunner.SERVER_LOADED) {
+
+            BrowserRunner.resource_directory = globals.test_dir + "source/browser/";
+
+            BrowserRunner.setupServer(globals);
+
+            BrowserRunner.SERVER_LOADED = true;
+        }
+
+        BrowserRunner.active_runner = this;
 
         this.run();
     }
@@ -69,26 +62,26 @@ export class BrowserRunner implements TestRunner {
     private async run() {
 
         while (!this.STOP_ALL_ACTIVITY) {
-
+            // Allow other cooperative tasks to run
+            await spark.sleep(1);
         }
     }
 
-    private async startBrowsers(globals: Globals) {
+    static async setupServer(globals: Globals) {
 
-        //start a dedicated instance of a browser
-        await spark.sleep(100);
+        const port = await lantern.getUnusedPort();
 
-        //startFirefox(port, globals);
-        startChrome(this.port, globals);
-    }
+        BrowserRunner.server = await lantern({
+            type: "http2",
+            port,
+            host: "0.0.0.0",
+            secure: lantern.mock_certificate,
+            // log: lantern.null_logger
+        });
 
-    private setupServer(globals: Globals) {
-
-        const { server, resource_directory, respond, request } = this;
-
-        const server_test = [];
-
-        let to_complete: number = 0;
+        const
+            { server, resource_directory } = BrowserRunner,
+            server_test = [];
 
         server.addDispatch(
             {
@@ -114,6 +107,8 @@ export class BrowserRunner implements TestRunner {
 
                     if (test_results) {
 
+                        console.log(test_results);
+
                         const { results, test_id } = test_results;
 
                         const test = server_test[test_id];
@@ -122,9 +117,9 @@ export class BrowserRunner implements TestRunner {
 
                         results.forEach(res => res.test = test);
 
-                        respond(test, ...results);
+                        BrowserRunner.active_runner.respond(test, ...results);
 
-                        return tools.sendUTF8String(JSON.stringify({ "completed": (--to_complete) == 0 }));
+                        return tools.sendUTF8String(JSON.stringify({ "completed": (--BrowserRunner.active_runner.to_complete) == 0 }));
                     }
 
                     return tools.sendUTF8String(JSON.stringify({ "completed": "false" }));
@@ -137,15 +132,20 @@ export class BrowserRunner implements TestRunner {
                 MIME: "application/json",
                 respond: async (tools) => {
 
-                    const test = await request(this);
+                    if (BrowserRunner.active_runner.request) {
 
-                    if (test) {
-                        const id = server_test.push(test) - 1;
 
-                        return tools.sendUTF8String(JSON.stringify({ test_id: id, test }));
+                        const test = await BrowserRunner.active_runner.request(BrowserRunner.active_runner);
+
+                        if (test) {
+                            const id = server_test.push(test) - 1;
+
+                            return tools.sendUTF8String(JSON.stringify({ test_id: id, test }));
+                        }
+
                     }
 
-                    return tools.sendUTF8String(JSON.stringify({ "NO_TESTS_NEED_TO_WAIT": "true" }));
+                    return tools.sendUTF8String(JSON.stringify({ "NO_TESTS_NEED_TO_WAIT": true }));
 
                 },
                 keys: { ext: server.ext.all, dir: "/test_rigs/acquire/" }
@@ -190,9 +190,21 @@ export class BrowserRunner implements TestRunner {
                 MIME: "application/javascript",
                 respond: async function (tools) {
                     tools.setMIME();
-                    return tools.sendRawStreamFromFile(globals.test_dir + "/build/library/utilites/test_running/test_harness.js");
+                    const str = await tools.getUTF8FromFile(globals.test_dir + "build/library" + tools.url.path);
+                    return tools.sendUTF8String(str.replace(/\"\@candle(fw|lib)\/([^\/\"]+)\/?/g, "\"/cfw\/$2/"));
                 },
-                keys: { ext: server.ext.all, dir: "/test_harness/acquire/" }
+                keys: { ext: server.ext.all, dir: "/test_running/utilities/" }
+            },
+            {
+                name: "TEST_HARNESS_UTILITES",
+                description: "Return test_harness file",
+                MIME: "application/javascript",
+                respond: async function (tools) {
+                    tools.setMIME();
+                    const str = await tools.getUTF8FromFile(globals.test_dir + "build/library" + tools.url.path);
+                    return tools.sendUTF8String(str.replace(/\"\@candle(fw|lib)\/([^\/\"]+)\/?/g, "\"/cfw\/$2/"));
+                },
+                keys: { ext: server.ext.all, dir: "/utilities/*" }
             },
             {
                 name: "GLOBAL_DATA",
@@ -204,17 +216,8 @@ export class BrowserRunner implements TestRunner {
                 },
                 keys: { ext: server.ext.all, dir: "/globals/acquire/" }
             },
-            {
-                name: "TEST_HARNESS",
-                description: "Return test_harness file",
-                MIME: "application/javascript",
-                respond: async function (tools) {
-                    tools.setMIME();
-                    return tools.sendRawStreamFromFile(globals.test_dir + "/build/library/utilites/test_running/construct_test_function.js");
-                },
-                keys: { ext: server.ext.all, dir: "/construct_test_function/acquire/" }
-            },
             candlefw_dispatch,
+            compiled_wick_dispatch,
             {
                 name: "TEST_RIG",
                 description: "Loads individual test rig data",
@@ -243,7 +246,18 @@ export class BrowserRunner implements TestRunner {
             },
             $404_dispatch
         );
+
+
+        //start a dedicated instance of a browser
+        await spark.sleep(100);
+
+        //startFirefox(port, globals);
+        startChrome(port, globals);
     }
+
+
+
+
 }
 
 function startFirefox(port, globals: Globals) {
@@ -311,7 +325,7 @@ function startChrome(port, globals: Globals) {
             //'--enable-kiosk-mode',
             `https://localhost:${port}/`
         ],
-        { detached: false, stdio: ['ignore', process.stdout, process.stderr], env: process.env }
+        { detached: true, stdio: ['ignore', process.stdout, process.stderr], env: process.env }
     );
 
     browser.on('close', (code) => {

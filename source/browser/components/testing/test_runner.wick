@@ -4,7 +4,7 @@ import test from "./test.wick"
 export default <div> 
 
 
-    <h1 class="title"><div class="color"><span class="cfw">cfw</span><div class="div"></div><span class="pkg">TEST</span></div></h1>
+    <h1 class="title"><div class="color"><span class="cfw">CandleLib</span><div class="div"></div><span class="pkg">Cure</span></div></h1>
 
     <container class="overflow" data=${ tests }>
         <test/>

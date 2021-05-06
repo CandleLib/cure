@@ -24,10 +24,12 @@
     </body>
     
     <script async type=module>
+        //  const d = window.open("./0/", "Test 1");
         import {cfw} from "/@cl/cfw/";
         import URL from "/@cl/url/";
         import wick from "/@cl/wick/";
         import spark from "/@cl/spark/";
+      //  import glow from "/@candlefw/glow";
         
 
         let ACTIVE = true, SLOW_POOL = true;
@@ -35,12 +37,16 @@
         async function start(){
 
 
-           async function complete_test(results, test_id){
+           async function complete_test(result, test_id){    
+      
+                result.errors = result.errors.map(e=>Object.assign({}, e))
 
-                (await (new URL("/test_rigs/resolve/")).submitJSON({
-                    results,
+                const {completed} = (await (new URL("/test_rigs/resolve/")).submitJSON({
+                    result,
                     test_id
                 }))
+
+                if(completed)  ACTIVE = false;
             }
             
            await wick.setPresets({
@@ -66,17 +72,13 @@
 
             let falloff = 2;
 
-            await spark.sleep(2000)
-
             while(SLOW_POOL){
-
-                console.log("POLLING")
 
                 if(!ACTIVE){
 
-                    const {NO_TESTS_NEED_TO_WAIT, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
+                    const {NO_TESTS, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
 
-                    if(!NO_TESTS_NEED_TO_WAIT){
+                    if(!NO_TESTS){
                         wick.rt.presets.models.meta.tests.length = 0;
                         wick.rt.presets.models.meta.tests.push(Object.assign(test, {test_id}))
                         ACTIVE= true;
@@ -86,9 +88,9 @@
                 await spark.sleep(100)
             
                 while(ACTIVE){        
-                    const {NO_TESTS_NEED_TO_WAIT, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
+                    const {NO_TESTS, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
                     
-                    if(!NO_TESTS_NEED_TO_WAIT){
+                    if(!NO_TESTS){
                         wick.rt.presets.models.meta.tests.push(Object.assign(test, {test_id}))
                         await spark.sleep(2);
                         falloff = 2;

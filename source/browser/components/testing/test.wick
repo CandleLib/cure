@@ -1,43 +1,61 @@
-import test, { type, name, test_id } from "@model";
-import { run_test, URL, complete_test } from "@api";
-
-var pass = undefined, total_time = undefined;
+import test, { type, test_id } from "@model";
+import {   URL, complete_test } from "@api";
+import spark from "@candlelib/spark"
 
 var frame = "@iframe";
 
 let model = this.model;
 
+var name = ""
+
+var results = []
+
 async function frameLoad(){
 
     const { contentWindow } = frame;
 
-    const result = await contentWindow.runTest(this.model);
+    setTimeout(async ()=>{
 
-    result.test = this.model;
-    
-    pass = result.PASSED;
-    
-    total_time = (Math.round((result.duration * (result.duration < 1 ? 10000 : 10))) / 10) 
-        + (result.duration < 1 ? "μs" : "ms");
-    
-    complete_test(result, test_id);
+        const pending_results = await contentWindow.runTest(this.model);
 
-    contentWindow.close();
+        for(const result of pending_results){   
+
+            result.test = this.model;
+            
+            const duration = result.clipboard_end - result.clipboard_start;
+
+            result.total_time = (Math.round((duration * (duration < 1 ? 10000 : 10))) / 10) 
+            + (duration < 1 ? "μs" : "ms");
+        }
+
+        
+
+        results = pending_results;
+        
+        complete_test(results, test_id);
+
+        contentWindow.close();
+    }, 1000)
 }
 
 frame.onload = ()=>frameLoad();
 
 export default <div>
-    <div class="id"> ${test_id }</div>
-    <div class="rs" style=${ pass ? "border-color:#89bd93;color:#89bd93" : "border-color:#ca4940;color:#ca4940" }> ${ (typeof pass != "undefined" && (pass ? "passed" : "failed")) || "pending"}</div>
-    <div class="ty"> type <span class="val"><br/>${ type.toLowerCase() }</span>  </div>
-    <div class="tm"> time <span class="val"><br/>${ total_time || "pending" } </span></div>
-    <div class="sr"> name <span class="val"><br/>${ name.replace("-->", " :: ") } </span> </div>
+    <container data=${results} element=null>
+        <div>
+            <div class="id"> ${test_id }</div>
+            <div class="rs" style=${ pass ? "border-color:#89bd93;color:#89bd93" : "border-color:#ca4940;color:#ca4940" }> 
+                ${ (typeof pass != "undefined" && (pass ? "passed" : "failed")) || "pending"}</div>
+            <div class="ty"> type <span class="val"><br/>${ type.toLowerCase() }</span>  </div>
+            <div class="tm"> time <span class="val"><br/>${ total_time || "pending" } </span></div>
+            <div class="sr"> name <span class="val"><br/>${ name.replace("-->", " :: ") } </span> </div>
+            </div>
+    </container>
     <iframe style="display: none;" src="/components/iframe.html"></iframe>
 </div>;
 
 <style>
-    root{
+    root > div{
         position: relative;
         display: flex;
         margin: 20px 50px;
