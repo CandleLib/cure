@@ -1,6 +1,6 @@
 {
     "name": "@candlelib/cure",
-    "version": "0.5.1",
+    "version": "0.5.2",
     "description": "Testing Framework",
     "type": "module",
     "types": "./build/types/test.d.ts",
