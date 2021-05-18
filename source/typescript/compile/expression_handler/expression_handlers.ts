@@ -103,18 +103,18 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
         },
 
         print: (queue, reporter) => {
-            return [];
+            return ["Expected function to not throw"];
         },
     },
 
     /**
-    * Call Expression [ !call() ] Should Throw
+    * Negated Call Expression [ !call() ] Should Throw
     */
     <ExpressionHandler<JSUnaryExpression>>{
 
         filter: JSNodeType.UnaryExpression,
 
-        confirmUse: _ => _.symbol == "!" && _.nodes[0].type == JSNodeType.CallExpression,
+        confirmUse: _ => _.symbol == "!" && (_.nodes[0].type == JSNodeType.CallExpression),
 
         build: (node, queue) => {
             const
@@ -128,12 +128,39 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
         },
 
         print: (queue, reporter) => {
-            return [];
+            const [name] = [...queue.shift()]
+            return [`Expected function ${name} to throw`];
+        },
+    },
+
+     /**
+    * Negated await Expression [ !await call() ] Should Throw
+    */
+      <ExpressionHandler<JSUnaryExpression>>{
+
+        filter: JSNodeType.UnaryExpression,
+
+        confirmUse: _ => _.symbol == "!" && (_.nodes[0].type == JSNodeType.AwaitExpression),
+
+        build: (node, queue) => {
+            const
+                [name, args] = (<JSCallExpression>node.nodes[0].nodes[0]).nodes,
+                str = queue.push(`"${$r(name).replace(/\"/g, "\\\"")}"`),
+                fn = queue.push(name),
+                vars = args.nodes.map(arg => queue.push(arg)),
+                first = fn, last = vars.pop();
+
+            queue.report(`!{${first},${last}}`);
+        },
+
+        print: (queue, reporter) => {
+            const [name] = [...queue.shift()]
+            return [`Expected function ${name} to throw`];
         },
     },
 
     /**
-    * Await Expression [ !call() ] Should not throw
+    * Await Expression [ await call() ] Should not throw
     */
     <ExpressionHandler<JSAwaitExpression>>{
 
@@ -149,11 +176,11 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
                 vars = args.nodes.map(arg => queue.push(arg)),
                 first = fn, last = vars.pop();
 
-            queue.report(`!{${first},${last}}`);
+            queue.report(`noThrow{${first},${last||first}}`);
         },
 
         print: (queue, reporter) => {
-            return [];
+            return ["Expected function to not throw"];
         },
     },
 
