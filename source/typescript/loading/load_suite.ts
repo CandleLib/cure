@@ -9,6 +9,7 @@ import { TestSuite } from "../types/test_suite.js";
 import { loadTests } from "./load_tests.js";
 import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
 import { createSuiteError } from "../utilities/library_errors.js";
+import spark from "@candlefw/spark";
 
 async function initializeSuite(
     globals: Globals,
@@ -43,6 +44,8 @@ export async function loadSuite(suite: TestSuite, globals: Globals, reloadSuite:
             try {
 
                 const watcher = fs.watch(suite.origin + "", async function (a) {
+                    //Sleep 100 ms to ensure new data is read
+                    await spark.sleep(100);
 
                     await reloadSuite(suite);
 
@@ -69,7 +72,7 @@ export function createSuiteReloaderFunction(globals: Globals, postInitialize: (s
 
             globals.flags.PENDING = true;
 
-            initializeSuite(globals, suite);
+            await initializeSuite(globals, suite);
 
             loadTests(suite.data, suite, globals);
 
