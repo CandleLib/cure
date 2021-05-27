@@ -1,6 +1,5 @@
-import lantern, { $404_dispatch, candlefw_dispatch, LanternServer, compiled_wick_dispatch } from "@candlefw/lantern";
-import spark from "@candlefw/spark";
-import { SHIFT_IN } from "@candlefw/wind/build/types/ascii_code_points";
+import lantern, { $404_dispatch, candle_library_dispatch, LanternServer, compiled_wick_dispatch } from "@candlelib/lantern";
+import spark from "@candlelib/spark";
 import { spawn } from "child_process";
 import { Http2Server } from "http2";
 import path from "path";
@@ -191,7 +190,7 @@ export class BrowserRunner implements TestRunner {
                 respond: async function (tools) {
                     tools.setMIME();
                     const str = await tools.getUTF8FromFile(globals.test_dir + "build/library" + tools.url.path);
-                    return tools.sendUTF8String(str.replace(/\"\@candle(fw|lib)\/([^\/\"]+)\/?/g, "\"/cfw\/$2/"));
+                    return tools.sendUTF8String(str.replace(/\"\@candlelib\/([^\/\"]+)\/?/g, "\"/@cl\/$1/"));
                 },
                 keys: { ext: server.ext.all, dir: "/test_running/utilities/" }
             },
@@ -202,7 +201,7 @@ export class BrowserRunner implements TestRunner {
                 respond: async function (tools) {
                     tools.setMIME();
                     const str = await tools.getUTF8FromFile(globals.test_dir + "build/library" + tools.url.path);
-                    return tools.sendUTF8String(str.replace(/\"\@candle(fw|lib)\/([^\/\"]+)\/?/g, "\"/cfw\/$2/"));
+                    return tools.sendUTF8String(str.replace(/\"\@candlelib\/([^\/\"]+)\/?/g, "\"/@cl\/$1/"));
                 },
                 keys: { ext: server.ext.all, dir: "/utilities/*" }
             },

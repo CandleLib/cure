@@ -1,4 +1,4 @@
-import { JSNodeTypeLU, renderCompressed as $r } from "@candlefw/js";
+import { JSNodeTypeLU, renderCompressed as $r } from "@candlelib/js";
 import { loadExpressionHandler } from "../build/library/compile/expression_handler/expression_handler_functions.js";
 import { getSuiteTestOutcomeFromURL } from "./tools.js";
 

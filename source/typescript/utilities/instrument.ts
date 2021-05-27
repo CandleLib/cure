@@ -1,17 +1,17 @@
 import fs from "fs";
 import path from "path";
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 
 import {
     parser, JSNodeType,
     ext, JSNodeClass,
     stmt, renderWithFormatting
-} from "@candlefw/js";
-import { traverse, skip_root } from "@candlefw/conflagrate";
+} from "@candlelib/js";
+import { traverse, skip_root } from "@candlelib/conflagrate";
 import { format_rules } from "../reporting/utilities/format_rules.js";
-import { getPackageJsonObject } from "@candlefw/wax";
-import { PackageJSONData } from "@candlefw/wax/build/types/types/package";
+import { getPackageJsonObject } from "@candlelib/wax";
+import { PackageJSONData } from "@candlelib/wax/build/types/types/package";
 
 const fsp = fs.promises;
 export const test = null;

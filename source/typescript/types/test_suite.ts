@@ -1,4 +1,4 @@
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
 import { Test } from "./test";
 

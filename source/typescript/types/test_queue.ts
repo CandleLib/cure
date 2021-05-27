@@ -1,4 +1,4 @@
-import { JSNode } from "@candlefw/js";
+import { JSNode } from "@candlelib/js";
 
 /**
  * Interface for the test variable queue

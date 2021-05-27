@@ -1,5 +1,5 @@
-import { JSNode } from "@candlefw/js";
-import { Lexer } from "@candlefw/wind";
+import { JSNode } from "@candlelib/js";
+import { Lexer } from "@candlelib/wind";
 
 export interface ImportModule extends DependGraphNode {
 

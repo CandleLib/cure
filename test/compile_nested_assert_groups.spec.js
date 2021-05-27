@@ -5,9 +5,9 @@
  * test if the assert_group has a `sequence` meta label.
  */
 
-import { parser } from "@candlefw/js";
+import { parser } from "@candlelib/js";
 import { compileTestsFromSourceAST } from "../build/library/compile/compile_statements.js";
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { createGlobalsObject } from "./tools.js";
 
 const source = await (URL.resolveRelative("./test/data/nested_assert_groups.js")).fetchText();

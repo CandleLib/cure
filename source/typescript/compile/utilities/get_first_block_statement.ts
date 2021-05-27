@@ -1,4 +1,4 @@
-import { JSNode, JSNodeType } from "@candlefw/js";
+import { JSNode, JSNodeType } from "@candlelib/js";
 import { jstBreadth } from "./traverse_js_node.js";
 
 

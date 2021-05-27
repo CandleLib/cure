@@ -4,7 +4,7 @@
  * @module compile
  */
 
-import { ext, JSModule, JSScript } from "@candlefw/js";
+import { ext, JSModule, JSScript } from "@candlelib/js";
 import { AssertionSite } from "../types/assertion_site.js";
 import { Globals } from "../types/globals.js";
 import { ImportModule } from "../types/imports.js";

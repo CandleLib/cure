@@ -4,7 +4,7 @@
  * to run within a browser iframe.
  */
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 
 assert(skip, URL.GLOBAL.host == "localhost", browser);
 

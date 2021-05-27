@@ -1,4 +1,4 @@
-import { Lexer } from "@candlefw/wind";
+import { Lexer } from "@candlelib/wind";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
 import { ImportSource, ModuleSpecifier } from "./imports";
 

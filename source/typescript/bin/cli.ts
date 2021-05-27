@@ -1,7 +1,22 @@
 #!/usr/bin/env node
+/**
+ * Copyright (C) 2021 Anthony Weathersby - The Hydrocarbon Parser Compiler
+ *
+ * This program is free software: you can redistribute it and/or modify
+ * it under the terms of the GNU General Public License as published by
+ * the Free Software Foundation, either version 3 of the License, or
+ * (at your option) any later version.
+ *
+ * This program is distributed in the hope that it will be useful,
+ * but WITHOUT ANY WARRANTY; without even the implied warranty of
+ * MERCHANTABILITY or FITNESS FOR A PARTICULAR PURPOSE.  See the
+ * GNU General Public License for more details.
+ * 
+ * Contact: acweathersby.codes@gmail.com
+ */
 
-import URL from "@candlefw/url";
-import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlefw/wax";
+import URL from "@candlelib/url";
+import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlelib/wax";
 import fs from "fs";
 import node_path from "path";
 import { BasicReporter, createTestFrame, NullReporter } from "../cure.js";

@@ -1,4 +1,4 @@
-import { JSNode } from "@candlefw/js";
+import { JSNode } from "@candlelib/js";
 import { StatementReference } from "../types/statement_props";
 export function compileStatementsAndDeclarations(
     statement_reference: StatementReference,

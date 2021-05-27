@@ -1,5 +1,5 @@
-import { copy, traverse } from "@candlefw/conflagrate";
-import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, JSNodeTypeLU, JSStatementClass, renderWithFormatting, tools } from "@candlefw/js";
+import { copy, traverse } from "@candlelib/conflagrate";
+import { JSExpressionStatement, JSNode, JSNodeClass, JSNodeType, JSNodeTypeLU, JSStatementClass, renderWithFormatting, tools } from "@candlelib/js";
 import { AssertionSite, AssertionSiteClosure } from "../types/assertion_site.js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
@@ -124,7 +124,7 @@ function walkJSNodeTree(state: CompilerState, LEAVE_ASSERTION_SITE: boolean, OUT
         .skipRoot()
         .makeSkippable()
         .makeMutable()) {
-            
+
         state.FORCE_USE = false;
 
         switch (node.type) {

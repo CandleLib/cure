@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import path from "path";
 
 import { Globals } from "../types/globals.js";
@@ -9,7 +9,7 @@ import { TestSuite } from "../types/test_suite.js";
 import { loadTests } from "./load_tests.js";
 import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
 import { createSuiteError } from "../utilities/library_errors.js";
-import spark from "@candlefw/spark";
+import spark from "@candlelib/spark";
 
 async function initializeSuite(
     globals: Globals,

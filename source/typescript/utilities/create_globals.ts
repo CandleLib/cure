@@ -1,4 +1,4 @@
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { NullReporter } from "../reporting/null_reporter.js";
 import { completedRun } from "../reporting/report.js";
 import * as colors from "../reporting/utilities/colors.js";

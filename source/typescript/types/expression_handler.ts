@@ -1,4 +1,4 @@
-import { JSNode, JSNodeClass, JSNodeType } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeType } from "@candlelib/js";
 import { Reporter } from "./reporter";
 import { ReportQueue } from "./report_queue";
 import { TestQueue } from "./test_queue";

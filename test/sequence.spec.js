@@ -11,7 +11,7 @@
  */
 
 
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { createTestsFromStringSource } from "./tools.js";
 
 

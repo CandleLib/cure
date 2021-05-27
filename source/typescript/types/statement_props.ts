@@ -1,4 +1,4 @@
-import { JSNode, JSStatementClass } from "@candlefw/js";
+import { JSNode, JSStatementClass } from "@candlelib/js";
 import { AssertionSite } from "./assertion_site.js";
 import { setUnion, closureSet } from "../utilities/sets.js";
 

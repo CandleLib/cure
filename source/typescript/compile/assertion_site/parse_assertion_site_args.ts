@@ -1,4 +1,4 @@
-import { JSCallExpression, JSCallExpressionClass, JSIdentifierClass, JSIdentifierReference, JSNode, JSNodeClass, JSNodeType, renderCompressed, tools } from "@candlefw/js";
+import { JSCallExpression, JSCallExpressionClass, JSIdentifierClass, JSIdentifierReference, JSNode, JSNodeClass, JSNodeType, renderCompressed, tools } from "@candlelib/js";
 import { AssertionSiteArguments } from "../../types/assertion_site_arguments.js";
 import { jst } from "../utilities/traverse_js_node.js";
 

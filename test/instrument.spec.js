@@ -1,5 +1,5 @@
-import URL from "@candlefw/url";
-import { getPackageJsonObject as getPackageJSON } from "@candlefw/wax";
+import URL from "@candlelib/url";
+import { getPackageJsonObject as getPackageJSON } from "@candlelib/wax";
 import fs from "fs";
 import path from "path";
 import { instrument, processPackageData } from "../build/library/utilities/instrument.js";

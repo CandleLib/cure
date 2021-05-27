@@ -1,4 +1,4 @@
-import { JSNode } from "@candlefw/js";
+import { JSNode } from "@candlelib/js";
 import { ImportModule } from "./imports.js";
 import { StatementReference } from "./statement_props";
 import { closureSet, setUnion, setDiff } from "../utilities/sets.js";

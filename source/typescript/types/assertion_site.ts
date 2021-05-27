@@ -1,5 +1,5 @@
-import { JSNode } from "@candlefw/js";
-import { Lexer } from "@candlefw/wind";
+import { JSNode } from "@candlelib/js";
+import { Lexer } from "@candlelib/wind";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum";
 import { ImportRequirement } from "./imports";
 import { StatementReference } from "./statement_props";

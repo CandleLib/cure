@@ -1,4 +1,4 @@
-import { SourceMap } from "@candlefw/conflagrate";
+import { SourceMap } from "@candlelib/conflagrate";
 import { TransferableTestError } from "./test_error.js";
 
 

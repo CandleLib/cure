@@ -1,4 +1,4 @@
-import { JSNode, JSNodeClass, JSNodeType, parser, renderWithFormatting } from "@candlefw/js";
+import { JSNode, JSNodeClass, JSNodeType, parser, renderWithFormatting } from "@candlelib/js";
 import { Reporter } from "../../types/reporter.js";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info.js";

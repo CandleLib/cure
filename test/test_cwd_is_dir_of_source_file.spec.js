@@ -1,12 +1,12 @@
 /**[API]:testing
  * 
- * Using @candlefw/url,  when a test rig is run the dir ( URL.GLOBAL )
+ * Using @candlelib/url,  when a test rig is run the dir ( URL.GLOBAL )
  * should be the same as the test's source file's dir.
  */
 
 
-import { getPackageJsonObject } from "@candlefw/wax";
-import URL from "@candlefw/url";
+import { getPackageJsonObject } from "@candlelib/wax";
+import URL from "@candlelib/url";
 
 const
     { package_dir, FOUND, package: pkg } = await getPackageJsonObject(URL.getCWDURL() + "/"),

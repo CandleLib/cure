@@ -1,6 +1,6 @@
-import { decodeJSONSourceMap, getSourceLineColumn, traverse } from "@candlefw/conflagrate";
-import URL from "@candlefw/url";
-import { Lexer } from "@candlefw/wind";
+import { decodeJSONSourceMap, getSourceLineColumn, traverse } from "@candlelib/conflagrate";
+import URL from "@candlelib/url";
+import { Lexer } from "@candlelib/wind";
 
 import { createTest__cfwtest } from "../test_running/utilities/create_test_function.js";
 import parser from "./parser.js";

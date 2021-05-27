@@ -1,5 +1,5 @@
-import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed, renderWithFormatting } from "@candlefw/js";
-import URL from "@candlefw/url";
+import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed, renderWithFormatting } from "@candlelib/js";
+import URL from "@candlelib/url";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
 import { createHierarchalName } from "../../utilities/name_hierarchy.js";

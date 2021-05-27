@@ -1,4 +1,4 @@
-import { exp, JSAssignmentExpression, JSAwaitExpression, JSCallExpression, JSEqualityExpression, JSInstanceOfExpression, JSNode, JSNodeClass, JSNodeType, JSRelationalExpression, JSUnaryExpression, renderCompressed as $r } from "@candlefw/js";
+import { exp, JSAssignmentExpression, JSAwaitExpression, JSCallExpression, JSEqualityExpression, JSInstanceOfExpression, JSNode, JSNodeClass, JSNodeType, JSRelationalExpression, JSUnaryExpression, renderCompressed as $r } from "@candlelib/js";
 import { fail, rst, valA } from "../../reporting/utilities/colors.js";
 import { ExpressionHandler } from "../../types/expression_handler";
 

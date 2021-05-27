@@ -1,4 +1,4 @@
-import spark from "@candlefw/spark";
+import spark from "@candlelib/spark";
 
 import { ExternalThrow } from "./external_throw.js";
 

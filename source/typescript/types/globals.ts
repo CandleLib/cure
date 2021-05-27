@@ -1,4 +1,4 @@
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { FSWatcher } from "fs";
 import { DesktopRunner } from "../test_running/runners/desktop_runner.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum.js";

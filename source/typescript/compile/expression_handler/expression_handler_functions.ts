@@ -1,4 +1,4 @@
-import { JSNode, renderCompressed } from "@candlefw/js";
+import { JSNode, renderCompressed } from "@candlelib/js";
 import { ExpressionHandler, ExpressionHandlerBase } from "../../types/expression_handler.js";
 import { Globals } from "../../types/globals.js";
 import { ReportQueue } from "../../types/report_queue.js";

@@ -1,4 +1,4 @@
-import { JSNode } from "@candlefw/js";
+import { JSNode } from "@candlelib/js";
 import { CompilerState } from "../types/compiler_state";
 import { Globals } from "../types/globals.js";
 import { ImportModule } from "../types/imports.js";

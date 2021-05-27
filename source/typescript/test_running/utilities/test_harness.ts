@@ -1,5 +1,5 @@
-import { decodeJSONSourceMap, SourceMap } from "@candlefw/conflagrate";
-import URL from "@candlefw/url";
+import { decodeJSONSourceMap, SourceMap } from "@candlelib/conflagrate";
+import URL from "@candlelib/url";
 import { TransferableTestError } from "../../types/test_error";
 import { TestHarness, TestHarnessEnvironment } from "../../types/test_harness";
 import { TestInfo } from "../../types/test_info";

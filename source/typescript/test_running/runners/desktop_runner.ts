@@ -1,5 +1,5 @@
-import spark from "@candlefw/spark";
-import URL from "@candlefw/url";
+import spark from "@candlelib/spark";
+import URL from "@candlelib/url";
 import { performance } from "perf_hooks";
 import { Worker } from "worker_threads";
 import { DesktopWorkerHandle } from "../../types/desktop_worker_handle";

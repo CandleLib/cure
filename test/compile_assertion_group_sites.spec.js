@@ -4,9 +4,9 @@
  * SEQUENCE : { ... } labeled blocks;
  */
 
-import { parser } from "@candlefw/js";
+import { parser } from "@candlelib/js";
 import { compileTestsFromSourceAST } from "@candlelib/cure/build/library/compile/compile_statements.js";
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { createGlobalsObject } from "./tools.js";
 
 const source = await (URL.resolveRelative("./test/data/function_test_spec.js")).fetchText();

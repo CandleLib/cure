@@ -1,5 +1,5 @@
-import spark from "@candlefw/spark";
-import { test } from "@candlefw/wick";
+import spark from "@candlelib/spark";
+import { test } from "@candlelib/wick";
 import { completedRun, startRun, updateRun } from "../reporting/report.js";
 import { Globals, Outcome } from "../types/globals.js";
 import { Test } from "../types/test.js";

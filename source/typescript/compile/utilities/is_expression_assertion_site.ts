@@ -1,4 +1,4 @@
-import { JSCallExpression, JSNode, JSNodeType, tools } from "@candlefw/js";
+import { JSCallExpression, JSNode, JSNodeType, tools } from "@candlelib/js";
 
 const assert_group_names = ["assert_group"];
 const assert_site_names = ["assert"];

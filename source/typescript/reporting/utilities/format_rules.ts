@@ -1,5 +1,5 @@
-import { JSNodeType } from "@candlefw/js";
-import { buildFormatRules, FormatRule as $ } from "@candlefw/conflagrate";
+import { JSNodeType } from "@candlelib/js";
+import { buildFormatRules, FormatRule as $ } from "@candlelib/conflagrate";
 
 export const { format_rules } = buildFormatRules([{
     type: JSNodeType.LexicalDeclaration,

@@ -1,4 +1,4 @@
-import { JSNode, stmt } from "@candlefw/js";
+import { JSNode, stmt } from "@candlelib/js";
 import { harness_internal_name } from "../../test_running/utilities/test_harness.js";
 import { ExpressionHandler } from "../../types/expression_handler.js";
 import { name_delimiter, createHierarchalName } from "../../utilities/name_hierarchy.js";

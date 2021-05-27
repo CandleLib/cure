@@ -1,4 +1,4 @@
-import URL from "@candlefw/url";
+import URL from "@candlelib/url";
 import { assert } from "console";
 import { createTestsFromStringSource, createTestSuiteFromSource, getSuiteTestOutcomeFromSource } from "./tools.js";
 

@@ -1,4 +1,4 @@
-import url from "@candlefw/url";
+import url from "@candlelib/url";
 import parser from "../build/library/utilities/parser.js";
 
 const v8_error_stack_string = `dfsf

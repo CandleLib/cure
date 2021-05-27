@@ -1,6 +1,6 @@
-import { traverse } from "@candlefw/conflagrate";
-import { JSNode, JSNodeType } from "@candlefw/js";
-import URL from "@candlefw/url";
+import { traverse } from "@candlelib/conflagrate";
+import { JSNode, JSNodeType } from "@candlelib/js";
+import URL from "@candlelib/url";
 import { CompilerState } from "../types/compiler_state";
 import { ImportModule } from "../types/imports";
 

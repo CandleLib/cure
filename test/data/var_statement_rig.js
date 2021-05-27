@@ -6,7 +6,7 @@
 
 // Since there is no implementation here this will throw an error
 // when inspected by cfw.docs or cfw.test.
-import wick from "@candlefw/wick";
+import wick from "@candlelib/wick";
 
 var comp = await wick("/test/compile/component_style.wick");
 

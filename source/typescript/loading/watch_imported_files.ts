@@ -1,6 +1,7 @@
-import { traverse } from "@candlefw/conflagrate";
-import { ext, JSNodeType, parser } from "@candlefw/js";
-import URL from "@candlefw/url";
+import { traverse } from "@candlelib/conflagrate";
+import { ext, JSNodeType, parser } from "@candlelib/js";
+import spark from "@candlelib/spark";
+import URL from "@candlelib/url";
 import fs from "fs";
 import { rst } from "../reporting/utilities/colors.js";
 import { runTests } from "../test_running/run_tests.js";
