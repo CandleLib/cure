@@ -11,8 +11,8 @@
             const TestError = function(d){ const {message, stack} = new Error(d); this.message = message, this.stack = stack};
 
             //Load test runners 
-            async function loadImport(source) {
-                return await import(source[0] == "/" ? source : "/" + source );
+            async function loadImport(source, module_specifier) {
+                return await import(module_specifier[0] == "/" ? module_specifier : "/" + module_specifier );
             }  
 
             const logger = console.log
