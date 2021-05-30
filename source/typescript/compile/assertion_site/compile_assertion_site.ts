@@ -203,14 +203,14 @@ export function compileAssertionGroupSite(
             block,
             LEAVE_ASSERTION_SITE,
             OUTER_SCOPE_IS_INSIDE_SEQUENCED,
-            RETURN_PROPS_ONLY
+            false
         ) : null;
     }
 
 
     if (prop) {
 
-        if (LEAVE_ASSERTION_SITE) {
+        if (false && LEAVE_ASSERTION_SITE) {
 
             const
                 imports_ = new Set(prop.assertion_sites.flatMap(r => [...r.import_names.values()])),
