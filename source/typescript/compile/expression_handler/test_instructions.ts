@@ -11,7 +11,7 @@ export function createPushAndAssetInstruction(val: string): JSNode {
 }
 
 export function createSetNameInstruction(generated_name: string, static_name: string = "", dynamic_name: string = "", suite_name = ""): JSNode {
-    const used_name = dynamic_name || `"${(static_name || generated_name).replace(/\"/g, "\\\"")}"`;
+    const used_name = dynamic_name || `"${((static_name || generated_name) + "").replace(/\"/g, "\\\"")}"`;
 
     const hierarchal_name = suite_name
         ? `"${suite_name + name_delimiter}" + ${used_name}`
@@ -21,7 +21,7 @@ export function createSetNameInstruction(generated_name: string, static_name: st
 }
 
 export function createPushNameInstruction(generated_name: string, static_name: string = "", dynamic_name: string = ""): JSNode {
-    const used_name = dynamic_name || `"${(static_name || generated_name).replace(/\"/g, "\\\"")}"`;
+    const used_name = dynamic_name || `"${((static_name || generated_name) + "").replace(/\"/g, "\\\"")}"`;
 
     return stmt(`${harness_internal_name}.pushName(${used_name})`);
 }
