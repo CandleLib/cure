@@ -124,19 +124,19 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
                 vars = args.nodes.map(arg => queue.push(arg)),
                 first = fn, last = vars.pop();
 
-            queue.report(`!{${first},${last}}`);
+            queue.report(`!{${first},${last || first}}`);
         },
 
         print: (queue, reporter) => {
-            const [name] = [...queue.shift()]
+            const [name] = [...queue.shift()];
             return [`Expected function ${name} to throw`];
         },
     },
 
-     /**
-    * Negated await Expression [ !await call() ] Should Throw
-    */
-      <ExpressionHandler<JSUnaryExpression>>{
+    /**
+   * Negated await Expression [ !await call() ] Should Throw
+   */
+    <ExpressionHandler<JSUnaryExpression>>{
 
         filter: JSNodeType.UnaryExpression,
 
@@ -150,11 +150,11 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
                 vars = args.nodes.map(arg => queue.push(arg)),
                 first = fn, last = vars.pop();
 
-            queue.report(`!{${first},${last}}`);
+            queue.report(`!{${first},${last || first}}`);
         },
 
         print: (queue, reporter) => {
-            const [name] = [...queue.shift()]
+            const [name] = [...queue.shift()];
             return [`Expected function ${name} to throw`];
         },
     },
@@ -176,7 +176,7 @@ export const default_expression_handlers: ExpressionHandler<JSNode>[] = [
                 vars = args.nodes.map(arg => queue.push(arg)),
                 first = fn, last = vars.pop();
 
-            queue.report(`noThrow{${first},${last||first}}`);
+            queue.report(`noThrow{${first},${last || first}}`);
         },
 
         print: (queue, reporter) => {
