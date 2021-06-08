@@ -211,7 +211,7 @@ export class BrowserRunner implements TestRunner {
                 },
                 keys: { ext: server.ext.all, dir: "/globals/acquire/" }
             },
-            candlefw_dispatch,
+            candle_library_dispatch,
             compiled_wick_dispatch,
             {
                 name: "TEST_RIG",
