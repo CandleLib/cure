@@ -11,6 +11,7 @@ export class CIReporter extends BasicReporter {
     constructor() { super(); }
     async update(results: Array<TestInfo>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
         if (!COMPLETE) return "";
+        terminal.CLEAR_SCREEN = false;
         return await super.update(results, global, terminal, COMPLETE);
     }
 }

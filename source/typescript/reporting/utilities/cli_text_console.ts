@@ -21,10 +21,21 @@ export class CLITextDraw {
 
     S: boolean;
 
+    /**
+     * If true then the screen will be cleared
+     * before drawing to it. 
+     */
+    CLEAR_SCREEN: boolean;
+
     constructor() {
         this.buffer = "";
         this.delimiter = "\n";
         this.S = false;
+        this.timer = 0;
+        this.CLEAR_SCREEN = true;
+
+        if (typeof process.stdout.cursorTo != "function")
+            this.CLEAR_SCREEN = false;
     }
 
     addLines(...lines) {
@@ -39,19 +50,30 @@ export class CLITextDraw {
     async print() {
         if (this.S) return;
         this.S = true;
-        return new Promise(res => {
+        const buffer = this.buffer;
+        this.buffer = "";
 
-            process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");
-            
-            process.stdout.cursorTo(0, 0, () => {
-                process.stdout.clearScreenDown(() => {
-                    process.stdin.write(this.buffer, () => {
-                        this.S = false;
-                        res();
+        if (this.CLEAR_SCREEN) {
+
+            new Promise(res => {
+                process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");;
+                process.stdout.cursorTo(0, 0, () => {
+                    process.stdout.clearScreenDown(() => {
+                        process.stdout.cursorTo(0, 0, () => {
+                            process.stdout.write(buffer, () => {
+                                res(0);
+                                this.S = false;
+                            });;
+                        });
                     });
                 });
             });
-        });
+        } else {
+
+            const print = console.log.bind(console);
+
+            buffer.split("\n").map(print);
+        }
     }
 
     log(...data) {
