@@ -62,8 +62,14 @@ async function loadModules(test: Test, ImportedModules: Map<string, NodeModule>,
 
     for (const { source, module_specifier } of test.import_module_sources)
 
-        if (!ImportedModules.has(module_specifier))
+        if (!ImportedModules.has(module_specifier)) {
 
-            ImportedModules.set(module_specifier, await ld(source));
+            const mod = await ld(source, module_specifier);
+
+            if (!mod) {
+                throw new Error(`Could not load module ${module_specifier} located ${source}`);
+            }
+            ImportedModules.set(module_specifier, mod);
+        }
 }
 
