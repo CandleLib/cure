@@ -16,12 +16,16 @@ const harness_env = createTestHarnessEnvironmentInstance(equal, util, <Performan
 export const harness = harness_env.harness;
 export const ImportedModules: Map<string, any> = new Map();
 export async function loadImport(source) {
-    return await import(source);
+    try {
+        return await import(source);
+    } catch (e) {
+        throw (e);
+    }
 }
 
 export function createAddendum(sources: ImportSource[], test: Test) {
     if (sources.findIndex(s => s.module_specifier == "@candlelib/wick") >= 0)
-        return `await cfw.wick.server(); cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
+        return `cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
     if (sources.findIndex(s => s.module_specifier == "@candlelib/url") >= 0)
         return `await cfw.url.server(); cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
     return "";
