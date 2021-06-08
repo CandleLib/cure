@@ -1,17 +1,15 @@
+import { skip_root, traverse } from "@candlelib/conflagrate";
+import {
+    ext, JSNodeClass, JSNodeType, parser,
+    renderWithFormatting, stmt
+} from "@candlelib/js";
+import { getPackageJsonObject, PackageJSONData } from "@candlelib/paraffin";
+import URL from "@candlelib/url";
 import fs from "fs";
 import path from "path";
-
-import URL from "@candlelib/url";
-
-import {
-    parser, JSNodeType,
-    ext, JSNodeClass,
-    stmt, renderWithFormatting
-} from "@candlelib/js";
-import { traverse, skip_root } from "@candlelib/conflagrate";
 import { format_rules } from "../reporting/utilities/format_rules.js";
-import { getPackageJsonObject } from "@candlelib/wax";
-import { PackageJSONData } from "@candlelib/wax/build/types/types/package";
+
+
 
 const fsp = fs.promises;
 export const test = null;
