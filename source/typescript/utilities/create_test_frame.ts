@@ -1,5 +1,5 @@
 import URL from "@candlelib/url";
-import { getPackageJsonObject } from "@candlelib/wax";
+import { getPackageJsonObject } from "@candlelib/paraffin";
 import default_expression_handlers from "../compile/expression_handler/expression_handlers.js";
 import { loadExpressionHandler } from "../compile/expression_handler/expression_handler_functions.js";
 import { createSuiteReloaderFunction, loadSuite, SuiteReloader } from "../loading/load_suite.js";

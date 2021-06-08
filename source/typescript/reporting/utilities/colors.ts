@@ -1,4 +1,4 @@
-import { xtF, xtColor, xtReset, col_x11, xtBold } from "@candlelib/wax";
+import { xtF, xtColor, xtReset, col_x11, xtBold } from "@candlelib/paraffin";
 
 export const
     rst = xtF(xtReset),

@@ -5,7 +5,7 @@
  */
 
 
-import { getPackageJsonObject } from "@candlelib/wax";
+import { getPackageJsonObject } from "@candlelib/paraffin";
 import URL from "@candlelib/url";
 
 const

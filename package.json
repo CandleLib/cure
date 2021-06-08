@@ -32,7 +32,7 @@
         "@candlelib/lantern": "0.1.0",
         "@candlelib/spark": "0.2.0",
         "@candlelib/url": "0.1.5",
-        "@candlelib/wax": "0.1.0",
+        "@candlelib/paraffin": "0.1.0",
         "@candlelib/wick": "0.12.7",
         "@candlelib/wind": "0.4.4",
         "deep-equal": "^2.0.1"

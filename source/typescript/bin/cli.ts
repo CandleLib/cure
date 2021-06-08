@@ -16,7 +16,7 @@
  */
 
 import URL from "@candlelib/url";
-import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlelib/wax";
+import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlelib/paraffin";
 import fs from "fs";
 import node_path from "path";
 import { BasicReporter, createTestFrame, NullReporter } from "../cure.js";
