@@ -320,7 +320,7 @@ function startChrome(port, globals: Globals) {
             //'--enable-kiosk-mode',
             `https://localhost:${port}/`
         ],
-        { detached: true, stdio: ['ignore', process.stdout, process.stderr], env: process.env }
+        { detached: true, stdio: ['ignore', 'ignore', 'ignore'], env: process.env }
     );
 
     browser.on('close', (code) => {
