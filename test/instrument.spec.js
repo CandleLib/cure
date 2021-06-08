@@ -54,7 +54,7 @@ assert_group(skip, "Create Spec File", sequence, () => {
 
     await instrument(dir, true);
 
-    assert(await fsp.readFile(path.join(dir, "test/candlefw.test.spec.js")));
+    assert(await fsp.readFile(path.join(dir, "test/CandleLibrary.test.spec.js")));
 
     assert(await fsp.readFile(path.join(dir, "package.json")));
 
@@ -66,9 +66,9 @@ assert_group(skip, "Create Spec File", sequence, () => {
 
     assert(data.devDependencies["@candlelib/cure"] == main_data.version);
 
-    assert(data?.scripts.test == "cfw.test ./test/**");
+    assert(data?.scripts.test == "candle.cure ./test/**");
 
-    assert(data?.scripts["test.watch"] == "cfw.test -w ./test/**");
+    assert(data?.scripts["test.watch"] == "candle.cure -w ./test/**");
 
     assert(await fsp.rmdir(dir, { recursive: true }));
 });

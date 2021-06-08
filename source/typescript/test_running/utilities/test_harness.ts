@@ -230,7 +230,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                     }
                 }
 
-                log_book.push("cfw.test.harness.inspect intercept:", ...args.flatMap(val => (util.inspect(val, false, limit, true) + "").split("\n")), "");
+                log_book.push("candle.cure.harness.inspect intercept:", ...args.flatMap(val => (util.inspect(val, false, limit, true) + "").split("\n")), "");
             },
 
 

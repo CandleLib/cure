@@ -79,7 +79,7 @@ CANDLELIB::CURE ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtRes
 
 Instrumenting
 
-    cfw.test instrument [Options]
+    candle.cure instrument [Options]
 
 Builds test file from package.json data
 
@@ -100,7 +100,7 @@ Builds test file from package.json data
     HELP_MESSAGE = ` 
 CANDLELIB::CURE ${sym_version} - ${xtF(xtColor(col_x11.Khaki1)) + TL + xtF(xtReset)} 
 
-    cfw.test [Command?] [Options] [...Input_Files]
+    candle.cure [Command?] [Options] [...Input_Files]
 
 [Command]
     
@@ -188,7 +188,7 @@ async function start() {
      * - Get the name of the project and use it to name the spec file. 
      * - Get the main entry point and read its exports to add to the spec file.
      * - Create a test folder (if one is not present) and create test spec file. 
-     * - Add a script entry in the package.json for testing with cfw.test 
+     * - Add a script entry in the package.json for testing with candle.cure 
      * (Fatally Warn about overwriting existing scripts)
      */
 

@@ -1,5 +1,5 @@
 
-"CFW.test internal test";
+"candle.cure internal test";
 
 import chai from "chai";
 import { NullReporter } from "@candlelib/cure";

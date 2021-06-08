@@ -25,7 +25,7 @@ function getNameData(result: TestInfo | Test, globals: Globals) {
         test_name = suite_names.pop();
 
     let
-        origin = "CandleFW/test",
+        origin = "CandleLibrary/test",
         suite_sub_names = [];
 
     if (globals.suites) {

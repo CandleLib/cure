@@ -97,7 +97,7 @@ export function processPackageData(pkg: PackageJSONData, cfw_test_pkg: PackageJS
     } = pkg;
 
     if (type !== "module")
-        throw new TypeError(`cfw.test only works on module packages. The package type of [${name}] is [${type || "not defined"}]`);
+        throw new TypeError(`candle.cure only works on module packages. The package type of [${name}] is [${type || "not defined"}]`);
 
     //add @candlelib/cure to dev dependencies
     if (!devDependencies) {
@@ -115,8 +115,8 @@ export function processPackageData(pkg: PackageJSONData, cfw_test_pkg: PackageJS
     if (pkg.scripts.test && !FORCE)
         throw new Error(`This will overwrite existing test script [ ${pkg.scripts.test} ]. Aborting.`);
 
-    pkg.scripts.test = `cfw.test ./test/**`;
-    pkg.scripts["test.watch"] = `cfw.test -w ./test/**`;
+    pkg.scripts.test = `candle.cure ./test/**`;
+    pkg.scripts["test.watch"] = `candle.cure -w ./test/**`;
 
     return {
         main,
@@ -127,13 +127,13 @@ export function processPackageData(pkg: PackageJSONData, cfw_test_pkg: PackageJS
 
 /**
  * Instrumenting reads the project.json file, and uses information to generate
- * files and scripts to run cfw.tests within the the project. 
+ * files and scripts to run candle.cures within the the project. 
  *
  * This process includes the following steps, in no particular order:
  * - Get the name of the project and use it to name the spec file.
  * - Get the main entry point and read its exports to add to the spec file.
  * - Create a test folder (if one is not present) and create test spec file.
- * - Add a script entry in the package.json for testing with cfw.test
+ * - Add a script entry in the package.json for testing with candle.cure
  * (Fatally Warn about overwriting existing scripts)
  * - (FUTURE) Use TypeScript typing information to generate basic tests. 
  */

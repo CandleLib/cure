@@ -1,5 +1,5 @@
 /**
- * @module cfw.test
+ * @module candle.cure
  */
 
 import { Outcome } from "./globals";

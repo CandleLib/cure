@@ -1,5 +1,5 @@
 
-assert_group("CFW.test internal test", sequence, () => {
+assert_group("candle.cure internal test", sequence, () => {
 
     let data = 2;
 

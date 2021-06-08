@@ -38,7 +38,7 @@ export type MetaLabel = AssertionReferenceName;
 export type AssertionReferenceName = string;
 
 /**
- * Used to pass customization options to cfw.test
+ * Used to pass customization options to candle.cure
  */
 export interface CFWTestConfiguration {
 
