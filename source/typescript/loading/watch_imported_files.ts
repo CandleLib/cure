@@ -18,13 +18,16 @@ function createFileWatcher(path: URL, globals: Globals) {
 
         const path_string = path.toString();
 
-        globals.reporter.notify("Watching", path + "");
+        // globals.reporter.notify("Watching", path + "");
 
         const watcher = fs.watch(path_string, async function () {
 
             if (!globals.flags.PENDING) {
 
                 globals.flags.PENDING = true;
+
+                //Sleep 300 ms to ensure new data is read
+                await spark.sleep(300);
 
                 const suites = Array.from(globals.watched_files_map.get(path_string).values());
 
