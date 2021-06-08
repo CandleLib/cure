@@ -15,6 +15,7 @@
  * Contact: acweathersby.codes@gmail.com
  */
 
+import spark from "@candlelib/spark";
 import URL from "@candlelib/url";
 import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlelib/paraffin";
 import fs from "fs";
@@ -237,10 +238,13 @@ async function start() {
                     frame.setReporter(new BasicReporter); break;
             }
 
-            await frame.start().then(d => {
+            await frame.start().then(async d => {
 
                 if (d.fatal_errors)
                     d.fatal_errors.forEach(console.error);
+
+                //Allow time for console output to be rendered
+                await spark.sleep(200);
 
                 process.exit(d.FAILED ? 1 : 0);
             });
