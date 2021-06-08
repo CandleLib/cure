@@ -64,7 +64,7 @@
 
             let falloff = 2;
 
-            await spark.sleep(2000)
+            await spark.sleep(500)
 
             while(SLOW_POOL){
 
@@ -91,11 +91,11 @@
                         await spark.sleep(2);
                         falloff = 2;
                     }else {
-                        await spark.sleep(falloff += (falloff * 0.5));
+                        await spark.sleep(Math.min(falloff += (falloff * 0.5)), 500);
                     }
                 }
 
-                await spark.sleep(1000)
+                await spark.sleep(200)
             }
         }
 
