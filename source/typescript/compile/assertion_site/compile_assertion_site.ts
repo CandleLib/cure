@@ -203,14 +203,14 @@ export function compileAssertionGroupSite(
             block,
             LEAVE_ASSERTION_SITE,
             OUTER_SCOPE_IS_INSIDE_SEQUENCED,
-            false
+            RETURN_PROPS_ONLY
         ) : null;
     }
 
 
     if (prop) {
 
-        if (false && LEAVE_ASSERTION_SITE) {
+        if (LEAVE_ASSERTION_SITE) {
 
             const
                 imports_ = new Set(prop.assertion_sites.flatMap(r => [...r.import_names.values()])),
@@ -237,7 +237,7 @@ export function compileAssertionGroupSite(
         } else {
 
 
-            mergeStatementReferencesAndDeclarations(state, prop);
+            // mergeStatementReferencesAndDeclarations(state, prop);
 
             for (const assertion_site of prop.assertion_sites) {
                 assertion_site.IS_ASYNC = assertion_site.IS_ASYNC || state.AWAIT || assertion_site.IS_ASYNC;
@@ -253,8 +253,8 @@ export function compileAssertionGroupSite(
             packageAssertionSites(state, prop);
 
             if (prop.stmt.nodes.length > 0) {
-                state.AWAIT = prop.AWAIT || state.AWAIT;
-                state.statement_references.push(prop);
+                //state.AWAIT = prop.AWAIT || state.AWAIT;
+                //state.statement_references.push(prop);
             }
         }
     }
