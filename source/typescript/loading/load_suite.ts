@@ -1,6 +1,6 @@
 import fs from "fs";
 
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import path from "path";
 
 import { Globals } from "../types/globals.js";

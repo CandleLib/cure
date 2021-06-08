@@ -4,7 +4,7 @@ import {
     renderWithFormatting, stmt
 } from "@candlelib/js";
 import { getPackageJsonObject, PackageJSONData } from "@candlelib/paraffin";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import fs from "fs";
 import path from "path";
 import { format_rules } from "../reporting/utilities/format_rules.js";

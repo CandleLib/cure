@@ -1,4 +1,4 @@
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import fs from "fs";
 export const fsp = fs.promises;
 

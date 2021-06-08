@@ -4,7 +4,7 @@
  * SEQUENCE : { ... } labeled blocks;
  */
 
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { createTestsFromStringSource } from "./tools.js";
 
 const source = await (URL.resolveRelative("./test/data/sequence_test_spec.js")).fetchText();

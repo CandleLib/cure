@@ -1,5 +1,5 @@
 import { findFile } from "../build/library/utilities/find_file.js";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 
 const
     start1 = URL.resolveRelative("./test/data/search_middle/search_start/"),

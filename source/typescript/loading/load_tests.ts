@@ -1,6 +1,6 @@
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlelib/conflagrate";
 import { parser, renderWithFormattingAndSourceMap } from "@candlelib/js";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { Lexer } from "@candlelib/wind";
 import path from "path";
 import { compileTests } from "../compile/compile.js";

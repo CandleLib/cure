@@ -1,4 +1,4 @@
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { getPackageJsonObject } from "@candlelib/paraffin";
 import default_expression_handlers from "../compile/expression_handler/expression_handlers.js";
 import { loadExpressionHandler } from "../compile/expression_handler/expression_handler_functions.js";

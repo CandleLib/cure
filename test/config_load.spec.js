@@ -1,5 +1,5 @@
 import { findFile, fsp } from "../build/library/utilities/find_file.js";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { getPackageJsonObject } from "@candlelib/paraffin";
 import { assert } from "console";
 import { ext, parser as js_parser, renderWithFormatting } from "@candlelib/js";

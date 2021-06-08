@@ -7,7 +7,7 @@
 
 import { parser } from "@candlelib/js";
 import { compileTestsFromSourceAST } from "../build/library/compile/compile_statements.js";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { createGlobalsObject } from "./tools.js";
 
 const source = await (URL.resolveRelative("./test/data/nested_assert_groups.js")).fetchText();

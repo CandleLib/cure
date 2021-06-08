@@ -1,4 +1,4 @@
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { getPackageJsonObject as getPackageJSON } from "@candlelib/paraffin";
 import fs from "fs";
 import path from "path";

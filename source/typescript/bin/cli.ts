@@ -16,7 +16,7 @@
  */
 
 import spark from "@candlelib/spark";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 import { col_x11, getPackageJsonObject, getProcessArgs, xtBold, xtColor, xtF, xtReset } from "@candlelib/paraffin";
 import fs from "fs";
 import node_path from "path";

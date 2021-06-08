@@ -1,12 +1,12 @@
 /**[API]:testing
  * 
- * Using @candlelib/url,  when a test rig is run the dir ( URL.GLOBAL )
+ * Using @candlelib/uri,  when a test rig is run the dir ( URL.GLOBAL )
  * should be the same as the test's source file's dir.
  */
 
 
 import { getPackageJsonObject } from "@candlelib/paraffin";
-import URL from "@candlelib/url";
+import URL from "@candlelib/uri";
 
 const
     { package_dir, FOUND, package: pkg } = await getPackageJsonObject(URL.getCWDURL() + "/"),
