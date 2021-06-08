@@ -115,7 +115,7 @@ function watchTestsOrExit(globals: Globals, resolution: any) {
 
     if (globals.flags.WATCH) {
 
-        globals.reporter.notify("Waiting for changes...");
+        //  globals.reporter.notify("Waiting for changes...");
 
         process.on("exit", () => {
 
@@ -142,7 +142,7 @@ async function initializeGlobals(globals: Globals, number_of_workers: number) {
 
     globals.runners = [
         new DesktopRunner(Math.max(number_of_workers, 1)),
-        new BrowserRunner(63021)
+        new BrowserRunner()
     ];
 
     globals.watchers.length = 0;

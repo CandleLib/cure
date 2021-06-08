@@ -73,7 +73,7 @@ export class BrowserRunner implements TestRunner {
             port,
             host: "0.0.0.0",
             secure: lantern.mock_certificate,
-            // log: lantern.null_logger
+            log: lantern.null_logger
         });
 
         const

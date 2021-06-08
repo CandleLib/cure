@@ -73,8 +73,8 @@ export class DesktopRunner implements TestRunner {
 
                     if (dur > wkr.test.timeout_limit) {
 
-                        wkr.target.terminate();
-                        wkr.target = this.createWorker(wkr);
+                        // wkr.target.terminate();
+                        // wkr.target = this.createWorker(wkr);
 
                         if (wkr.test.retries > 0) {
                             wkr.test.retries--;
