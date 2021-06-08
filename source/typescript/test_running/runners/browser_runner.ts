@@ -42,8 +42,6 @@ export class BrowserRunner implements TestRunner {
         this.request = request;
         this.STOP_ALL_ACTIVITY = false;
 
-        console.log("INIT");
-
         if (!BrowserRunner.SERVER_LOADED) {
 
             BrowserRunner.resource_directory = globals.test_dir + "source/browser/";
@@ -105,8 +103,6 @@ export class BrowserRunner implements TestRunner {
                     const test_results: { test_id: number, results: TestInfo[]; } = await tools.getJSONasObject();
 
                     if (test_results) {
-
-                        console.log(test_results);
 
                         const { results, test_id } = test_results;
 
