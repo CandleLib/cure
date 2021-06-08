@@ -152,7 +152,7 @@ export class BasicReporter implements Reporter {
 
             if (!suite_header) {
                 if (tests.size == 0)
-                    suite_header = offsetA + bkgr + "" + name + ":" + rst;
+                    suite_header = offsetA + symD + "" + name + ":" + rst;
                 else if (FAILURE) {
                     suite_header = offsetA + objA + "" + name + ":" + rst;
                 } else
@@ -178,7 +178,7 @@ export class BasicReporter implements Reporter {
     async start(pending_tests: Test[], global: Globals, terminal: CLITextDraw) {
 
         //Each test is its own suite.
-
+        this.renderToTerminal("starting", terminal);
         this.root_suite = createSuite("/");
 
         pending_tests = pending_tests.slice()
@@ -202,22 +202,24 @@ export class BasicReporter implements Reporter {
     }
 
     async renderToTerminal(output: string, terminal: CLITextDraw) {
-
         if (this.WORKING) {
+
             this.pending = output;
             return;
         }
 
+        this.pending = output;
+
         this.WORKING = true;
 
-        terminal.clear();
+        terminal.log(this.pending);
 
-        terminal.log(output);
+        this.pending = "";
 
         await terminal.print();
 
         this.WORKING = false;
-
+        /*
         if (this.pending) {
 
             const transfer = this.pending;
@@ -226,6 +228,8 @@ export class BasicReporter implements Reporter {
 
             await this.renderToTerminal(transfer, terminal);
         }
+        */
+
     }
 
 
@@ -311,7 +315,7 @@ export class BasicReporter implements Reporter {
                             suite.strings.push("", "");
                         }
 
-                        if (test.INSPECT) {
+                        if (test?.INSPECT) {
 
                             suite.strings.push(...(await createInspectionMessage(test_result, test, suites[test.suite_index], this)).split("\n").map(str => offsetB + str));
 
@@ -345,6 +349,9 @@ export class BasicReporter implements Reporter {
         strings.push(`${total} test${total !== 1 ? "s" : ""} ran. ${total > 0 ? (failed > 0
             ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (total - failed)} test${total - failed !== 1 ? "s" : ""} passed`
             : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
+
+
+        await spark.sleep(10);
 
         await this.renderToTerminal([strings.join("\n"), rst].join("\n"), terminal);
 
