@@ -196,12 +196,10 @@ async function loadTestSuites(test_suite_url_strings: string[], globals: Globals
     ]));
 
     try {
-
         for (const suite of globals.suites.values())
+
             await loadSuite(suite, globals, suiteReloader);
-
     } catch (e) {
-
         createGlobalError(globals, e, "Critical Error Encountered");
     }
 

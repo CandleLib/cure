@@ -188,7 +188,7 @@ export interface TestHarness {
       * Creates a new TestResult object and pushes it to
       * the top of the test clipboard stack, which makes it the
       * active test frame. All data pertaining to a test
-      * collected by this new object. 
+      * is then stored in this object. 
       */
      pushTestResult: (exception_handler_id?: number) => void;
 

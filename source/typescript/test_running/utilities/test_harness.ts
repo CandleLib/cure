@@ -166,6 +166,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 if (typeof a == "object" && typeof b == "object" && a != b)
                     return equal(a, b);
 
+
                 return a == b;
             },
 
