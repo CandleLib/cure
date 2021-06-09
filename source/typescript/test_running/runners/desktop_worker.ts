@@ -25,9 +25,9 @@ export async function loadImport(source) {
 
 export function createAddendum(sources: ImportSource[], test: Test) {
     if (sources.findIndex(s => s.module_specifier == "@candlelib/wick") >= 0)
-        return `cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
+        return `const __URI__ = (await import("@candlelib/uri")).default; __URI__.GLOBAL = new __URI__("${test.working_directory + "/"}")`;
     if (sources.findIndex(s => s.module_specifier == "@candlelib/uri") >= 0)
-        return `await cfw.url.server(); cfw.url.GLOBAL = new cfw.url("${test.working_directory + "/"}")`;
+        return `const __URI__ = (await import("@candlelib/uri")).default; __URI__.server(); __URI__.GLOBAL = new __URI__("${test.working_directory + "/"}")`;
     return "";
 }
 
