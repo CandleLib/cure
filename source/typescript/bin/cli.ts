@@ -220,7 +220,7 @@ async function start() {
             files = await getSpecFileNames(...files.map(s => {
                 let url = new URL(s);
 
-                if (url.IS_RELATIVE)
+            if (url.IS_RELATIVE)
                     url = URL.resolveRelative(url, process.cwd() + "/");
 
                 return url.path;
