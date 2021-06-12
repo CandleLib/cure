@@ -141,7 +141,7 @@ async function initializeGlobals(globals: Globals, number_of_workers: number) {
     await loadPackageJson(globals);
 
     globals.runners = [
-        new DesktopRunner(Math.max(number_of_workers, 1)),
+        new DesktopRunner(Math.max(number_of_workers || 1, 1)),
         new BrowserRunner()
     ];
 
