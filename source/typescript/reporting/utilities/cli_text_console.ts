@@ -32,13 +32,13 @@ export class CLITextDraw {
         this.delimiter = "\n";
         this.S = false;
         this.timer = 0;
-        this.CLEAR_SCREEN = true;
+        this.CLEAR_SCREEN = false;
 
         if (typeof process.stdout.cursorTo != "function")
             this.CLEAR_SCREEN = false;
     }
 
-    addLines(...lines) {
+    addLines(...lines: string[]) {
         const out_lines = lines.join(this.delimiter);
 
         if (this.buffer)
@@ -51,7 +51,8 @@ export class CLITextDraw {
         if (this.S) return;
         this.S = true;
         const buffer = this.buffer;
-        this.buffer = "";
+        this.clear();
+
 
         if (this.CLEAR_SCREEN) {
 
@@ -70,13 +71,12 @@ export class CLITextDraw {
             });
         } else {
 
-            const print = console.log.bind(console);
-
-            buffer.split("\n").map(print);
+            console.log(buffer);
+            this.S = false;
         }
     }
 
-    log(...data) {
+    log(...data: string[]) {
         this.addLines(...data);
         //spark.queueUpdate(this);
     }

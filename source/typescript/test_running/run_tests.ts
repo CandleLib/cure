@@ -12,7 +12,7 @@ export async function runTests(
     RELOAD_DEPENDENCIES: boolean = false
 ): Promise<Outcome> {
 
-    const { runners: test_runners, outcome } = globals;
+    const { runners: test_runners = [], outcome } = globals;
 
     let FAILED = false, SOLO_RUN = false;
 
@@ -51,7 +51,6 @@ export async function runTests(
                         return slug.test;
                     }
             };
-
         await startRun(active_tests.flatMap(d => d.test), globals);
 
         for (const runner of runners)

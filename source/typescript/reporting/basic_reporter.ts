@@ -98,9 +98,10 @@ export class BasicReporter implements Reporter {
 
     WORKING: boolean;
 
-    pending: string;
+    pending: string[];
 
     constructor() {
+        this.WORKING = false;
         this.root_suite = createSuite("/");
         this.time_start = 0;
         this.notifications = [];
@@ -162,7 +163,7 @@ export class BasicReporter implements Reporter {
             strings.push(suite_header, ...suite_strings);
         }
 
-        return strings.join("\n") + "\n";
+        return strings;
     }
 
     async loadingSuites(global: Globals, terminal) { }
@@ -175,7 +176,7 @@ export class BasicReporter implements Reporter {
 
     async prestart(global: Globals, terminal) { }
 
-    async renderToTerminal(output: string, terminal: CLITextDraw) {
+    async renderToTerminal(output: string[], terminal: CLITextDraw) {
         if (this.WORKING) {
 
             this.pending = output;
@@ -186,9 +187,9 @@ export class BasicReporter implements Reporter {
 
         this.WORKING = true;
 
-        terminal.log(this.pending);
+        terminal.log(...this.pending);
 
-        this.pending = "";
+        this.pending = null;
 
         await terminal.print();
 
@@ -208,7 +209,10 @@ export class BasicReporter implements Reporter {
     async start(pending_tests: Test[], global: Globals, terminal: CLITextDraw) {
 
         //Each test is its own suite.
-        await this.renderToTerminal("starting", terminal);
+        await this.renderToTerminal(["starting"], terminal);
+
+        terminal.CLEAR_SCREEN = true;
+
         this.root_suite = createSuite("/");
 
         pending_tests = pending_tests.slice()
@@ -245,8 +249,8 @@ export class BasicReporter implements Reporter {
 
         const out = this.render(global);
 
-        if (!COMPLETE)
-            await this.renderToTerminal(out, terminal);
+        //if (!COMPLETE)
+        //    await this.renderToTerminal(out, terminal);
 
         return out;
     }
@@ -256,7 +260,7 @@ export class BasicReporter implements Reporter {
         const
             time_end = performance.now(),
 
-            strings = [await this.update(results, globals, terminal, true)],
+            strings = [...(await this.update(results, globals, terminal, true))],
 
             suites = [...globals.suites.values()],
 
@@ -350,9 +354,9 @@ export class BasicReporter implements Reporter {
             : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
 
 
-        await spark.sleep(10);
+        await this.renderToTerminal([...strings, rst], terminal);
 
-        await this.renderToTerminal([strings.join("\n"), rst].join("\n"), terminal);
+        await spark.sleep(10);
 
         return failed > 0;
     }

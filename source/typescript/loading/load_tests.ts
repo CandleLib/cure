@@ -125,6 +125,7 @@ function createTestRig(
         BROWSER: BROWSER || false,
 
         source_location: suite?.url?.toString() ?? "",
+
         working_directory: globals?.package_dir?.toString() ?? "",
 
     };
