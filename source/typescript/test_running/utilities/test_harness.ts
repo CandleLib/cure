@@ -155,7 +155,6 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                         fn.apply(fn, values.slice(1));
                     }
                 } catch (e) {
-                    console.log(e);
                     return true;
                 }
                 return false;

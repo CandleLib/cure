@@ -79,6 +79,7 @@ export class DesktopRunner implements TestRunner {
                         if (wkr.test.retries > 0) {
                             wkr.test.retries--;
                             wkr.start = current_time;
+
                             wkr.target.postMessage({ test: wkr.test });
                         } else {
                             const result: TestInfo = <TestInfo>{
@@ -102,6 +103,7 @@ export class DesktopRunner implements TestRunner {
                             };
 
                             this.respond(wkr.test, result);
+
                             wkr.test = null;
                             wkr.READY = true;
                         }
