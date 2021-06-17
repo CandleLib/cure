@@ -1,6 +1,6 @@
 {
     "name": "@candlelib/cure",
-    "version": "0.5.2",
+    "version": "0.6.0",
     "description": "Testing Framework",
     "type": "module",
     "types": "./build/types/test.d.ts",
@@ -26,15 +26,15 @@
     "author": "Anthony Weathersby <acweathersby.codes+candlelib@gmail.com>",
     "license": "MIT",
     "dependencies": {
-        "@candlelib/conflagrate": "*",
-        "@candlelib/hydrocarbon": "*",
-        "@candlelib/js": "*",
-        "@candlelib/lantern": "*",
-        "@candlelib/paraffin": "*",
-        "@candlelib/spark": "*",
-        "@candlelib/uri": "*",
-        "@candlelib/wick": "*",
-        "@candlelib/wind": "*",
+        "@candlelib/conflagrate": "0.4.2",
+        "@candlelib/hydrocarbon": "0.11.2",
+        "@candlelib/js": "0.5.4",
+        "@candlelib/lantern": "0.2.0",
+        "@candlelib/paraffin": "0.1.3",
+        "@candlelib/spark": "0.3.2",
+        "@candlelib/uri": "0.2.3",
+        "@candlelib/wick": "0.15.3",
+        "@candlelib/wind": "0.5.2",
         "deep-equal": "^2.0.1"
     },
     "devDependencies": {
