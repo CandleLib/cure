@@ -22,7 +22,7 @@ const assertion_sites = createTestsFromStringSource(source);
 
 // compileStatementsNew expects a global object and  
 assert(assertion_sites.length == 1);
-assert(assertion_sites[0].SOLO == false);
+assert(assertion_sites[0].SOLO == true);
 
 // Test Sequence Directly
 

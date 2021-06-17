@@ -26,7 +26,7 @@ assert("25: Invalid less than", 2 < 1);
 //10
 assert("27: Invalid less than equal", 2 <= 1);
 //11
-assert("29: This will time out", await spark.sleep(10) == 0);
+assert(5, "29: This will time out", await spark.sleep(10) == 0);
 //12
 assert("31: This test will throw", AThrowingFunction() == 2);
 //13

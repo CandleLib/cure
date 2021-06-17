@@ -35,7 +35,7 @@ assert_group("Error Thrown From Source Mapped File In Working Directory", sequen
         const test_error = createTransferableTestErrorFromException(e, harness);
         const source = await seekSourceFile(test_error, harness);
 
-        assert("Reported line of error is correct", source.line == 21);
+        assert("Reported line of error is correct", source.line == 22);
         assert("Reported column of error is correct", source.column == 60);
     }
 });

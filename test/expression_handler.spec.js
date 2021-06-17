@@ -60,7 +60,7 @@ assert_group(sequence, "Post Test Run", () => {
 
     assert("The result[0] property expression_handler_identifier should equal 0", results[0].expression_handler_identifier == 0);
 
-    assert("The result[0] name should equal 'Mock Generated Name'", results[0].name == "Mock Generated Name");
+    assert("The result[0] name should equal 'Mock Generated Name'", results[0].name == "null-->Mock Generated Name");
 
     assert(results[0].PASSED == false);
 

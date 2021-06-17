@@ -9,7 +9,7 @@ URL.toString();
 assert_group("Gets package.json", sequence, () => {
 
     assert("Loads package.json", (await getPackageJSON()).FOUND == true);
-    assert("Loads @candlelib/package.json", (await getPackageJSON()).package.name == "@candlelib/test");
+    assert("Loads @candlelib/package.json", (await getPackageJSON()).package.name == "@candlelib/cure");
     assert("The directory that package.json is found in should be the same as CWD/PWD", (await getPackageJSON()).package_dir == process.cwd() + "/");
 });
 

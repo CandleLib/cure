@@ -1,5 +1,5 @@
 
-import { createTestFrame, NullReporter } from "@candlelib/cure/build/library/test.js";
+import { createTestFrame, NullReporter } from "../build/library/cure.js";
 
 assert("The function createTestFrame should not throw", createTestFrame());
 
@@ -23,7 +23,7 @@ assert_group("Test", sequence, () => {
     assert(outcome.results.length === 11,
         "Only 11 results should be available");
 
-    assert(outcome.results[2].errors[0].summary == "a is not defined",
+    assert(outcome.results[2].errors[0].summary == "assert is not defined",
         "Chai assert test 1 in internal.mock_spec.js should fail due to undefined `assert`");
 
     assert(outcome.results[3].errors[0].summary == "a is not defined",

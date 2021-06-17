@@ -13,5 +13,8 @@ const
     expected_dir = URL.resolveRelative("./test/", package_dir).path;
 
 assert(FOUND == true);
-assert(pkg?.name == "@candlelib/test");
-assert(expected_dir == URL.GLOBAL + "");
+assert(pkg?.name == "@candlelib/cure");
+
+// Not sure if this should be implemented. Could break a bunch
+// Of existing tests that rely on CWD being the root of the package
+//assert(i, expected_dir == URL.GLOBAL + "");

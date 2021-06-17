@@ -49,7 +49,7 @@ export async function getSuiteTestOutcomeFromSource(source, global_modifications
 
     const globals = createGlobalsObject();
 
-    globals.runner = new DesktopRunner(1);
+    globals.runners = [new DesktopRunner(1)];
 
     Object.assign(globals, global_modifications);
 
