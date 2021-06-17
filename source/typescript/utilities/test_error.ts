@@ -25,7 +25,6 @@ const test_function_name = createTest__cfwtest.name;
 
 function Call_Originated_In_Test_Source(node: StackTraceAst) {
 
-    console.log(node);
     return node.type == "call"
         && (node.call_id == "Object.eval" || node.call_id == "asyncObject.eval")
         && node.sub_stack[0].type == "call"
