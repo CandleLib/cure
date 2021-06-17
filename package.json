@@ -9,7 +9,7 @@
         "candle.cure": "./index.js"
     },
     "scripts": {
-        "prepublishOnly": "yarn build && yarn test",
+        "prepublishOnly": "rm -rf ./build && tsc & sleep 10",
         "test": "node ./build/library/bin/cli.js --headless --threads=2 --reporter=ci ./test/",
         "test.watch": "candle.cure -w --threads=2 ./test/",
         "build.watch": "tsc --watch",
