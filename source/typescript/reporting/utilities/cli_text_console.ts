@@ -54,7 +54,7 @@ export class CLITextDraw {
         this.clear();
 
 
-        if (this.CLEAR_SCREEN) {
+        if (this.CLEAR_SCREEN && typeof process.stdout.cursorTo == "function") {
 
             new Promise(res => {
                 process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");;
