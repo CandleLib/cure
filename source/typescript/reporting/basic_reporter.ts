@@ -175,32 +175,6 @@ export class BasicReporter implements Reporter {
 
     async prestart(global: Globals, terminal) { }
 
-    async start(pending_tests: Test[], global: Globals, terminal: CLITextDraw) {
-
-        //Each test is its own suite.
-        this.renderToTerminal("starting", terminal);
-        this.root_suite = createSuite("/");
-
-        pending_tests = pending_tests.slice()
-            .sort((a, b) => a.index < b.index ? -1 : 1)
-            .sort((a, b) => a.suite_index < b.suite_index ? -1 : 1);
-
-        this.time_start = performance.now();
-
-        try {
-            for (const test of pending_tests) {
-
-                const { suites, name } = getNameData(test, global);
-
-                const suite = getSuiteAtDirectory(this.root_suite, suites);
-            }
-        } catch (e) {
-            //console.log(e);
-        }
-
-        this.render(global);
-    }
-
     async renderToTerminal(output: string, terminal: CLITextDraw) {
         if (this.WORKING) {
 
@@ -231,6 +205,31 @@ export class BasicReporter implements Reporter {
         */
 
     }
+    async start(pending_tests: Test[], global: Globals, terminal: CLITextDraw) {
+
+        //Each test is its own suite.
+        await this.renderToTerminal("starting", terminal);
+        this.root_suite = createSuite("/");
+
+        pending_tests = pending_tests.slice()
+            .sort((a, b) => a.index < b.index ? -1 : 1)
+            .sort((a, b) => a.suite_index < b.suite_index ? -1 : 1);
+
+        this.time_start = performance.now();
+
+        try {
+            for (const test of pending_tests) {
+
+                const { suites, name } = getNameData(test, global);
+
+                const suite = getSuiteAtDirectory(this.root_suite, suites);
+            }
+        } catch (e) {
+            //console.log(e);
+        }
+
+        this.render(global);
+    }
 
 
     async update(results: Array<TestInfo>, global: Globals, terminal: CLITextDraw, COMPLETE = false) {
@@ -247,7 +246,7 @@ export class BasicReporter implements Reporter {
         const out = this.render(global);
 
         if (!COMPLETE)
-            this.renderToTerminal(out, terminal);
+            await this.renderToTerminal(out, terminal);
 
         return out;
     }
