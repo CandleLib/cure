@@ -23,6 +23,12 @@
         "type": "git",
         "url": "https://github.com/candlelib/test.git"
     },
+    "files": [
+        "/build",
+        "/README.md",
+        "/CHANGELOG.md",
+        "/LICENSE"
+    ],
     "author": "Anthony Weathersby <acweathersby.codes+candlelib@gmail.com>",
     "license": "MIT",
     "dependencies": {
