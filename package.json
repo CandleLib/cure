@@ -27,7 +27,8 @@
         "/build",
         "/README.md",
         "/CHANGELOG.md",
-        "/LICENSE"
+        "/LICENSE",
+        "/index.js"
     ],
     "author": "Anthony Weathersby <acweathersby.codes+candlelib@gmail.com>",
     "license": "MIT",
