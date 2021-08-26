@@ -22,13 +22,13 @@
 
 <> location > url 							            
 
-<> url > (RST g:ws) ( protocol domain? f:r { $sym1 + $sym2 } )? path				f:r { ($sym1 + $sym2) }
+<> url > (RST g:sp) ( protocol domain? f:r { $sym1 + $sym2 } )? path				f:r { ($sym1 + $sym2) }
 
-<> domain > (RST g:ws) ( g:id | g:num | \. | \- )(+\" )
+<> domain > (RST g:sp) ( g:id | g:num | \. | \- )(+\" )
 
-<> path > (RST g:ws) \/ ( \. | \/ | g:id | g:num )(+\" )                            f:r { $sym1 + $sym2 }
+<> path > (RST g:sp) \/ ( \. | \/ | g:id | g:num )(+\" )                            f:r { $sym1 + $sym2 }
 
-<> protocol > g:id (RST g:ws) \: (RST g:ws) \//							f:r { $sym1 + $sym2 + $sym3 }
+<> protocol > g:id (RST g:sp) \: (RST g:sp) \//							f:r { $sym1 + $sym2 + $sym3 }
 
 <> member > identifier \. member                                                    f:r { $sym1 + $sym2 + $sym3 }
     | identifier \.[ member \]                                                    f:r { $sym1 + $sym2 + $sym3 + $sym4 + $sym5 }

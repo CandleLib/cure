@@ -12,6 +12,6 @@
     | \( expression \)                  f:r { $sym2 }
     | \{ id \, id \}                    f:r { [ { type:"range", start: $sym2, end:$sym4 } ] }
 
-<> op > ( g:sym | g:id )(+\' ) g:ws?    f:r { { type:"op_ref", sym:$sym1, precedence:env.getPrecedence($sym1, env.globals), captures:1 } }
+<> op > ( g:sym | g:id )(+\' ) g:sp?    f:r { { type:"op_ref", sym:$sym1, precedence:env.getPrecedence($sym1, env.globals), captures:1 } }
 
 <> id > \$$ g:num                       f:r { parseInt($sym2) } 

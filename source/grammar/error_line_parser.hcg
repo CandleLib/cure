@@ -13,7 +13,7 @@
 <> call_arg > call_id \( v8_stack_line(+\, ) \)										f:r { { type:"call", call_id:$sym1, sub_stack: $sym3 } }
 	| location
 
-<> call_id > (RST g:ws)( (RST g:ws) g:id | (RST g:ws) g:num | \. | \_ | \$ )(+\" ) g:ws?		f:r { $sym1 }
+<> call_id > (RST g:sp)( (RST g:sp) g:id | (RST g:sp) g:num | \. | \_ | \$ )(+\" ) g:sp?		f:r { $sym1 }
 
 <> location > ( url | anonymous ) location_indices?									f:r { $sym1 == "anonymous" ? { type:"location", url:$sym1, pos:$sym2 } : { type:"location", url:new env.URL($sym1), pos:$sym2 } }
 
@@ -21,10 +21,10 @@
 
 <> location_indices > \: g:num location_indices?									f:r { [ parseInt($sym2), ...$sym3 ] }
 
-<> url > (RST g:ws) protocol? domain? path											f:r { $sym1 + $sym2 + $sym3 }
+<> url > (RST g:sp) protocol? domain? path											f:r { $sym1 + $sym2 + $sym3 }
 
-<> domain > (RST g:ws) ( g:id | \. | g:num | \- )(+\" )
+<> domain > (RST g:sp) ( g:id | \. | g:num | \- )(+\" )
 
-<> path > (RST g:ws) ( \. | \/ | g:id | g:num )(+\" )
+<> path > (RST g:sp) ( \. | \/ | g:id | g:num )(+\" )
 
-<> protocol >(RST g:ws)  g:id (RST g:ws) \: (RST g:ws) \//							f:r { $sym1 + $sym2 + $sym3 }
+<> protocol >(RST g:sp)  g:id (RST g:sp) \: (RST g:sp) \//							f:r { $sym1 + $sym2 + $sym3 }
