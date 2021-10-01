@@ -1,8 +1,6 @@
 @IGNORE θws θnl
 
-
-
-<> start → v8_stack_trace
+<> start > v8_stack_trace
 
 <> v8_stack_trace > ( g:id | \ws | g:num | g:sym )(*\" ) ( g:nl v8_stack_lines? )?
 
@@ -34,13 +32,13 @@
     | identifier \.[ member \]                                                    f:r { $sym1 + $sym2 + $sym3 + $sym4 + $sym5 }
     | identifier
 
-<> identifier → identifier_symbols 
+<> identifier > identifier_symbols 
 
-<> identifier_symbols →  identifier_symbols g:id      ↦r { $sym1 + $sym2 }
-    │ identifier_symbols \_                           ↦r { $sym1 + $sym2 }
-    │ identifier_symbols \-                           ↦r { $sym1 + $sym2 }
-    │ identifier_symbols \$                           ↦r { $sym1 + $sym2 }
-    │ identifier_symbols g:num                        ↦r { $sym1 + $sym2 }
+<> identifier_symbols >  identifier_symbols g:id      f:r { $sym1 + $sym2 }
+    │ identifier_symbols \_                           f:r { $sym1 + $sym2 }
+    │ identifier_symbols \-                           f:r { $sym1 + $sym2 }
+    │ identifier_symbols \$                           f:r { $sym1 + $sym2 }
+    │ identifier_symbols g:num                        f:r { $sym1 + $sym2 }
     │ \_ 
     │ \$ 
     │ g:id

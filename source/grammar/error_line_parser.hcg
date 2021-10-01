@@ -1,7 +1,7 @@
 
 @IGNORE θws θnl
 
-<> start → v8_stack_trace
+<> start > v8_stack_trace
 
 <> v8_stack_trace > ( g:id | \ws | g:num | g:sym )(*\" ) ( g:nl v8_stack_lines? )?
 
