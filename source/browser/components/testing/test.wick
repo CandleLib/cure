@@ -22,7 +22,7 @@ async function frameLoad(){
             const duration = result.clipboard_end - result.clipboard_start;
 
             result.total_time = (Math.round((duration * (duration < 1 ? 10000 : 10))) / 10) 
-            + (duration < 1 ? "μs" : "ms");
+            + (duration < 1 ? "as" : "ms");
         }     
 
         results = pending_results.map(r=>({
@@ -40,14 +40,14 @@ async function frameLoad(){
 frame.onload = ()=>frameLoad();
 
 export default <div>
-    <container data=${results}>
+    <container data={results}>
         <div>
-            <div class="id"> ${test_id }</div>
-            <div class="rs" style=${ pass ? "border-color:#89bd93;color:#89bd93" : "border-color:#ca4940;color:#ca4940" }> 
-                ${ (typeof pass != "undefined" && (pass ? "passed" : "failed")) || "pending"}</div>
-            <div class="ty"> type <span class="val"><br/>${ type.toLowerCase() }</span>  </div>
-            <div class="tm"> time <span class="val"><br/>${ total_time || "pending" } </span></div>
-            <div class="sr"> name <span class="val"><br/>${ (nambre).replace("-->", " :: ") } </span> </div>
+            <div class="id"> {test_id }</div>
+            <div class="rs" style={ pass ? "border-color:#89bd93;color:#89bd93" : "border-color:#ca4940;color:#ca4940" }> 
+                { (typeof pass != "undefined" && (pass ? "passed" : "failed")) || "pending"}</div>
+            <div class="ty"> type <span class="val"><br/>{ type.toLowerCase() }</span>  </div>
+            <div class="tm"> time <span class="val"><br/>{ total_time || "pending" } </span></div>
+            <div class="sr"> name <span class="val"><br/>{ (nambre).replace("-->", " :: ") } </span> </div>
             </div>
     </container>
     <iframe style="display: none;" src="/components/iframe.html"></iframe>
