@@ -49,7 +49,7 @@ export class CLITextDraw {
 
     async print() {
         if (this.S) return;
-        this.S = true;
+        //this.S = true;
         const buffer = this.buffer;
         this.clear();
 
@@ -58,20 +58,12 @@ export class CLITextDraw {
 
             new Promise(res => {
                 process.stdout.write("\u001b[3J\u001b[2J\u001b[1J");;
-                process.stdout.cursorTo(0, 0, () => {
-                    process.stdout.clearScreenDown(() => {
-                        process.stdout.cursorTo(0, 0, () => {
-                            process.stdout.write(buffer, () => {
-                                res(0);
-                                this.S = false;
-                            });;
-                        });
-                    });
-                });
+                process.stdout.cursorTo(0, 0);
+                process.stdout.clearScreenDown();
+                process.stdout.write(buffer);
             });
-        } else {
 
-            console.log(buffer);
+        } else {
             this.S = false;
         }
     }
