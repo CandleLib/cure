@@ -1,7 +1,6 @@
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlelib/conflagrate";
 import { parser, renderWithFormattingAndSourceMap } from "@candlelib/js";
 import URL from "@candlelib/uri";
-import { Lexer } from "@candlelib/wind";
 import path from "path";
 import { compileTests } from "../compile/compile.js";
 import { format_rules } from "../reporting/utilities/format_rules.js";
@@ -25,12 +24,8 @@ export function loadTests(text_data: string, suite: TestSuite, globals: Globals)
     globals.input_source = suite.origin;
 
     try {
-        const lex = new Lexer(text_data);
 
-        lex.source = suite.origin;
-
-        const { assertion_sites } = compileTests(parser(lex).ast, globals, "");
-
+        const { assertion_sites } = compileTests(parser(text_data).ast, globals, "");
 
         if (assertion_sites.length > 0)
             suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
@@ -93,6 +88,7 @@ function createTestRig(
             pos,
             index,
             IS_ASYNC,
+            SKIP,
             SOLO,
             RUN,
             INSPECT,
@@ -117,7 +113,7 @@ function createTestRig(
         test_function_object_args: test_function_arguments,
         pos,
         map: createSourceMapJSON(source_map),
-
+        SKIP,
         IS_ASYNC,
         SOLO,
         RUN,

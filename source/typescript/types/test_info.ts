@@ -38,7 +38,7 @@ export interface TestInfo {
      * tests have been run.
      */
     test?: Test;
-    
+
     /**
      * Identifer of the ExpressionHandler that generated the 
      * test. May be -1 if the TestInfo object was created while
@@ -51,6 +51,11 @@ export interface TestInfo {
      * exception or timing out
      */
     PASSED: boolean;
+
+    /**
+     * True if the test has been skipped
+     */
+    SKIPPED?: boolean;
 
     /**
      * True if the test exceeded the time limit. 

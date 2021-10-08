@@ -1,4 +1,4 @@
-import { JSCallExpression, JSCallExpressionClass, JSIdentifierClass, JSIdentifierReference, JSNode, JSNodeClass, JSNodeType, renderCompressed, tools } from "@candlelib/js";
+import { exp, JSCallExpression, JSIdentifierReference, JSNode, JSNodeClass, JSNodeType, renderCompressed, stmt, tools } from "@candlelib/js";
 import { AssertionSiteArguments } from "../../types/assertion_site_arguments.js";
 import { jst } from "../utilities/traverse_js_node.js";
 
@@ -41,6 +41,9 @@ export function parseAssertionSiteArguments(call_node: JSNode): AssertionSiteArg
 
         skip();
     }
+
+    if (result.SKIP)
+        result.assertion_expr = null;
 
     return result;
 }

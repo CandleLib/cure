@@ -3,6 +3,10 @@ import { harness_internal_name } from "../../test_running/utilities/test_harness
 import { ExpressionHandler } from "../../types/expression_handler.js";
 import { name_delimiter, createHierarchalName } from "../../utilities/name_hierarchy.js";
 
+
+export function createSkipInstruction(): JSNode {
+    return stmt(`${harness_internal_name}.skip();`);
+}
 export function createPushInstruction(val: string): JSNode {
     return stmt(`${harness_internal_name}.pushValue(${val});`);
 }

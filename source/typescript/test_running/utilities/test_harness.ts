@@ -75,6 +75,8 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 return source_map;
             },
 
+
+
             mark(index: number) {
                 //@ts-ignore
                 //harness.errors.push(new te(new Error("marked: " + index), "", 0, 0, "", ""));
@@ -325,6 +327,7 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 active_test_result = <TestInfo>{
                     name: "",
                     message: "",
+                    SKIPPED: false,
                     PASSED: true,
                     TIMED_OUT: false,
                     clipboard_write_start: -1,
@@ -344,6 +347,10 @@ export function createTestHarnessEnvironmentInstance(equal, util, performance: P
                 };
 
                 clipboard.push(active_test_result);
+            },
+
+            skip() {
+                active_test_result.SKIPPED = true;
             },
 
             popTestResult() {

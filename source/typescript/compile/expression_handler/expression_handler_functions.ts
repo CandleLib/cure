@@ -11,7 +11,8 @@ import {
     createPushAndAssetInstruction,
     createPushInstruction,
     createPushNameInstruction,
-    createPushTestResultInstruction
+    createPushTestResultInstruction,
+    createSkipInstruction
 } from "./test_instructions.js";
 
 export function loadExpressionHandler(globals: Globals, obj: ExpressionHandlerBase) {
@@ -63,63 +64,74 @@ export function compileExpressionHandler(
 
     let generated_name = renderCompressed(expression_node);
 
-    instructions.push(...setup_statements);
+    instructions.push(...setup_statements);;
 
     const value_lookup: Map<string, number> = new Map();
+    if (generated_name == "skip") {
 
-    handler.build(expression_node, {
+        instructions.unshift(createPushNameInstruction(generated_name, static_name, dynamic_name));
 
-        name(string) {
-            generated_name = string;
-        },
+        instructions.push(createSkipInstruction());
 
-        push(node) {
+        instructions.unshift(createPushTestResultInstruction(<any>{ identifier: 100000 }));
 
-            const id = "$$" + value_lookup.size;
+    } else {
 
-            value_lookup.set(id, value_lookup.size);
+        handler.build(expression_node, {
 
-            const val = typeof node == "string"
-                ? node
-                : renderCompressed(node);
+            name(string) {
+                generated_name = string;
+            },
 
-            instructions.push(createPushInstruction(val));
+            push(node) {
 
-            return id;
-        },
+                const id = "$$" + value_lookup.size;
 
-        evaluate(expression_script) {
+                value_lookup.set(id, value_lookup.size);
 
-            const id = "$$" + value_lookup.size;
+                const val = typeof node == "string"
+                    ? node
+                    : renderCompressed(node);
 
-            value_lookup.set(id, value_lookup.size);
+                instructions.push(createPushInstruction(val));
 
-            instructions.push(createPushInstruction(compileTestyScript(expression_script, globals)));
+                return id;
+            },
 
-            return id;
-        },
+            evaluate(expression_script) {
 
+                const id = "$$" + value_lookup.size;
 
-        report(report_script) {
+                value_lookup.set(id, value_lookup.size);
 
-            const id = "$$" + value_lookup.size;
+                instructions.push(createPushInstruction(compileTestyScript(expression_script, globals)));
 
-            value_lookup.set(id, value_lookup.size);
-
-            instructions.push(createPushAndAssetInstruction(compileTestyScript(report_script, globals)));
-
-            return id;
-        }
-    });
-
-    // Ensure these are added to the top of the instructions array in the following order
-    // harness.pushTestResult...
-    // harness.setResultName...
+                return id;
+            },
 
 
-    instructions.unshift(createPushNameInstruction(generated_name, static_name, dynamic_name));
+            report(report_script) {
 
-    instructions.unshift(createPushTestResultInstruction(handler));
+                const id = "$$" + value_lookup.size;
+
+                value_lookup.set(id, value_lookup.size);
+
+                instructions.push(createPushAndAssetInstruction(compileTestyScript(report_script, globals)));
+
+                return id;
+            }
+        });
+
+
+        // Ensure these are added to the top of the instructions array in the following order
+        // harness.pushTestResult...
+        // harness.setResultName...
+
+        instructions.unshift(createPushNameInstruction(generated_name, static_name, dynamic_name));
+
+        instructions.unshift(createPushTestResultInstruction(handler));
+    }
+
 
     instructions.push(...teardown_statements);
 

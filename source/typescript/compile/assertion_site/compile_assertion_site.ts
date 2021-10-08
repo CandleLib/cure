@@ -1,4 +1,5 @@
-import { JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed, renderWithFormatting } from "@candlelib/js";
+import { exp, JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed, renderWithFormatting } from "@candlelib/js";
+import { Logger, LogLevel } from '@candlelib/log';
 import URL from "@candlelib/uri";
 import { AssertionSite } from "../../types/assertion_site.js";
 import { CompilerState } from "../../types/compiler_state";
@@ -30,7 +31,8 @@ function createAssertSiteObject(
         throwable_id: THROWABLE_TEST_OBJECT_ID.ASSERTION_SITE,
         index: -1,
         static_name,
-        RUN: !SKIP,
+        RUN: true,
+        SKIP,
         SOLO,
         INSPECT,
         IS_ASYNC: AWAIT,
@@ -67,10 +69,9 @@ export function compileAssertionSite(
 
 
     let HAVE_EXPRESSION_HANDLER = false;
+    let HAVE_ASSERTION_EXPRESSION = !!assertion_expression;
 
     const
-
-        HAVE_ASSERTION_EXPRESSION = !!assertion_expression,
 
         AWAIT = (jst(assertion_expression)
             .filter("type", JSNodeType.AwaitExpression)
@@ -84,7 +85,7 @@ export function compileAssertionSite(
 
     let test_name = renderCompressed(assertion_expression);
 
-    if (HAVE_ASSERTION_EXPRESSION)
+    if (HAVE_ASSERTION_EXPRESSION && !SKIP) {
         for (const express_handler of selectExpressionHandler(assertion_expression, state.globals)) {
 
             if (express_handler.confirmUse(assertion_expression)) {
@@ -110,10 +111,37 @@ export function compileAssertionSite(
                 break;
             }
         }
+    }
+
+    if (!HAVE_ASSERTION_EXPRESSION || !HAVE_EXPRESSION_HANDLER) {
+        const expr = exp("skip");
+
+        expr.pos = assertion_call_node.pos;
+
+        const { nodes, name } = compileExpressionHandler(
+            expr,
+            null,
+            [],
+            [],
+            state.globals,
+            name_expression ? renderCompressed(name_expression) : "",
+            static_name,
+            state.suite_name
+        );
+
+        test_name = name;
+
+        //@ts-ignore
+        ast.nodes = nodes;
+
+        HAVE_EXPRESSION_HANDLER = true;
+        HAVE_ASSERTION_EXPRESSION = true;
+    }
 
     const assertion_site = createAssertSiteObject(
         test_name,
-        SKIP, SOLO,
+        SKIP,
+        SOLO,
         INSPECT,
         AWAIT || state.AWAIT,
         BROWSER,
@@ -193,7 +221,9 @@ export function compileAssertionGroupSite(
             //@ts-ignore
             block.nodes.push(createPopNameInstruction());
         } catch (e) {
-            console.error(e);
+
+            Logger.get("cure").get("error").activate(LogLevel.CRITICAL).critical(e);
+
             process.exit();
         }
 
@@ -243,7 +273,8 @@ export function compileAssertionGroupSite(
                 assertion_site.static_name = createHierarchalName(name, assertion_site.static_name);
                 assertion_site.BROWSER = assertion_site.BROWSER || BROWSER || assertion_site.BROWSER;
                 assertion_site.SOLO = assertion_site.SOLO || SOLO || assertion_site.SOLO;
-                assertion_site.RUN = assertion_site.RUN || !SKIP || assertion_site.RUN;
+                assertion_site.RUN = assertion_site.RUN;
+                assertion_site.SKIP = SKIP;
                 assertion_site.INSPECT = assertion_site.INSPECT || INSPECT;
                 assertion_site.origin = state.ast;
             }

@@ -1,3 +1,4 @@
+import spark from "@candlelib/spark";
 import equal from "deep-equal";
 import { performance } from "perf_hooks";
 import util from "util";
@@ -19,6 +20,7 @@ export async function loadImport(source) {
     try {
         return await import(source);
     } catch (e) {
+        e.message += source;
         throw (e);
     }
 }

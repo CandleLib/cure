@@ -1,4 +1,5 @@
 import lantern, { $404_dispatch, candle_library_dispatch, LanternServer, compiled_wick_dispatch } from "@candlelib/lantern";
+import { Logger, LogLevel } from '@candlelib/log';
 import spark from "@candlelib/spark";
 import { spawn } from "child_process";
 import { Http2Server } from "http2";
@@ -273,7 +274,7 @@ function startFirefox(port, globals: Globals) {
     );
 
     browser.on('close', (code) => {
-        console.log(`child process exited with code ${code}`);
+        Logger.get("cure").get("browser").get("firefox").activate(LogLevel.INFO).log(`child process exited with code ${code}`);
     });
 
     process.on("SIGTERM", () => {
@@ -331,7 +332,7 @@ function startChrome(port, globals: Globals): () => void {
     );
 
     browser.on('close', (code) => {
-        console.log(`child process exited with code ${code}`);
+        Logger.get("cure").get("browser").get("chrome").activate(LogLevel.INFO).log(`child process exited with code ${code}`);
     });
 
     process.on("exit", () => {

@@ -1,5 +1,4 @@
 import spark from "@candlelib/spark";
-import { test } from "@candlelib/wick";
 import { completedRun, startRun, updateRun } from "../reporting/report.js";
 import { Globals, Outcome } from "../types/globals.js";
 import { Test } from "../types/test.js";
@@ -31,13 +30,15 @@ export async function runTests(
 
             intermediate_results = [],
 
-            active_tests: { state: number, test: Test; }[] =
+            pending_tests: { state: number, test: Test; }[] =
                 tests.map(test => {
                     if (test.SOLO || test.INSPECT)
                         SOLO_RUN = true;
                     return { state: 0, test };
                 })
                     .filter(({ test }) => test.RUN && (!SOLO_RUN || test.INSPECT || test.SOLO)),
+            active_tests = pending_tests.filter(({ test }) => !test.SKIP),
+
 
             response: TestRunnerResponse = async function (test: Test, ...results: TestInfo[]) {
                 intermediate_results.push(...results);
@@ -51,7 +52,7 @@ export async function runTests(
                         return slug.test;
                     }
             };
-        await startRun(active_tests.flatMap(d => d.test), globals);
+        await startRun(pending_tests.flatMap(d => d.test), globals);
 
         for (const runner of runners)
             runner.init(globals, request, response, RELOAD_DEPENDENCIES);
@@ -90,6 +91,7 @@ export async function runTests(
 
         globals.exit("Unrecoverable error encountered in run_tests.ts", e);
     }
+
 
     outcome.FAILED = FAILED;
 

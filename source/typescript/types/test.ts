@@ -79,7 +79,7 @@ export interface Test {
      * run alongside each other.
      */
     SOLO: boolean;
-
+    SKIP: boolean;
     RUN: boolean;
 
     /**

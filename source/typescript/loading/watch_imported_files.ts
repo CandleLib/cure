@@ -18,7 +18,7 @@ function createFileWatcher(path: URL, globals: Globals) {
 
         const path_string = path.toString();
 
-        // globals.reporter.notify("Watching", path + "");
+        globals.reporter.notify("Watching", path + "");
 
         const watcher = fs.watch(path_string, async function () {
 

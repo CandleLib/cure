@@ -92,6 +92,11 @@ export interface Reporter {
         pass: string,
 
         /**
+        * Color to denote skipped test.
+        */
+        skip: string,
+
+        /**
          * General color to highlight an object name such as a member expression or variable.
          */
         objA: string,

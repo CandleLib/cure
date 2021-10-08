@@ -1,4 +1,5 @@
 import URL from "@candlelib/uri";
+import { Logger, LogLevel } from '@candlelib/log';
 import { NullReporter } from "../reporting/null_reporter.js";
 import { completedRun } from "../reporting/report.js";
 import * as colors from "../reporting/utilities/colors.js";
@@ -84,7 +85,9 @@ export function createGlobals(
 
                 if (error) {
                     //Make sure this is printed no matter what.
-                    console.error(error);
+
+                    Logger.get("cure").get("error").activate(LogLevel.ERROR).error(error);
+
                     globals.outcome.fatal_errors.push(error);
                 }
 

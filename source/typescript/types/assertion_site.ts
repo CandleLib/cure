@@ -32,6 +32,8 @@ export interface AssertionSite {
     IS_ASYNC: boolean;
     SOLO: boolean;
     RUN: boolean;
+
+    SKIP: boolean;
     INSPECT: boolean;
     BROWSER: boolean;
 

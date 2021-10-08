@@ -9,7 +9,7 @@ import { TestInfo } from "../types/test_info.js";
 import { createHierarchalName, splitHierarchalName } from "../utilities/name_hierarchy.js";
 import { blame, blameAssertionSite } from "../utilities/test_error.js";
 import { CLITextDraw } from "./utilities/cli_text_console.js";
-import { rst } from "./utilities/colors.js";
+import { rst, skip } from "./utilities/colors.js";
 import { createInspectionMessage } from "./utilities/create_inspection_message.js";
 
 function Object_Is_TestResult(o: any): o is TestInfo {
@@ -116,7 +116,7 @@ export class BasicReporter implements Reporter {
 
         const
             strings = [],
-            { fail, msgA, pass, msgB, symD, msgC, bkgr, objA } = this.colors;
+            { fail, msgA, pass, msgB, symD, msgC, bkgr, objA, skip } = this.colors;
 
 
         for (const { node: suite, meta: { depth } } of traverse(this.root_suite, "suites").skipRoot()) {
@@ -127,24 +127,28 @@ export class BasicReporter implements Reporter {
                 offsetB = (" ").repeat((depth + 1) * 2),
                 suite_strings = [];
 
-            let suite_header = "", FAILURE;
+            let suite_header = "", FAILURE = false;
 
             for (const test_result of tests.values()) {
                 const
-                    { test, PASSED } = test_result,
+                    { test, PASSED, SKIPPED } = test_result,
                     { name: result_name } = getNameData(test_result, globals),
                     duration = test_result.clipboard_end - test_result.previous_clipboard_end,
                     dur_string = ` # ${Math.round((duration * (duration < 1 ? 10000 : 10))) / 10}${duration < 1 ? "μs" : "ms"}`;
 
-                FAILURE = FAILURE || !PASSED;
+                FAILURE = (FAILURE || !PASSED) && !SKIPPED;
 
                 if (result_name.trim() == name.trim()) {
-                    if (PASSED)
+                    if (SKIPPED)
+                        suite_header = offsetA + skip + "- " + msgA + result_name + "# skipped" + rst;
+                    else if (PASSED)
                         suite_header = offsetA + pass + "✓ " + msgA + result_name + dur_string + rst;
                     else
                         suite_header = offsetA + fail + "✗ " + msgA + result_name + dur_string + rst;
                 } else {
-                    if (PASSED)
+                    if (SKIPPED)
+                        suite_strings.push(offsetB + skip + " - " + msgA + result_name + "# skipped" + rst);
+                    else if (PASSED)
                         suite_strings.push(offsetB + pass + " ✓ " + msgA + result_name + dur_string + rst);
                     else
                         suite_strings.push(offsetB + fail + " ✗ " + msgA + result_name + dur_string + rst);
@@ -227,6 +231,23 @@ export class BasicReporter implements Reporter {
                 const { suites, name } = getNameData(test, global);
 
                 const suite = getSuiteAtDirectory(this.root_suite, suites);
+
+                let info: TestInfo = {
+                    SKIPPED: true,
+                    PASSED: false,
+                    TIMED_OUT: true,
+                    name: test.name,
+                    clipboard_end: 0,
+                    clipboard_start: 0,
+                    clipboard_write_start: 0,
+                    previous_clipboard_end: 0,
+                    log_start: 0,
+                    location: test.pos,
+                    errors: [],
+                    test: test,
+                };
+                if (test.SKIP)
+                    suite.tests.set(name, info);
             }
         } catch (e) {
             //console.log(e);
@@ -270,6 +291,8 @@ export class BasicReporter implements Reporter {
 
             total = results.length,
 
+            skipped = 0,
+
             failed = 0;
 
         try {
@@ -285,10 +308,12 @@ export class BasicReporter implements Reporter {
                     for (const test_result of tests.values()) {
 
                         const
-                            { test, PASSED } = test_result,
+                            { test, PASSED, SKIPPED } = test_result,
                             { name: result_name } = getNameData(test_result, globals);
 
-                        if (!PASSED) {
+                        if (SKIPPED) {
+                            skipped++;
+                        } else if (!PASSED) {
 
                             failed++;
 
@@ -348,10 +373,14 @@ export class BasicReporter implements Reporter {
             strings.push(e);
             //  errors.push(`${rst}Reporter failed:\n\n    ${fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
         }
+        const ran = total - skipped;
 
-        strings.push(`${total} test${total !== 1 ? "s" : ""} ran. ${total > 0 ? (failed > 0
-            ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (total - failed)} test${total - failed !== 1 ? "s" : ""} passed`
-            : pass + (total > 1 ? "All tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
+        if (skipped > 0)
+            strings.push(`${skipped} test${skipped !== 1 ? "s" : ""} skipped.`);
+        strings.push(`${ran} test${ran !== 1 ? "s" : ""} ran. ${ran > 0 ? (failed > 0
+            ? fail + `${failed} test${(failed !== 1 ? "s" : "")} failed ${rst}:: ${pass + (ran - failed)} test${ran - failed !== 1 ? "s" : ""} passed`
+            : pass + (ran > 1 ? "All ran tests passed" : "The Test Has Passed")) : ""} ${rst}\n\nTotal time ${(time_end - this.time_start) | 0}ms\n\n`);
+
 
 
         await this.renderToTerminal([...strings, rst], terminal);

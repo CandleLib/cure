@@ -115,7 +115,7 @@ function watchTestsOrExit(globals: Globals, resolution: any) {
 
     if (globals.flags.WATCH) {
 
-        //  globals.reporter.notify("Waiting for changes...");
+        globals.reporter.notify("Waiting for changes...");
 
         process.on("exit", () => {
 

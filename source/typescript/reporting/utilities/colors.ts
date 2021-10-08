@@ -17,6 +17,11 @@ export const
     pass = xtF(xtColor(col_x11.DarkOliveGreen1)),
 
     /**
+     * Color to denote skipped test.
+     */
+    skip = xtF(xtColor(col_x11.DarkGray)),
+
+    /**
      * General color to highlight an object name such as a member expression or variable.
      */
     objA = xtF(xtColor(col_x11.Orange)),

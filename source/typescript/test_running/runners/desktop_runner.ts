@@ -2,6 +2,7 @@ import spark from "@candlelib/spark";
 import URL from "@candlelib/uri";
 import { performance } from "perf_hooks";
 import { Worker } from "worker_threads";
+import { Logger, LogLevel } from '@candlelib/log';
 import { DesktopWorkerHandle } from "../../types/desktop_worker_handle";
 import { Globals } from "../../types/globals";
 import { Test } from "../../types/test.js";
@@ -136,7 +137,9 @@ export class DesktopRunner implements TestRunner {
 
         const worker = new Worker(module_url);
 
-        worker.on("error", e => { console.error(e); });
+        worker.on("error", e => {
+            Logger.get("cure").get("server-runner").activate(LogLevel.ERROR).error(e.toString());
+        });
 
         worker.on("message", (results: TestInfo[]) => {
             if (!this.STOP_ALL_ACTIVITY && wkr.test) {
