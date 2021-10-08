@@ -33,6 +33,13 @@ export class DesktopRunner implements TestRunner {
             .map(() => ({ DISCARD: false, READY: false, target: null }));
     }
 
+    close() {
+        for (const wkr of this.workers) {
+            if (wkr.target)
+                wkr.target.terminate();
+        }
+    }
+
     Can_Accept_Test(test: Test) { return !test.BROWSER; }
 
     complete() {
@@ -143,12 +150,6 @@ export class DesktopRunner implements TestRunner {
         return worker;
     }
 
-    destroy() {
-        for (const wkr of this.workers) {
-            if (wkr.target)
-                wkr.target.terminate();
-        }
-    }
 
     /**
      * REMOVE  - No longer need to access this data in worker.

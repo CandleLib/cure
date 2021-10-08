@@ -23,6 +23,8 @@ export class BrowserRunner implements TestRunner {
 
     globals: Globals;
 
+    kill_switch: () => void;
+
     constructor() {
         this.STOP_ALL_ACTIVITY = false;
         this.to_complete = 0;
@@ -36,6 +38,11 @@ export class BrowserRunner implements TestRunner {
         this.STOP_ALL_ACTIVITY = true;
     }
 
+    close() {
+        if (this.kill_switch)
+            this.kill_switch();
+    }
+
     async init(globals: Globals, request, respond) {
 
         this.respond = respond;
@@ -46,7 +53,7 @@ export class BrowserRunner implements TestRunner {
 
             BrowserRunner.resource_directory = globals.test_dir + "source/browser/";
 
-            BrowserRunner.setupServer(globals);
+            this.kill_switch = await BrowserRunner.setupServer(globals);
 
             BrowserRunner.SERVER_LOADED = true;
         }
@@ -64,7 +71,7 @@ export class BrowserRunner implements TestRunner {
         }
     }
 
-    static async setupServer(globals: Globals) {
+    static async setupServer(globals: Globals): Promise<() => void> {
 
         const port = await lantern.getUnusedPort();
 
@@ -247,12 +254,12 @@ export class BrowserRunner implements TestRunner {
         await spark.sleep(100);
 
         //startFirefox(port, globals);
-        startChrome(port, globals);
+        let bowser_kill_switch = startChrome(port, globals);
+
+        return () => {
+            bowser_kill_switch();
+        };
     }
-
-
-
-
 }
 
 function startFirefox(port, globals: Globals) {
@@ -281,7 +288,7 @@ function startFirefox(port, globals: Globals) {
 }
 
 
-function startChrome(port, globals: Globals) {
+function startChrome(port, globals: Globals): () => void {
     const browser = spawn("google-chrome",
         [
             // https://github.com/GoogleChrome/chrome-launcher/blob/master/docs/chrome-flags-for-tools.md#--enable-automation
@@ -327,15 +334,18 @@ function startChrome(port, globals: Globals) {
         console.log(`child process exited with code ${code}`);
     });
 
-
     process.on("exit", () => {
-        browser.kill("SIGTERM");
+        if (!browser.killed)
+            browser.kill("SIGTERM");
     });
 
     process.on("SIGINT", () => {
-        browser.kill("SIGTERM");
-        //process.kill(browser.pid);
-        process.exit(0);
+        if (!browser.killed)
+            browser.kill("SIGTERM");
         return false;
     });
+
+    return () => {
+        browser.kill("SIGTERM");
+    };
 }

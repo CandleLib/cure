@@ -193,7 +193,6 @@ export function compileAssertionGroupSite(
             //@ts-ignore
             block.nodes.push(createPopNameInstruction());
         } catch (e) {
-            console.log(name);
             console.error(e);
             process.exit();
         }

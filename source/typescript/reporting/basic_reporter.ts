@@ -1,5 +1,7 @@
 import { bidirectionalTraverse, traverse } from "@candlelib/conflagrate";
+import spark from "@candlelib/spark";
 import { performance } from "perf_hooks";
+import { getExpressionHandlerReportLines } from "../compile/expression_handler/expression_handler_functions.js";
 import { Globals } from "../types/globals.js";
 import { Reporter } from "../types/reporter.js";
 import { Test } from "../types/test.js";
@@ -8,9 +10,7 @@ import { createHierarchalName, splitHierarchalName } from "../utilities/name_hie
 import { blame, blameAssertionSite } from "../utilities/test_error.js";
 import { CLITextDraw } from "./utilities/cli_text_console.js";
 import { rst } from "./utilities/colors.js";
-import { getExpressionHandlerReportLines } from "../compile/expression_handler/expression_handler_functions.js";
 import { createInspectionMessage } from "./utilities/create_inspection_message.js";
-import spark from "@candlelib/spark";
 
 function Object_Is_TestResult(o: any): o is TestInfo {
     return !!o.test;

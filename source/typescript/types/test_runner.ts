@@ -18,6 +18,12 @@ export interface TestRunner {
     complete(): void;
 
     /**
+     * 
+     * Called when the runner should release all resources and close down
+     */
+    close(): void;
+
+    /**
      * Called during a request of a test. Must return a bool that 
      * is true if the test runner is able to run the test based
      * on the state of the test's flags and meta labels.
