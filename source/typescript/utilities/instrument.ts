@@ -17,7 +17,7 @@ export const test = null;
 export async function createSpecFile(pkg_name: string, source_file_path: string, pwd: string = process.cwd())
     : Promise<string> {
 
-    await URL.polyfill();
+    await URL.server();
 
     const
         url = URL.resolveRelative(source_file_path, pwd + "/"),
