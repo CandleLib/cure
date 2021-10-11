@@ -41,6 +41,7 @@
         "@candlelib/spark": "0.3.2",
         "@candlelib/uri": "0.2.3",
         "@candlelib/wind": "0.5.2",
+        "@candlelib/log": "*",
         "deep-equal": "^2.0.1"
     },
     "devDependencies": {
