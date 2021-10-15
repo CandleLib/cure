@@ -11,7 +11,7 @@ import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
 import { createSuiteError } from "../utilities/library_errors.js";
 import spark from "@candlelib/spark";
 
-async function initializeSuite(
+async function loadSuiteCode(
     globals: Globals,
     suite: TestSuite,
     url: URL = suite.url
@@ -29,12 +29,13 @@ async function initializeSuite(
 }
 
 export type SuiteReloader = (suite: TestSuite) => Promise<void>;
+
 export async function loadSuite(suite: TestSuite, globals: Globals, reloadSuite: (suite: TestSuite) => Promise<void>) {
     try {
 
         const { flags: { WATCH, PRELOAD_IMPORTS } } = globals;
 
-        await initializeSuite(globals, suite, new URL(path.resolve(process.cwd(), suite.origin)));
+        await loadSuiteCode(globals, suite, new URL(path.resolve(process.cwd(), suite.origin)));
 
         if (PRELOAD_IMPORTS || WATCH)
             await handleWatchOfRelativeDependencies(suite, globals);
@@ -72,7 +73,7 @@ export function createSuiteReloaderFunction(globals: Globals, postInitialize: (s
 
             globals.flags.PENDING = true;
 
-            await initializeSuite(globals, suite);
+            await loadSuiteCode(globals, suite);
 
             loadTests(suite.data, suite, globals);
 

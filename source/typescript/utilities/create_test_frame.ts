@@ -16,6 +16,7 @@ import { createTestSuite } from "./create_test_suite.js";
 import { DefaultOptions } from "./default_options.js";
 import { endWatchedTests } from "./end_watched_tests.js";
 import { createGlobalError } from "./library_errors.js";
+import { TestSuite } from "../types/test_suite.js";
 
 type Resolver = (value: Outcome | PromiseLike<Outcome>) => void;
 
@@ -51,6 +52,9 @@ export function createTestFrame(
             null
         );
 
+
+    const global_init = initializeGlobals(globals, number_of_workers);
+
     let resolution: Resolver = null;
 
     function initializeResolver(res: Resolver) {
@@ -62,9 +66,15 @@ export function createTestFrame(
 
     return {
 
+        async init() {
+            return global_init;
+        },
+
         setReporter: (reporter: Reporter) => {
             globals.reporter = initializeReporterColors(reporter);
         },
+
+        get globals() { return globals },
 
         get number_of_workers() { return number_of_workers; },
 
@@ -72,20 +82,44 @@ export function createTestFrame(
 
         endWatchedTests: () => endWatchedTests(globals, resolution),
 
-        start: (): Promise<Outcome> => new Promise(async (resolver: Resolver) => {
+        start: (
+            suites: TestSuite[] = []
 
+        ): Promise<Outcome> => new Promise(async (resolver: Resolver) => {
+
+            await global_init;
+
+            if (suites.length == 0) {
+
+                const reloader: SuiteReloader =
+                    createSuiteReloaderFunction(globals, async (suite) => {
+
+                        const tests = suite.tests.slice();
+
+                        if (tests.length > 0)
+                            await runTests(tests, globals);
+                        else
+                            globals.reportErrors();
+
+                    });
+
+                suites = await loadTestSuites(test_suite_url_strings, globals, reloader);
+            } else {
+                globals.suites = new Map
+                for (const suite of suites) {
+                    globals.suites.set(suite.origin, suite);
+                }
+            }
 
             await URL.server();
 
             initializeResolver(resolver);
 
-            await initializeGlobals(globals, number_of_workers);
-
             try {
 
                 harness_init(globals.package_dir.toString(), globals.package_dir.toString());
 
-                await loadAndRunTestSuites(globals, test_suite_url_strings);
+                await loadAndRunTestSuites(globals, suites);
 
                 watchTestsOrExit(globals, resolution);
 
@@ -151,26 +185,15 @@ async function initializeGlobals(globals: Globals, number_of_workers: number) {
 
 }
 
-async function loadAndRunTestSuites(globals: Globals, test_suite_url_strings: string[]) {
+
+
+async function loadAndRunTestSuites(globals: Globals, suites: TestSuite[]) {
 
     if (globals.lock()) {
 
         try {
 
-            const reloader: SuiteReloader = createSuiteReloaderFunction(globals, async (suite) => {
-
-                const tests = suite.tests.slice();
-
-                if (tests.length > 0)
-                    await runTests(tests, globals);
-                else
-                    globals.reportErrors();
-
-            });
-
-            const st = await loadTestSuites(test_suite_url_strings, globals, reloader);
-
-            const tests = st.flatMap(suite => suite.tests);
+            const tests = suites.flatMap(suite => suite.tests);
 
 
             if (tests.length > 0)

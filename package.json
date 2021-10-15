@@ -40,11 +40,11 @@
         "@candlelib/paraffin": "0.1.3",
         "@candlelib/spark": "0.3.2",
         "@candlelib/uri": "0.2.3",
-        "@candlelib/wick": "0.15.3",
         "@candlelib/wind": "0.5.2",
         "deep-equal": "^2.0.1"
     },
     "devDependencies": {
+        "@candlelib/wick": "0.15.3",
         "@types/node": "^13.9.1",
         "chai": "^4.3.4",
         "typescript": "^4.0.2"

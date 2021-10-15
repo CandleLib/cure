@@ -293,7 +293,9 @@ export class BasicReporter implements Reporter {
 
             skipped = 0,
 
-            failed = 0;
+            failed = 0,
+
+            ran = 0;
 
         try {
 
@@ -311,8 +313,11 @@ export class BasicReporter implements Reporter {
                             { test, PASSED, SKIPPED } = test_result,
                             { name: result_name } = getNameData(test_result, globals);
 
+                        ran++;
+
                         if (SKIPPED) {
                             skipped++;
+                            ran--;
                         } else if (!PASSED) {
 
                             failed++;
@@ -373,7 +378,6 @@ export class BasicReporter implements Reporter {
             strings.push(e);
             //  errors.push(`${rst}Reporter failed:\n\n    ${fail + (await (new TestError(e)).toAsyncBlameString()).split("\n").join("\n   ")}\n${rst}`, "");
         }
-        const ran = total - skipped;
 
         if (skipped > 0)
             strings.push(`${skipped} test${skipped !== 1 ? "s" : ""} skipped.`);

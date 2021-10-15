@@ -2,7 +2,7 @@
  * @module candle.cure
  */
 
-import { Outcome } from "./globals";
+import { Outcome, Globals } from "./globals";
 import { Reporter } from "./reporter";
 
 /**
@@ -36,10 +36,19 @@ export interface TestFrame {
     /**
      * The number of threads the test frame uses
      * when running tests.
-     * 
-     * @readonly
      */
-    number_of_workers: number;
+    readonly number_of_workers: number;
+
+    /**
+     * The globals object
+     */
+    readonly globals: Globals
+
+    /**
+     * Returns a promise that resolves when the 
+     * global initialization has completed.
+     */
+    init(): Promise<void>;
 };
 
 /**

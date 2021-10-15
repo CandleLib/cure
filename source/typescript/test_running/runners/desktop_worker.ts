@@ -1,4 +1,3 @@
-import spark from "@candlelib/spark";
 import equal from "deep-equal";
 import { performance } from "perf_hooks";
 import util from "util";

@@ -3,7 +3,7 @@ import URL from "@candlelib/uri";
 import { Lexer } from "@candlelib/wind";
 
 import { createTest__cfwtest } from "../test_running/utilities/create_test_function.js";
-import parser from "./parser.js";
+import loader from "./error_parser.js";
 import { THROWABLE_TEST_OBJECT_ID } from "./throwable_test_object_enum.js";
 
 import { AssertionSite } from "../types/assertion_site.js";
@@ -15,7 +15,7 @@ import { TestHarness } from "../types/test_harness.js";
 import { TestInfo } from "../types/test_info.js";
 import { TestSuite } from "../types/test_suite.js";
 
-
+const { parse: parser } = await loader;
 
 const test_function_name = createTest__cfwtest.name;
 /**
@@ -203,62 +203,82 @@ export function createTestErrorFromString(msg, harness: TestHarness): Transferab
 }
 export async function seekSourceFile(test_error: { column: number, line: number, source_path: string; }, harness: TestHarness) {
 
-    let
-        { line, column, source_path: source } = test_error, origin = source,
-        source_url = new URL(source),
-        active_url = source_url,
-        map_source_url = null,
-        source_text = "";
+    try {
+        let
+            { line, column, source_path: source } = test_error, origin = source,
+            source_url = new URL(source),
+            active_url = source_url,
+            map_source_url = null,
+            source_text = "";
 
-    const cwd = new URL(harness.working_directory);
+        const cwd = new URL(harness.working_directory);
 
-    outer: while (true) {
-        if (!active_url.isSUBDIRECTORY_OF(cwd)) break;
-        source_text = (await active_url.fetchText());
-        if (active_url.ext == "map") {
+        outer: while (true) {
+            if (!active_url.isSUBDIRECTORY_OF(cwd)) break;
+            source_text = (await active_url.fetchText());
+            if (active_url.ext == "map") {
 
-            let source_map = decodeJSONSourceMap(source_text);
+                let source_map = decodeJSONSourceMap(source_text);
 
-            ({ column, line, source } = getSourceLineColumn(line, column, source_map));
+                ({ column, line, source } = getSourceLineColumn(line, column, source_map));
 
-            source_url = URL.resolveRelative(source, active_url);
+                source_url = URL.resolveRelative(source, active_url);
 
-            active_url = source_url;
+                active_url = source_url;
 
-            continue;
-        } else if (active_url.ext == "js" || active_url.ext == "ts") {
-            for (const [, loc] of source_text.matchAll(/\/\/#\s*sourceMappingURL=(.+)/g)) {
-                map_source_url = URL.resolveRelative(`./${loc}`, origin);
-                active_url = map_source_url;
-                continue outer;
+                continue;
+            } else if (active_url.ext == "js" || active_url.ext == "ts") {
+                for (const [, loc] of source_text.matchAll(/\/\/#\s*sourceMappingURL=(.+)/g)) {
+                    map_source_url = URL.resolveRelative(`./${loc}`, origin);
+                    active_url = map_source_url;
+                    continue outer;
+                }
+                break;
             }
             break;
         }
-        break;
+
+        source_text = (await source_url.fetchText());
+
+        return { line, column, source_text, source_url };
+    } catch (e) {
+
+        return null;
     }
 
-    source_text = (await source_url.fetchText());
-
-    return { line, column, source_text, source_url };
 }
 
 export async function blame(test_error: TransferableTestError, harness: TestHarness) {
 
-    const { source_text, source_url, line, column } = await seekSourceFile(test_error, harness);
+    const result = await seekSourceFile(test_error, harness);
 
-    const string = new Lexer(source_text).seek(line, column).blame();
+    if (result) {
 
-    return [source_url + ":" + line + ":" + column, ...string.split("\n")];
+        const { source_text, source_url, line, column } = result;
+
+        const string = new Lexer(source_text).seek(line, column).blame();
+
+        return [source_url + ":" + line + ":" + column, ...string.split("\n")];
+    }
+
+    return [];
 }
 
 
 export async function blameAssertionSite(test: Test, test_result: TestInfo, harness: TestHarness) {
 
-    const { source_text, line, column, source_url } = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source_path: test.source_location }, harness);
+    const result = await seekSourceFile({ line: test.pos.line + 1, column: test.pos.column, source_path: test.source_location }, harness);
 
-    const string = new Lexer(source_text).seek(line, column).blame();
+    if (result) {
 
-    return [source_url + ":" + line + ":" + column, ...string.split("\n")];
+        const { source_text, line, column, source_url } = result;
+
+        const string = new Lexer(source_text).seek(line, column).blame();
+
+        return [source_url + ":" + line + ":" + column, ...string.split("\n")];
+    }
+
+    return [];
 }
 
 export function getPosFromSourceMapJSON(line, column, sourcemap_json_string) {

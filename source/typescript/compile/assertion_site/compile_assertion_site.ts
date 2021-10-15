@@ -1,4 +1,4 @@
-import { exp, JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed, renderWithFormatting } from "@candlelib/js";
+import { exp, JSCallExpression, JSIdentifierReference, JSNode, JSNodeType, renderCompressed } from "@candlelib/js";
 import { Logger, LogLevel } from '@candlelib/log';
 import URL from "@candlelib/uri";
 import { AssertionSite } from "../../types/assertion_site.js";
@@ -7,7 +7,7 @@ import { createHierarchalName } from "../../utilities/name_hierarchy.js";
 import { setUnion } from "../../utilities/sets.js";
 import { createTargetedTestError } from "../../utilities/test_error.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../../utilities/throwable_test_object_enum.js";
-import { mergeStatementReferencesAndDeclarations, compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
+import { compileEnclosingStatement, compileTestsFromSourceAST, packageAssertionSites } from "../compile_statements.js";
 import { compileExpressionHandler, selectExpressionHandler } from "../expression_handler/expression_handler_functions.js";
 import { createPopNameInstruction, createPushNameInstruction } from "../expression_handler/test_instructions.js";
 import { empty_set } from "../utilities/empty_set.js";
@@ -86,6 +86,7 @@ export function compileAssertionSite(
     let test_name = renderCompressed(assertion_expression);
 
     if (HAVE_ASSERTION_EXPRESSION && !SKIP) {
+
         for (const express_handler of selectExpressionHandler(assertion_expression, state.globals)) {
 
             if (express_handler.confirmUse(assertion_expression)) {

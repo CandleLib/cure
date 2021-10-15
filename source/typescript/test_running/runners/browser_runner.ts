@@ -1,5 +1,8 @@
-import lantern, { $404_dispatch, candle_library_dispatch, LanternServer, compiled_wick_dispatch } from "@candlelib/lantern";
 import { Logger, LogLevel } from '@candlelib/log';
+Logger.get("lantern").activate();
+
+
+import lantern, { $404_dispatch, candle_library_dispatch, compiled_wick_dispatch, LanternServer } from "@candlelib/lantern";
 import spark from "@candlelib/spark";
 import { spawn } from "child_process";
 import { Http2Server } from "http2";
@@ -8,6 +11,9 @@ import { Globals } from "../../types/globals.js";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info.js";
 import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/test_runner.js";
+import { getPackageJsonObject } from '@candlelib/paraffin';
+import URI from '@candlelib/uri';
+
 
 export class BrowserRunner implements TestRunner {
 
@@ -42,6 +48,7 @@ export class BrowserRunner implements TestRunner {
     close() {
         if (this.kill_switch)
             this.kill_switch();
+        BrowserRunner.server.close();
     }
 
     async init(globals: Globals, request, respond) {
@@ -76,6 +83,8 @@ export class BrowserRunner implements TestRunner {
 
         const port = await lantern.getUnusedPort();
 
+        Logger.get("lantern").deactivate()
+
         BrowserRunner.server = await lantern({
             type: "http2",
             port,
@@ -83,6 +92,12 @@ export class BrowserRunner implements TestRunner {
             secure: lantern.mock_certificate,
             log: lantern.null_logger
         });
+
+        const root_directory = (await getPackageJsonObject(new URI(import.meta.url).path)).package_dir;
+
+        BrowserRunner.resource_directory =
+            root_directory
+            + "/source/browser/";
 
         const
             { server, resource_directory } = BrowserRunner,
@@ -111,6 +126,7 @@ export class BrowserRunner implements TestRunner {
                     const test_results: { test_id: number, results: TestInfo[]; } = await tools.getJSONasObject();
 
                     if (test_results) {
+
 
                         const { results, test_id } = test_results;
 
@@ -193,7 +209,7 @@ export class BrowserRunner implements TestRunner {
                 MIME: "application/javascript",
                 respond: async function (tools) {
                     tools.setMIME();
-                    const str = await tools.getUTF8FromFile(globals.test_dir + "build/library" + tools.url.path);
+                    const str = await tools.getUTF8FromFile(root_directory + "/build/library" + tools.url.path);
                     return tools.sendUTF8String(str.replace(/\"\@candlelib\/([^\/\"]+)\/?/g, "\"/@cl\/$1/"));
                 },
                 keys: { ext: server.ext.all, dir: "/test_running/utilities/" }
@@ -204,7 +220,7 @@ export class BrowserRunner implements TestRunner {
                 MIME: "application/javascript",
                 respond: async function (tools) {
                     tools.setMIME();
-                    const str = await tools.getUTF8FromFile(globals.test_dir + "build/library" + tools.url.path);
+                    const str = await tools.getUTF8FromFile(root_directory + "/build/library" + tools.url.path);
                     return tools.sendUTF8String(str.replace(/\"\@candlelib\/([^\/\"]+)\/?/g, "\"/@cl\/$1/"));
                 },
                 keys: { ext: server.ext.all, dir: "/utilities/*" }
@@ -222,8 +238,8 @@ export class BrowserRunner implements TestRunner {
             candle_library_dispatch,
             compiled_wick_dispatch,
             {
-                name: "TEST_RIG",
-                description: "Loads individual test rig data",
+                name: "APP ENTRY",
+                description: "Loads the application webpage",
                 MIME: "text/html",
                 respond: async function (tools) {
                     if (tools.filename !== "")
@@ -274,7 +290,8 @@ function startFirefox(port, globals: Globals) {
     );
 
     browser.on('close', (code) => {
-        Logger.get("cure").get("browser").get("firefox").activate(LogLevel.INFO).log(`child process exited with code ${code}`);
+        Logger.get("cure").get("browser").get("firefox")
+            .activate(LogLevel.INFO).log(`child process exited with code ${code}`);
     });
 
     process.on("SIGTERM", () => {
@@ -332,7 +349,11 @@ function startChrome(port, globals: Globals): () => void {
     );
 
     browser.on('close', (code) => {
-        Logger.get("cure").get("browser").get("chrome").activate(LogLevel.INFO).log(`child process exited with code ${code}`);
+        Logger
+            .get("cure")
+            .get("browser")
+            .get("chrome")
+            .debug(`child process exited with code ${code}`);
     });
 
     process.on("exit", () => {
