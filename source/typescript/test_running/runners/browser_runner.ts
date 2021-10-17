@@ -1,18 +1,22 @@
+import lantern, {
+    $404_dispatch,
+    candle_library_dispatch, filesystem_dispatch,
+
+    LanternServer
+} from "@candlelib/lantern";
 import { Logger, LogLevel } from '@candlelib/log';
-Logger.get("lantern").activate();
-
-
-import lantern, { $404_dispatch, candle_library_dispatch, compiled_wick_dispatch, LanternServer } from "@candlelib/lantern";
+import { getPackageJsonObject } from '@candlelib/paraffin';
 import spark from "@candlelib/spark";
+import URI from '@candlelib/uri';
 import { spawn } from "child_process";
 import { Http2Server } from "http2";
-import path from "path";
 import { Globals } from "../../types/globals.js";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info.js";
 import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/test_runner.js";
-import { getPackageJsonObject } from '@candlelib/paraffin';
-import URI from '@candlelib/uri';
+Logger.get("lantern").activate();
+
+
 
 
 export class BrowserRunner implements TestRunner {
@@ -86,10 +90,14 @@ export class BrowserRunner implements TestRunner {
     static async setupServer(globals: Globals): Promise<() => void> {
 
         const port = await lantern.getUnusedPort();
-
+        const root_directory = (await getPackageJsonObject(new URI(import.meta.url).path)).package_dir;
+        BrowserRunner.resource_directory =
+            root_directory
+            + "/source/browser/";
         Logger.get("lantern").deactivate();
 
         BrowserRunner.server = await lantern({
+            cwd: BrowserRunner.resource_directory,
             type: "http2",
             port,
             host: "0.0.0.0",
@@ -97,18 +105,15 @@ export class BrowserRunner implements TestRunner {
             log: lantern.null_logger
         });
 
-        const root_directory = (await getPackageJsonObject(new URI(import.meta.url).path)).package_dir;
 
-        BrowserRunner.resource_directory =
-            root_directory
-            + "/source/browser/";
+
 
         const
-            { server, resource_directory } = BrowserRunner,
+            { server } = BrowserRunner,
             server_test = [];
 
         server.addDispatch(
-            {
+            /* {
                 name: "REDIRECT_TO_SLASH_TERMINATED_PATH",
                 description: "Redirect directory requests to paths that are terminated with a backslash",
                 MIME: "text/html",
@@ -120,7 +125,7 @@ export class BrowserRunner implements TestRunner {
                     return false;
                 },
                 keys: { ext: server.ext.all, dir: "/*" }
-            },
+            }, */
             {
                 name: "RESOLVE_TEST_RIG",
                 description: "Browser responding with the results of a test",
@@ -174,40 +179,6 @@ export class BrowserRunner implements TestRunner {
                 keys: { ext: server.ext.all, dir: "/test_rigs/acquire/" }
             },
             {
-                name: "TEXT_COMPONENTS_INDEX_HTML",
-                description: "Loads individual test rig data",
-                MIME: "text/html",
-                respond: async function (tools) {
-                    if (tools.ext !== "")
-                        return false;
-                    tools.setMIME();
-                    return tools.sendRawStreamFromFile(resource_directory + tools.url.path + "index.html");
-                },
-                keys: { ext: server.ext.all, dir: "/components/*" }
-            },
-            {
-                name: "TEXT_COMPONENTS_INDEX_WICK",
-                description: "Loads individual test rig data",
-                MIME: "text/html",
-                respond: async function (tools) {
-                    if (tools.ext !== "")
-                        return false;
-                    tools.setMIME();
-                    return tools.sendRawStreamFromFile(resource_directory + tools.url.path + "index.wick");
-                },
-                keys: { ext: server.ext.all, dir: "/components/*" }
-            },
-            {
-                name: "NAMED_COMPONENTS",
-                description: "Loads individual test rig data",
-                MIME: "text/html",
-                respond: async function (tools) {
-                    tools.setMIME();
-                    return tools.sendRawStreamFromFile(path.join(resource_directory, tools.url.path));
-                },
-                keys: { ext: server.ext.all, dir: "/components/*" }
-            },
-            {
                 name: "TEST_HARNESS",
                 description: "Return test_harness file",
                 MIME: "application/javascript",
@@ -240,8 +211,7 @@ export class BrowserRunner implements TestRunner {
                 keys: { ext: server.ext.all, dir: "/globals/acquire/" }
             },
             candle_library_dispatch,
-            compiled_wick_dispatch,
-            {
+            /* {
                 name: "APP ENTRY",
                 description: "Loads the application webpage",
                 MIME: "text/html",
@@ -251,8 +221,8 @@ export class BrowserRunner implements TestRunner {
                     tools.setMIME();
                     return tools.sendRawStreamFromFile(resource_directory + "/index.html");
                 },
-                keys: { ext: server.ext.all, dir: "/" }
-            },
+                keys: { ext: server.ext.all, dir: "/*" }
+            }, */
             {
                 name: "Test Files",
                 description: "Loads files from test dir of the tested repo",
@@ -267,6 +237,7 @@ export class BrowserRunner implements TestRunner {
                 },
                 keys: { ext: server.ext.all, dir: "/test/*" }
             },
+            filesystem_dispatch,
             $404_dispatch
         );
 
