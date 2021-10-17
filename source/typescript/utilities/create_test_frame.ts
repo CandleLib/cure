@@ -74,7 +74,7 @@ export function createTestFrame(
             globals.reporter = initializeReporterColors(reporter);
         },
 
-        get globals() { return globals },
+        get globals() { return globals; },
 
         get number_of_workers() { return number_of_workers; },
 
@@ -89,7 +89,13 @@ export function createTestFrame(
 
             await global_init;
 
+            await URL.server();
+
+            initializeResolver(resolver);
+
             if (suites.length == 0) {
+
+                harness_init(globals.package_dir.toString(), globals.package_dir.toString());
 
                 const reloader: SuiteReloader =
                     createSuiteReloaderFunction(globals, async (suite) => {
@@ -105,19 +111,15 @@ export function createTestFrame(
 
                 suites = await loadTestSuites(test_suite_url_strings, globals, reloader);
             } else {
-                globals.suites = new Map
+                globals.suites = new Map;
                 for (const suite of suites) {
                     globals.suites.set(suite.origin, suite);
                 }
             }
 
-            await URL.server();
-
-            initializeResolver(resolver);
-
             try {
 
-                harness_init(globals.package_dir.toString(), globals.package_dir.toString());
+
 
                 await loadAndRunTestSuites(globals, suites);
 
