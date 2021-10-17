@@ -4,6 +4,7 @@
 
 import { Outcome, Globals } from "./globals";
 import { Reporter } from "./reporter";
+import { TestSuite } from './test_suite';
 
 /**
  * Returned from a call to `createTestFrame`. Provides an
@@ -24,9 +25,11 @@ export interface TestFrame {
     endWatchedTests: () => void;
 
     /**
-    * Starts the test cycle.
+    * Starts the test cycle. An optional array of 
+    * TestSuites can be passed to override the default
+    * behavior of loading tests from `*.spec.js` files.
     */
-    start: () => Promise<Outcome>;
+    start: (suites?: TestSuite[]) => Promise<Outcome>;
 
     /**
      * Set the reporter used to log test data.
@@ -42,7 +45,7 @@ export interface TestFrame {
     /**
      * The globals object
      */
-    readonly globals: Globals
+    readonly globals: Globals;
 
     /**
      * Returns a promise that resolves when the 
@@ -84,9 +87,9 @@ export interface TestFrameOptions {
     PRELOAD_IMPORTS?: boolean;
 
     /**
-     * Root dir of @candlelib/cure
+     * Root dir of @candlelib/cure. Required 
      */
-    test_dir: string;
+    test_dir?: string;
 
     /**
      * Maximum time (in milliseconds) a test rig is allowed to 

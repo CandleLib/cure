@@ -6,7 +6,7 @@ import path from "path";
 import { Globals } from "../types/globals.js";
 import { TestSuite } from "../types/test_suite.js";
 
-import { loadTests } from "./load_tests.js";
+import { compileTestsFromString } from "./load_tests.js";
 import { handleWatchOfRelativeDependencies } from "./watch_imported_files.js";
 import { createSuiteError } from "../utilities/library_errors.js";
 import spark from "@candlelib/spark";
@@ -25,7 +25,7 @@ async function loadSuiteCode(
 
     suite.tests.length = 0;
 
-    loadTests(suite.data, suite, globals);
+    compileTestsFromString(suite.data, suite, globals);
 }
 
 export type SuiteReloader = (suite: TestSuite) => Promise<void>;
@@ -75,7 +75,7 @@ export function createSuiteReloaderFunction(globals: Globals, postInitialize: (s
 
             await loadSuiteCode(globals, suite);
 
-            loadTests(suite.data, suite, globals);
+            compileTestsFromString(suite.data, suite, globals);
 
             await handleWatchOfRelativeDependencies(suite, globals);
 

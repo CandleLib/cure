@@ -48,7 +48,11 @@ export class BrowserRunner implements TestRunner {
     close() {
         if (this.kill_switch)
             this.kill_switch();
-        BrowserRunner.server.close();
+
+        if (BrowserRunner.server) {
+            BrowserRunner.server.close();
+            BrowserRunner.server = null;
+        }
     }
 
     async init(globals: Globals, request, respond) {
@@ -83,7 +87,7 @@ export class BrowserRunner implements TestRunner {
 
         const port = await lantern.getUnusedPort();
 
-        Logger.get("lantern").deactivate()
+        Logger.get("lantern").deactivate();
 
         BrowserRunner.server = await lantern({
             type: "http2",

@@ -1,7 +1,7 @@
 import { parser } from "@candlelib/js";
 import { NullReporter } from "@candlelib/cure";
 import { compileTests } from "@candlelib/cure/build/library/compile/compile.js";
-import { loadTests } from "@candlelib/cure/build/library/loading/load_tests.js";
+import { compileTestsFromString } from "@candlelib/cure/build/library/loading/load_tests.js";
 import { DesktopRunner } from "@candlelib/cure/build/library/test_running/runners/desktop_runner.js";
 import { runTests } from "@candlelib/cure/build/library/test_running/run_tests.js";
 import { initializeReporterColors } from "@candlelib/cure/build/library/utilities/create_test_frame.js";
@@ -38,7 +38,7 @@ export async function createTestSuiteFromSource(source, globals = createGlobalsO
 
     const suite = createTestSuite("internal", 0);
 
-    await loadTests(source, suite, globals);
+    await compileTestsFromString(source, suite, globals);
 
     suite.name = "test";
 

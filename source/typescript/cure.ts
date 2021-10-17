@@ -35,7 +35,11 @@ import { createTestFrame } from "./utilities/create_test_frame.js";
 import { BasicReporter } from "./reporting/basic_reporter.js";
 import { NullReporter } from "./reporting/null_reporter.js";
 export { createTestSuite } from "./utilities/create_test_suite.js";
-export { loadTests } from "./loading/load_tests.js";
+export {
+    compileTestsFromString,
+    compileTestsFromString as loadTests,
+    compileTestsFromAST
+} from "./loading/load_tests.js";
 
 export * from "./types/plugin.js";
 export * from "./types/config_script.js";

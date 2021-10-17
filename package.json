@@ -3,7 +3,7 @@
     "version": "0.6.1",
     "description": "Testing Framework",
     "type": "module",
-    "types": "./build/types/test.d.ts",
+    "types": "./build/types/cure.d.ts",
     "main": "./build/library/cure.js",
     "bin": {
         "candle.cure": "./index.js"
@@ -45,7 +45,6 @@
         "deep-equal": "^2.0.1"
     },
     "devDependencies": {
-        "@candlelib/wick": "0.15.3",
         "@types/node": "^13.9.1",
         "chai": "^4.3.4",
         "typescript": "^4.0.2"

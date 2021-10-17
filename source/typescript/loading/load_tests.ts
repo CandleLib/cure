@@ -1,6 +1,6 @@
 import { createSourceMap, createSourceMapJSON, SourceMap } from "@candlelib/conflagrate";
-import { parser, renderWithFormattingAndSourceMap } from "@candlelib/js";
-import URL from "@candlelib/uri";
+import { JSModule, JSNode, JSScript, parser, renderWithFormattingAndSourceMap } from "@candlelib/js";
+import URI from "@candlelib/uri";
 import path from "path";
 import { compileTests } from "../compile/compile.js";
 import { format_rules } from "../reporting/utilities/format_rules.js";
@@ -14,18 +14,23 @@ import { createTestError } from "../utilities/library_errors.js";
 import { THROWABLE_TEST_OBJECT_ID } from "../utilities/throwable_test_object_enum.js";
 
 /**
- * Create Tests from a test filepath and add to suite.
+ * Create test rigs from source string and load them into a 
+ * test suite.
  * 
  * @param {string} url_string - A path to the test file.
  * @param {TestSuite} suite - A TestSuite that the TestRigs will be added to.
  */
-export function loadTests(text_data: string, suite: TestSuite, globals: Globals): void {
+export function compileTestsFromString(text_data: string, suite: TestSuite, globals: Globals): void {
+    compileTestsFromAST(parser(text_data).ast, suite, globals);
+}
+
+export function compileTestsFromAST(test_ast: JSNode, suite: TestSuite, globals: Globals): void {
 
     globals.input_source = suite.origin;
 
     try {
 
-        const { assertion_sites } = compileTests(parser(text_data).ast, globals, "");
+        const { assertion_sites } = compileTests(<JSModule | JSScript>test_ast, globals, "");
 
         if (assertion_sites.length > 0)
             suite.tests = mapAssertionSitesToTests(assertion_sites, suite, globals);
@@ -175,7 +180,7 @@ function collectImports(
             const { module_source, IS_RELATIVE } = import_module;
 
             source = IS_RELATIVE
-                ? URL.resolveRelative(module_source, path.resolve(process.cwd(), suite.origin)) + ""
+                ? URI.resolveRelative(module_source, path.resolve(process.cwd(), suite.origin)) + ""
                 : module_source + "";
 
             ImportMap.set(import_module, source);

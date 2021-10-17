@@ -13,7 +13,6 @@
             background-color: #ffffff;
             color: rgb(0, 0, 0);
         }
-
     </style>
     <link href="https://fonts.googleapis.com/css2?family=Fira+Mono&display=swap" rel="stylesheet">
     <!--<link href="https://fonts.googleapis.com/css2?family=Nunito:wght@300&display=swap" rel="stylesheet">-->
@@ -31,7 +30,7 @@
         import URL from "/@cl/uri/";
         import spark from "/@cl/spark/";
         
-        let ACTIVE = true, SLOW_POOL = true, cache = [];
+        let ACTIVE = false, SLOW_POOL = true, cache = [];
 
         class TestRunner{
 
@@ -50,37 +49,40 @@
                     return cached;
                 }
 
+                this.COMPLETED = false
+
                 this.iframe = document.createElement("iframe");
                 
                 this.iframe.src = "/components/iframe.html";
-                console.log(this.iframe)
+
                 this.loaded = new Promise(
                     res=>{
                         this.iframe
                         .addEventListener("load", ()=>res())
                     }
                 )
+                
                 document.body.appendChild(this.iframe);
+                
                 this.load(test, test_id);
             }
 
             clear(){
                 this.id  = -1;
                 this.test = null;
+                this.iframe.contentWindow.document.body.innerHTML = "";
                 cache.push(this)
             }
 
             async load(test, test_id){
                 
-                await this.loaded;
-                
                 this.COMPLETED = false;
+                
+                await this.loaded;
                 
                 const pending_results = await this.iframe.contentWindow.runTest(
                     Object.assign(test, {test_id})
                 );
-
-                console.log(pending_results)
 
                 await TestRunner.complete_test(
                     pending_results, test_id
@@ -97,56 +99,61 @@
 
             let falloff = 2;
 
-            await spark.sleep(500);
+            await spark.sleep(10);
 
-            let active_tests = [];
+            let active_tests = [], pending_tests = [];
 
             while(SLOW_POOL){
-
-                console.log("POLLING")
 
                 if(!ACTIVE){
 
                     const {NO_TESTS_NEED_TO_WAIT, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
 
                     if(!NO_TESTS_NEED_TO_WAIT){
-                        active_tests.push(new TestRunner( test, test_id));
+                        pending_tests.push({test, test_id});
                         ACTIVE = true;
                     }
                 }
 
-                await spark.sleep(50)
+                await spark.sleep(10)
 
-                while(ACTIVE){   
+                while(pending_tests.length > 0 || active_tests.length > 0){   
+
+                    for(let i = 0; i < pending_tests.length;){
+                        
+                        if(active_tests.length >= 2)
+                            break;
+
+                        const {test, test_id} = pending_tests.pop();
+
+                        active_tests.push(new TestRunner(test, test_id));
+                    }
 
                     for(let i = 0; i < active_tests.length; i++){
                         
                         const test_runner = active_tests[i];
 
                         if(test_runner.COMPLETED){
-                            active_tests.splice(i,1);
+                            active_tests.splice(i, 1);
                             i--;
                             test_runner.clear();
                         };
                     }
-
-                    if(active_tests.length == 0)
-                        ACTIVE == false;
-
                     const {NO_TESTS_NEED_TO_WAIT, test_id, test} = (await (new URL("/test_rigs/acquire/")).fetchJSON());
                     
                     if(!NO_TESTS_NEED_TO_WAIT){
-                        active_tests.push(new TestRunner(test, test_id));
-                        await spark.sleep(2);
-                        falloff = 2;
-                    }else if(active_tests.length > 0) {
-                        await spark.sleep(50);
-                    }else {
-                        await spark.sleep(Math.min(falloff += (falloff * 0.5)), 500);
+                        pending_tests.push({test, test_id});
+                    }else if(
+                        active_tests.length > 0 || pending_tests.length > 0
+                    ) {
+                            await spark.sleep(10);
+                    } else {
+                        ACTIVE == false;
+                        break;
                     }
                 }
 
-                await spark.sleep(200)
+                await spark.sleep(30)
             }
         }
 
