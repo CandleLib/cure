@@ -16,9 +16,6 @@ import { TestInfo } from "../../types/test_info.js";
 import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/test_runner.js";
 Logger.get("lantern").activate();
 
-
-
-
 export class BrowserRunner implements TestRunner {
 
     static active_runner: BrowserRunner;
@@ -105,27 +102,11 @@ export class BrowserRunner implements TestRunner {
             log: lantern.null_logger
         });
 
-
-
-
         const
             { server } = BrowserRunner,
             server_test = [];
 
         server.addDispatch(
-            /* {
-                name: "REDIRECT_TO_SLASH_TERMINATED_PATH",
-                description: "Redirect directory requests to paths that are terminated with a backslash",
-                MIME: "text/html",
-                respond: async function (tools) {
-
-                    if (!tools.url.ext && tools.url.path[tools.url.path.length - 1] !== "/")
-                        return tools.redirect(tools.url.path + "/");
-
-                    return false;
-                },
-                keys: { ext: server.ext.all, dir: "/*" }
-            }, */
             {
                 name: "RESOLVE_TEST_RIG",
                 description: "Browser responding with the results of a test",
@@ -211,18 +192,7 @@ export class BrowserRunner implements TestRunner {
                 keys: { ext: server.ext.all, dir: "/globals/acquire/" }
             },
             candle_library_dispatch,
-            /* {
-                name: "APP ENTRY",
-                description: "Loads the application webpage",
-                MIME: "text/html",
-                respond: async function (tools) {
-                    if (tools.filename !== "")
-                        return false;
-                    tools.setMIME();
-                    return tools.sendRawStreamFromFile(resource_directory + "/index.html");
-                },
-                keys: { ext: server.ext.all, dir: "/*" }
-            }, */
+
             {
                 name: "Test Files",
                 description: "Loads files from test dir of the tested repo",
