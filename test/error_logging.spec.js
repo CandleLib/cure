@@ -8,7 +8,7 @@ import { createTransferableTestErrorFromException, seekSourceFile } from "../bui
 import { testThrow } from "../build/library/utilities/testThrow.js";
 import { ExternalThrowB } from "./data/external_throw.js";
 
-assert_group("Error Thrown From The Spec File", sequence, () => {
+assert_group(skip, "Error Thrown From The Spec File", sequence, () => {
     try {
         throw new Error("Help");
     } catch (e) {
@@ -17,7 +17,7 @@ assert_group("Error Thrown From The Spec File", sequence, () => {
     }
 });
 
-assert_group("Error Thrown From External File In Working Directory", sequence, () => {
+assert_group(skip, "Error Thrown From External File In Working Directory", sequence, () => {
     try {
         ExternalThrowB();
     } catch (e) {
@@ -26,7 +26,7 @@ assert_group("Error Thrown From External File In Working Directory", sequence, (
     }
 });
 
-assert_group("Error Thrown From Source Mapped File In Working Directory", sequence, () => {
+assert_group(skip, "Error Thrown From Source Mapped File In Working Directory", sequence, () => {
 
     try {
         testThrow();
@@ -40,7 +40,7 @@ assert_group("Error Thrown From Source Mapped File In Working Directory", sequen
     }
 });
 
-assert_group("Error Thrown From File Outside Working Directory. Should Map Back To Spec File", sequence, () => {
+assert_group(skip, "Error Thrown From File Outside Working Directory. Should Map Back To Spec File", sequence, () => {
 
     try {
         const lexer = new Lexer();

@@ -74,9 +74,9 @@ assert_group(sequence, "Post Test Run", () => {
 
     assert(results[0].test_stack[4] == "==");
 
-    assert(results[1].PASSED == true);
+    assert(skip, results[1].PASSED == true);
 
-    assert(results[2].PASSED == false);
+    assert(results[2].PASSED == true);
 
 });
 

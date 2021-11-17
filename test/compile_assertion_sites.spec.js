@@ -31,7 +31,7 @@ const globals = createGlobalsObject();
 
 let { assertion_sites } = compileTestsFromSourceAST(globals, parser(source).ast, []);
 
-assert(assertion_sites.length == 10);
+assert(assertion_sites.length == 11);
 
 // These tests are sipped since they are likely to break frequently 
 // and don't prove much.
@@ -53,11 +53,11 @@ assert(assertion_sites[2].static_name == "2 Chai assert test 1 - Undeclared vari
 assert(assertion_sites[3].static_name == "3 Chai assert test 2");
 assert(assertion_sites[4].static_name == "4 Chai assert test 3");
 assert(assertion_sites[5].static_name == "5 Chai assert test 4");
-assert(skip, assertion_sites[6].static_name == "6 Report undeterminable test"); //< No longer generates a test. Reports a library error instead
-assert(assertion_sites[6].static_name == "7 Basic failed inequality");
-assert(assertion_sites[7].static_name == "8 Failed strict equality");
-assert(assertion_sites[8].static_name == "9 Passing equality");
-assert(assertion_sites[9].static_name == "10 The NullReport update method should return true");
+assert(assertion_sites[6].static_name == "6 Report undeterminable test"); //< No longer generates a test. Reports a library error instead
+assert(assertion_sites[7].static_name == "7 Basic failed inequality");
+assert(assertion_sites[8].static_name == "8 Failed strict equality");
+assert(assertion_sites[9].static_name == "9 Passing equality");
+assert(assertion_sites[10].static_name == "10 The NullReport update method should return true");
 
 const source2 = await (URL.resolveRelative("./test/data/nested_dependencies_test_spec.js")).fetchText();
 
