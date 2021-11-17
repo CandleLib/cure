@@ -1,4 +1,4 @@
-import { buildParserMemoryBuffer, loadWASM } from "@candlelib/hydrocarbon";
+import { buildParserMemoryBuffer, loadWASM } from "@candlelib/hydrocarbon/build/library/runtime/parser_memory_old.js";
 import Lexer from "@candlelib/wind";
 
 const debug_stack = [];

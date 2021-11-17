@@ -1,6 +1,6 @@
-@IGNORE θws θnl
+@IGNORE g:sp g:nl
 
-<> testy → expression                   f:r { $sym1[0] }
+<> testy > expression                   f:r { $sym1[0] }
 
 <> expression > binary                  f:r { env.completeCaptures($sym1, env.globals) }
 

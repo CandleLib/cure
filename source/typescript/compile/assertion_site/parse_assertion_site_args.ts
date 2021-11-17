@@ -121,7 +121,7 @@ function handleIdentifierArguments(node: JSIdentifierReference, result: Assertio
 }
 
 function createMultipleAssertionExpressionError(new_expr: JSNode, existing_expr: JSNode) {
-    return [new_expr.pos.errorMessage(`Cannot add assertion expression [${renderCompressed(new_expr)}]`),
-    existing_expr.pos.errorMessage(`Candidate assertion expression [${renderCompressed(existing_expr)}] already passed to this function.`)].join("\n");
+    return [new_expr.pos.createError(`Cannot add assertion expression [${renderCompressed(new_expr)}]`),
+    existing_expr.pos.createError(`Candidate assertion expression [${renderCompressed(existing_expr)}] already passed to this function.`)].join("\n");
 }
 

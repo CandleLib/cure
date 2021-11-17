@@ -1,25 +1,18 @@
-import lantern, {
-    $404_dispatch,
-    candle_library_dispatch, filesystem_dispatch,
-
-    LanternServer
-} from "@candlelib/lantern";
 import { Logger, LogLevel } from '@candlelib/log';
 import { getPackageJsonObject } from '@candlelib/paraffin';
 import spark from "@candlelib/spark";
 import URI from '@candlelib/uri';
 import { spawn } from "child_process";
-import { Http2Server } from "http2";
 import { Globals } from "../../types/globals.js";
 import { Test } from "../../types/test.js";
 import { TestInfo } from "../../types/test_info.js";
 import { TestRunner, TestRunnerRequest, TestRunnerResponse } from "../../types/test_runner.js";
-Logger.get("lantern").activate();
+
 
 export class BrowserRunner implements TestRunner {
 
     static active_runner: BrowserRunner;
-    static server: LanternServer<Http2Server>;
+    static server: any;
     static resource_directory: string;
     static SERVER_LOADED: boolean;
     static port: number;
@@ -85,6 +78,13 @@ export class BrowserRunner implements TestRunner {
     }
 
     static async setupServer(globals: Globals): Promise<() => void> {
+        Logger.get("lantern").activate();
+        const {
+            default: lantern,
+            $404_dispatch,
+            candle_library_dispatch,
+            filesystem_dispatch,
+        } = await import("@candlelib/lantern");
 
         const port = await lantern.getUnusedPort();
         const root_directory = (await getPackageJsonObject(new URI(import.meta.url).path)).package_dir;
