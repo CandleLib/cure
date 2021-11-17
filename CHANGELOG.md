@@ -1,3 +1,13 @@
+## [v0.6.2] - 2021-11-17 
+
+- [2021-10-08]
+
+    Made it possible to skip assertion sites within assert_groups and updated BasicReporter to list skipped tests.
+
+- [2021-10-08]
+
+    Fixed issue were the process hung after watch-less test runs due to test runner resources (workers or child-processes) not being released.
+
 ## [v0.6.0] - 2021-06-17 
 
 - [2021-06-08]
