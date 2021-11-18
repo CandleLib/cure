@@ -19,9 +19,9 @@ export async function loadImport(source) {
     try {
         return await import(source);
     } catch (e) {
-        e.message += source;
+        e.message;
         throw (e);
-    }
+    }q
 }
 
 export function createAddendum(sources: ImportSource[], test: Test) {
