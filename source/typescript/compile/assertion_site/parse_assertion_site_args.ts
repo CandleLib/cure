@@ -31,11 +31,12 @@ export function parseAssertionSiteArguments(call_node: JSNode): AssertionSiteArg
 
             handleNumericArguments(result, node);
 
-        else if (Node_Is_A_String(node))
+        else if (Node_Is_A_String(node)) {
 
             handleStringArgument(result, node);
 
-        else
+
+        } else
             handleOtherExpressionTypes(result, node, mutate);
 
 
@@ -49,7 +50,8 @@ export function parseAssertionSiteArguments(call_node: JSNode): AssertionSiteArg
 }
 
 function Node_Is_A_String(node: JSNode) {
-    return node.type == JSNodeType.StringLiteral;
+    return node.type == JSNodeType.StringLiteral
+        || (node.type == JSNodeType.Template && node.nodes.length == 1);
 }
 
 function Node_Is_An_Identifier(node: JSNode): node is JSIdentifierReference {
@@ -89,7 +91,10 @@ function handleOtherExpressionTypes(result: AssertionSiteArguments, node: JSNode
 }
 
 function handleStringArgument(result: AssertionSiteArguments, node: JSNode) {
-    if (!result.name) result.name = <string>node.value;
+
+    if (!result.name && node.type == JSNodeType.Template)
+        result.name = node.nodes[0].value.replace(/\n/g, "\\n").replace(/\"/g, "\\\"");
+    else if (!result.name) result.name = <string>node.value;
 }
 
 function handleNumericArguments(result: AssertionSiteArguments, node: JSNode) {
