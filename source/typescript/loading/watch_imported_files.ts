@@ -1,5 +1,6 @@
 import { traverse } from "@candlelib/conflagrate";
 import { ext, JSNodeType, parser } from "@candlelib/js";
+import { getPackageJsonObject } from '@candlelib/paraffin';
 import spark from "@candlelib/spark";
 import URL from "@candlelib/uri";
 import fs from "fs";
@@ -15,10 +16,10 @@ const fsp = fs.promises;
 function createFileWatcher(path: URL, globals: Globals) {
 
     try {
+        let path_string = path + "";
 
-        const path_string = path.toString();
 
-        globals.reporter.notify("Watching", path + "");
+        //globals.reporter.notify("Watching", path + "");
 
         const watcher = fs.watch(path_string, async function () {
 
@@ -65,6 +66,32 @@ async function loadImports(filepath: URL, suite: TestSuite, globals: Globals) {
 
         globals.watched_files_map.set(file_path_string, new Map());
 
+        if (!filepath.ext) {
+            //Try to resolve the file path to a single file.
+
+            const candidates = [
+                new URL(filepath + "/package.json"),
+                new URL(filepath + ".js"),
+                URL.resolveRelative(filepath),
+            ];
+
+            for (let candidate of candidates) {
+                if (await candidate.DOES_THIS_EXIST()) {
+                    if (candidate.file == "package.json") {
+                        const { FOUND, package: pkg, package_dir } = await getPackageJsonObject(candidate);
+                        if (FOUND && package_dir == candidate.dir) {
+                            filepath = URL.resolveRelative(pkg.main, candidate.dir + "/");
+                            break;
+                        }
+                    } else {
+                        filepath = candidate;
+                        break;
+                    }
+                }
+            }
+        }
+
+
         if (globals.flags.WATCH)
             createFileWatcher(filepath, globals);
 
@@ -89,7 +116,7 @@ async function loadImports(filepath: URL, suite: TestSuite, globals: Globals) {
                         loadImports(url, suite, globals);
                 }
             } catch (e) {
-                return fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + filepath + rst, globals);
+                //return fatalExit(e, globals.reporter.colors.fail + "\nCannot continue in watch mode when a watched file cannot be found\n" + filepath + rst, globals);
             }
         }
 
